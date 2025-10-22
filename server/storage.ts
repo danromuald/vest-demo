@@ -8,7 +8,11 @@ import {
   type FinancialModel, type InsertFinancialModel,
   type ThesisMonitor, type InsertThesisMonitor,
   type MarketEvent, type InsertMarketEvent,
+  companies, positions, proposals, icMeetings, votes,
+  agentResponses, financialModels, thesisMonitors, marketEvents,
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -59,266 +63,201 @@ export interface IStorage {
   createMarketEvent(event: InsertMarketEvent): Promise<MarketEvent>;
 }
 
-export class MemStorage implements IStorage {
-  private companies: Map<string, Company> = new Map();
-  private positions: Map<string, Position> = new Map();
-  private proposals: Map<string, Proposal> = new Map();
-  private icMeetings: Map<string, ICMeeting> = new Map();
-  private votes: Map<string, Vote> = new Map();
-  private agentResponses: Map<string, AgentResponse> = new Map();
-  private financialModels: Map<string, FinancialModel> = new Map();
-  private thesisMonitors: Map<string, ThesisMonitor> = new Map();
-  private marketEvents: Map<string, MarketEvent> = new Map();
-
-  constructor() {
-    this.seedData();
-  }
-
-  private seedData() {
-    // Seed initial companies
-    const nvda: Company = {
-      id: randomUUID(),
-      ticker: "NVDA",
-      name: "NVIDIA Corporation",
-      sector: "Technology",
-      industry: "Semiconductors",
-      marketCap: "2850000000000",
-      currentPrice: "875.50",
-      description: "Leader in GPU technology and AI computing infrastructure",
-      createdAt: new Date(),
-    };
-    this.companies.set(nvda.id, nvda);
-
-    const msft: Company = {
-      id: randomUUID(),
-      ticker: "MSFT",
-      name: "Microsoft Corporation",
-      sector: "Technology",
-      industry: "Software",
-      marketCap: "2950000000000",
-      currentPrice: "415.25",
-      description: "Cloud computing, productivity software, and AI services",
-      createdAt: new Date(),
-    };
-    this.companies.set(msft.id, msft);
-
-    // Seed positions
-    const position1: Position = {
-      id: randomUUID(),
-      ticker: "MSFT",
-      companyName: "Microsoft Corporation",
-      shares: 120000,
-      avgCost: "385.50",
-      currentPrice: "415.25",
-      marketValue: "49830000",
-      portfolioWeight: "2.85",
-      gainLoss: "3570000",
-      gainLossPercent: "7.72",
-      sector: "Technology",
-      analyst: "Sarah Chen",
-      thesisHealth: "HEALTHY",
-      purchaseDate: new Date("2024-08-15"),
-      createdAt: new Date(),
-    };
-    this.positions.set(position1.id, position1);
-  }
-
+export class DatabaseStorage implements IStorage {
   // Companies
   async getCompanies(): Promise<Company[]> {
-    return Array.from(this.companies.values());
+    return await db.select().from(companies);
   }
 
   async getCompany(id: string): Promise<Company | undefined> {
-    return this.companies.get(id);
+    const [company] = await db.select().from(companies).where(eq(companies.id, id));
+    return company || undefined;
   }
 
   async getCompanyByTicker(ticker: string): Promise<Company | undefined> {
-    return Array.from(this.companies.values()).find(c => c.ticker === ticker);
+    const [company] = await db.select().from(companies).where(eq(companies.ticker, ticker));
+    return company || undefined;
   }
 
   async createCompany(insertCompany: InsertCompany): Promise<Company> {
-    const company: Company = {
-      ...insertCompany,
-      id: randomUUID(),
-      createdAt: new Date(),
-    };
-    this.companies.set(company.id, company);
+    const [company] = await db
+      .insert(companies)
+      .values({ ...insertCompany, id: randomUUID() })
+      .returning();
     return company;
   }
 
   // Positions
   async getPositions(): Promise<Position[]> {
-    return Array.from(this.positions.values());
+    return await db.select().from(positions);
   }
 
   async getPosition(id: string): Promise<Position | undefined> {
-    return this.positions.get(id);
+    const [position] = await db.select().from(positions).where(eq(positions.id, id));
+    return position || undefined;
   }
 
   async createPosition(insertPosition: InsertPosition): Promise<Position> {
-    const position: Position = {
-      ...insertPosition,
-      id: randomUUID(),
-      createdAt: new Date(),
-    };
-    this.positions.set(position.id, position);
+    const [position] = await db
+      .insert(positions)
+      .values({ ...insertPosition, id: randomUUID() })
+      .returning();
     return position;
   }
 
-  async updatePosition(id: string, updates: Partial<Position>): Promise<Position | undefined> {
-    const position = this.positions.get(id);
-    if (!position) return undefined;
-    const updated = { ...position, ...updates };
-    this.positions.set(id, updated);
-    return updated;
+  async updatePosition(id: string, updateData: Partial<Position>): Promise<Position | undefined> {
+    const [position] = await db
+      .update(positions)
+      .set(updateData)
+      .where(eq(positions.id, id))
+      .returning();
+    return position || undefined;
   }
 
   // Proposals
   async getProposals(): Promise<Proposal[]> {
-    return Array.from(this.proposals.values());
+    return await db.select().from(proposals).orderBy(desc(proposals.createdAt));
   }
 
   async getProposal(id: string): Promise<Proposal | undefined> {
-    return this.proposals.get(id);
+    const [proposal] = await db.select().from(proposals).where(eq(proposals.id, id));
+    return proposal || undefined;
   }
 
   async createProposal(insertProposal: InsertProposal): Promise<Proposal> {
-    const proposal: Proposal = {
-      ...insertProposal,
-      id: randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    this.proposals.set(proposal.id, proposal);
+    const [proposal] = await db
+      .insert(proposals)
+      .values({ ...insertProposal, id: randomUUID() })
+      .returning();
     return proposal;
   }
 
-  async updateProposal(id: string, updates: Partial<Proposal>): Promise<Proposal | undefined> {
-    const proposal = this.proposals.get(id);
-    if (!proposal) return undefined;
-    const updated = { ...proposal, ...updates, updatedAt: new Date() };
-    this.proposals.set(id, updated);
-    return updated;
+  async updateProposal(id: string, updateData: Partial<Proposal>): Promise<Proposal | undefined> {
+    const [proposal] = await db
+      .update(proposals)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(proposals.id, id))
+      .returning();
+    return proposal || undefined;
   }
 
   // IC Meetings
   async getICMeetings(): Promise<ICMeeting[]> {
-    return Array.from(this.icMeetings.values());
+    return await db.select().from(icMeetings).orderBy(desc(icMeetings.meetingDate));
   }
 
   async getICMeeting(id: string): Promise<ICMeeting | undefined> {
-    return this.icMeetings.get(id);
+    const [meeting] = await db.select().from(icMeetings).where(eq(icMeetings.id, id));
+    return meeting || undefined;
   }
 
   async createICMeeting(insertMeeting: InsertICMeeting): Promise<ICMeeting> {
-    const meeting: ICMeeting = {
-      ...insertMeeting,
-      id: randomUUID(),
-      createdAt: new Date(),
-    };
-    this.icMeetings.set(meeting.id, meeting);
+    const [meeting] = await db
+      .insert(icMeetings)
+      .values({ ...insertMeeting, id: randomUUID() })
+      .returning();
     return meeting;
   }
 
-  async updateICMeeting(id: string, updates: Partial<ICMeeting>): Promise<ICMeeting | undefined> {
-    const meeting = this.icMeetings.get(id);
-    if (!meeting) return undefined;
-    const updated = { ...meeting, ...updates };
-    this.icMeetings.set(id, updated);
-    return updated;
+  async updateICMeeting(id: string, updateData: Partial<ICMeeting>): Promise<ICMeeting | undefined> {
+    const [meeting] = await db
+      .update(icMeetings)
+      .set(updateData)
+      .where(eq(icMeetings.id, id))
+      .returning();
+    return meeting || undefined;
   }
 
   // Votes
   async getVotes(proposalId: string): Promise<Vote[]> {
-    return Array.from(this.votes.values()).filter(v => v.proposalId === proposalId);
+    return await db.select().from(votes).where(eq(votes.proposalId, proposalId));
   }
 
   async createVote(insertVote: InsertVote): Promise<Vote> {
-    const vote: Vote = {
-      ...insertVote,
-      id: randomUUID(),
-      createdAt: new Date(),
-    };
-    this.votes.set(vote.id, vote);
+    const [vote] = await db
+      .insert(votes)
+      .values({ ...insertVote, id: randomUUID() })
+      .returning();
     return vote;
   }
 
   // Agent Responses
   async getAgentResponses(ticker?: string): Promise<AgentResponse[]> {
-    const responses = Array.from(this.agentResponses.values());
-    return ticker ? responses.filter(r => r.ticker === ticker) : responses;
+    if (ticker) {
+      return await db.select().from(agentResponses)
+        .where(eq(agentResponses.ticker, ticker))
+        .orderBy(desc(agentResponses.generatedAt));
+    }
+    return await db.select().from(agentResponses).orderBy(desc(agentResponses.generatedAt));
   }
 
   async createAgentResponse(insertResponse: InsertAgentResponse): Promise<AgentResponse> {
-    const response: AgentResponse = {
-      ...insertResponse,
-      id: randomUUID(),
-      generatedAt: new Date(),
-    };
-    this.agentResponses.set(response.id, response);
+    const [response] = await db
+      .insert(agentResponses)
+      .values({ ...insertResponse, id: randomUUID() })
+      .returning();
     return response;
   }
 
   // Financial Models
   async getFinancialModels(ticker?: string): Promise<FinancialModel[]> {
-    const models = Array.from(this.financialModels.values());
-    return ticker ? models.filter(m => m.ticker === ticker) : models;
+    if (ticker) {
+      return await db.select().from(financialModels)
+        .where(eq(financialModels.ticker, ticker))
+        .orderBy(desc(financialModels.createdAt));
+    }
+    return await db.select().from(financialModels).orderBy(desc(financialModels.createdAt));
   }
 
   async createFinancialModel(insertModel: InsertFinancialModel): Promise<FinancialModel> {
-    const model: FinancialModel = {
-      ...insertModel,
-      id: randomUUID(),
-      createdAt: new Date(),
-    };
-    this.financialModels.set(model.id, model);
+    const [model] = await db
+      .insert(financialModels)
+      .values({ ...insertModel, id: randomUUID() })
+      .returning();
     return model;
   }
 
   // Thesis Monitors
   async getThesisMonitors(): Promise<ThesisMonitor[]> {
-    return Array.from(this.thesisMonitors.values());
+    return await db.select().from(thesisMonitors);
   }
 
   async getThesisMonitor(ticker: string): Promise<ThesisMonitor | undefined> {
-    return Array.from(this.thesisMonitors.values()).find(m => m.ticker === ticker);
+    const [monitor] = await db.select().from(thesisMonitors).where(eq(thesisMonitors.ticker, ticker));
+    return monitor || undefined;
   }
 
   async createThesisMonitor(insertMonitor: InsertThesisMonitor): Promise<ThesisMonitor> {
-    const monitor: ThesisMonitor = {
-      ...insertMonitor,
-      id: randomUUID(),
-      createdAt: new Date(),
-    };
-    this.thesisMonitors.set(monitor.id, monitor);
+    const [monitor] = await db
+      .insert(thesisMonitors)
+      .values({ ...insertMonitor, id: randomUUID() })
+      .returning();
     return monitor;
   }
 
-  async updateThesisMonitor(id: string, updates: Partial<ThesisMonitor>): Promise<ThesisMonitor | undefined> {
-    const monitor = this.thesisMonitors.get(id);
-    if (!monitor) return undefined;
-    const updated = { ...monitor, ...updates };
-    this.thesisMonitors.set(id, updated);
-    return updated;
+  async updateThesisMonitor(id: string, updateData: Partial<ThesisMonitor>): Promise<ThesisMonitor | undefined> {
+    const [monitor] = await db
+      .update(thesisMonitors)
+      .set(updateData)
+      .where(eq(thesisMonitors.id, id))
+      .returning();
+    return monitor || undefined;
   }
 
   // Market Events
-  async getMarketEvents(limit: number = 20): Promise<MarketEvent[]> {
-    const events = Array.from(this.marketEvents.values());
-    return events.sort((a, b) => 
-      (b.detectedAt?.getTime() || 0) - (a.detectedAt?.getTime() || 0)
-    ).slice(0, limit);
+  async getMarketEvents(limit: number = 50): Promise<MarketEvent[]> {
+    return await db.select().from(marketEvents)
+      .orderBy(desc(marketEvents.detectedAt))
+      .limit(limit);
   }
 
   async createMarketEvent(insertEvent: InsertMarketEvent): Promise<MarketEvent> {
-    const event: MarketEvent = {
-      ...insertEvent,
-      id: randomUUID(),
-      detectedAt: new Date(),
-    };
-    this.marketEvents.set(event.id, event);
+    const [event] = await db
+      .insert(marketEvents)
+      .values({ ...insertEvent, id: randomUUID() })
+      .returning();
     return event;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
