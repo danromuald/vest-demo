@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AgentPanel } from "@/components/agent-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Check, X, Minus, TrendingUp, Shield, BarChart3 } from "lucide-react";
+import { Users, Check, X, Minus, TrendingUp, Shield, BarChart3, FileText, ChevronRight } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useToast } from "@/hooks/use-toast";
-import type { ICMeeting as ICMeetingType } from "@shared/schema";
+import type { ICMeeting as ICMeetingType, Proposal, WorkflowStageRecord } from "@shared/schema";
 
 export default function ICMeeting() {
   const { toast } = useToast();
@@ -17,10 +17,31 @@ export default function ICMeeting() {
   const [scenarioAnalysis, setScenarioAnalysis] = useState<any>(null);
   const [votes, setVotes] = useState<{ name: string; vote: 'APPROVE' | 'REJECT' | 'ABSTAIN' }[]>([]);
   const [meetingId, setMeetingId] = useState<string | null>(null);
+  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
 
   // Fetch IC meetings
   const { data: meetings = [] } = useQuery<ICMeetingType[]>({
     queryKey: ['/api/ic-meetings'],
+  });
+
+  // Fetch proposals
+  const { data: allProposals = [] } = useQuery<Proposal[]>({
+    queryKey: ['/api/proposals'],
+  });
+
+  // Fetch workflow stages to find proposals at IC_MEETING stage
+  const { data: workflowStages = [] } = useQuery<WorkflowStageRecord[]>({
+    queryKey: ['/api/workflow-stages'],
+  });
+
+  // Filter proposals at IC_MEETING stage
+  const icProposals = allProposals.filter(proposal => {
+    const stage = workflowStages.find(s => 
+      s.entityId === proposal.id && 
+      s.entityType === 'PROPOSAL' && 
+      s.currentStage === 'IC_MEETING'
+    );
+    return stage !== undefined;
   });
 
   // Use first scheduled or in-progress meeting
@@ -30,6 +51,13 @@ export default function ICMeeting() {
       setMeetingId(activeMeeting.id);
     }
   }, [meetings]);
+
+  // Auto-select first IC proposal if none selected
+  useEffect(() => {
+    if (icProposals.length > 0 && !selectedProposal) {
+      setSelectedProposal(icProposals[0]);
+    }
+  }, [icProposals, selectedProposal]);
 
   // WebSocket connection for real-time collaboration
   const { isConnected, lastMessage, sendMessage } = useWebSocket("/ws");
@@ -144,15 +172,70 @@ export default function ICMeeting() {
         </p>
       </div>
 
+      {/* Proposals Under Consideration */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Proposals for Review
+          </CardTitle>
+          <CardDescription>
+            {icProposals.length} proposal{icProposals.length !== 1 ? 's' : ''} scheduled for IC review
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {icProposals.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
+              <p className="text-sm text-muted-foreground">No proposals under review</p>
+              <p className="text-xs text-muted-foreground mt-1">Proposals will appear here when advanced to IC Meeting stage</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {icProposals.map((proposal) => (
+                <div
+                  key={proposal.id}
+                  onClick={() => setSelectedProposal(proposal)}
+                  className={`flex items-center gap-4 rounded-md border p-4 cursor-pointer transition-colors ${
+                    selectedProposal?.id === proposal.id 
+                      ? 'border-primary bg-primary/5' 
+                      : 'hover-elevate'
+                  }`}
+                  data-testid={`card-proposal-${proposal.ticker}`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-mono font-semibold text-foreground">{proposal.ticker}</span>
+                      <Badge variant={proposal.proposalType === 'BUY' ? 'default' : proposal.proposalType === 'SELL' ? 'destructive' : 'secondary'}>
+                        {proposal.proposalType}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {proposal.proposedWeight}% Weight
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-foreground">{proposal.companyName}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Analyst: {proposal.analyst}</p>
+                  </div>
+                  <ChevronRight className={`h-5 w-5 ${selectedProposal?.id === proposal.id ? 'text-primary' : 'text-muted-foreground'}`} />
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Current Proposal */}
+      {selectedProposal && (
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
           <div>
-            <CardTitle className="text-xl font-semibold">Active Proposal: NVDA Buy Recommendation</CardTitle>
-            <CardDescription>Sarah Chen • Technology Sector • February 22, 2025</CardDescription>
+            <CardTitle className="text-xl font-semibold">
+              {selectedProposal.ticker} {selectedProposal.proposalType} Recommendation
+            </CardTitle>
+            <CardDescription>{selectedProposal.analyst} • {selectedProposal.companyName}</CardDescription>
           </div>
-          <Badge variant="default" className="bg-chart-4/10 text-chart-4 border-chart-4/20">
-            Under Review
+          <Badge variant={selectedProposal.status === 'PENDING' ? 'default' : 'outline'} className="bg-chart-4/10 text-chart-4 border-chart-4/20">
+            {selectedProposal.status}
           </Badge>
         </CardHeader>
         <CardContent>
@@ -167,34 +250,24 @@ export default function ICMeeting() {
               <div>
                 <h4 className="text-sm font-medium text-foreground mb-2">Proposed Action</h4>
                 <p className="text-sm text-muted-foreground">
-                  Buy 137,450 shares of NVIDIA at 3.0% portfolio weight
+                  {selectedProposal.proposalType} {selectedProposal.companyName} at {selectedProposal.proposedWeight}% portfolio weight
                 </p>
               </div>
               <div>
                 <h4 className="text-sm font-medium text-foreground mb-2">Investment Thesis</h4>
-                <p className="text-sm text-muted-foreground">
-                  NVIDIA is the dominant player in AI computing infrastructure with 85% market share in datacenter GPUs. 
-                  The company is experiencing explosive growth driven by generative AI adoption across enterprises. 
-                  H100/H200 GPUs remain supply-constrained with 6-9 month lead times, indicating robust demand.
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {selectedProposal.thesis}
                 </p>
               </div>
-              <div>
-                <h4 className="text-sm font-medium text-foreground mb-2">Valuation</h4>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="rounded-md bg-muted/50 p-3">
-                    <p className="text-xs text-muted-foreground">Current Price</p>
-                    <p className="text-lg font-mono font-semibold text-foreground">$875.50</p>
-                  </div>
-                  <div className="rounded-md bg-muted/50 p-3">
-                    <p className="text-xs text-muted-foreground">Base Target</p>
-                    <p className="text-lg font-mono font-semibold text-primary">$1,050</p>
-                  </div>
-                  <div className="rounded-md bg-muted/50 p-3">
-                    <p className="text-xs text-muted-foreground">Upside</p>
-                    <p className="text-lg font-mono font-semibold text-chart-2">+19.9%</p>
+              {selectedProposal.targetPrice && (
+                <div>
+                  <h4 className="text-sm font-medium text-foreground mb-2">Target Price</h4>
+                  <div className="rounded-md bg-muted/50 p-3 inline-block">
+                    <p className="text-xs text-muted-foreground">Price Target</p>
+                    <p className="text-lg font-mono font-semibold text-primary">${selectedProposal.targetPrice}</p>
                   </div>
                 </div>
-              </div>
+              )}
             </TabsContent>
             <TabsContent value="financials" className="pt-4">
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -217,49 +290,47 @@ export default function ICMeeting() {
               </div>
             </TabsContent>
             <TabsContent value="risks" className="pt-4">
-              <ul className="space-y-2">
-                <li className="flex items-start gap-2 text-sm text-foreground">
-                  <Shield className="h-4 w-4 text-chart-3 mt-0.5" />
-                  Customer concentration risk (Microsoft, Meta, Google represent 55% of datacenter revenue)
-                </li>
-                <li className="flex items-start gap-2 text-sm text-foreground">
-                  <Shield className="h-4 w-4 text-chart-3 mt-0.5" />
-                  Competition from AMD, Intel, and custom silicon from hyperscalers
-                </li>
-                <li className="flex items-start gap-2 text-sm text-foreground">
-                  <Shield className="h-4 w-4 text-chart-3 mt-0.5" />
-                  Valuation multiple compression if AI investment cycle decelerates
-                </li>
-              </ul>
+              {selectedProposal.risks && selectedProposal.risks.length > 0 ? (
+                <ul className="space-y-2">
+                  {selectedProposal.risks.map((risk: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                      <Shield className="h-4 w-4 text-chart-3 mt-0.5" />
+                      {risk}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">No risks specified</p>
+              )}
             </TabsContent>
             <TabsContent value="catalysts" className="pt-4">
-              <ul className="space-y-2">
-                <li className="flex items-start gap-2 text-sm text-foreground">
-                  <TrendingUp className="h-4 w-4 text-chart-2 mt-0.5" />
-                  Blackwell GPU architecture launch (Q2 2025) with 2.5x performance improvement
-                </li>
-                <li className="flex items-start gap-2 text-sm text-foreground">
-                  <TrendingUp className="h-4 w-4 text-chart-2 mt-0.5" />
-                  Sovereign AI infrastructure buildout across Europe and Asia
-                </li>
-                <li className="flex items-start gap-2 text-sm text-foreground">
-                  <TrendingUp className="h-4 w-4 text-chart-2 mt-0.5" />
-                  Expanding software and services revenue (CUDA ecosystem)
-                </li>
-              </ul>
+              {selectedProposal.catalysts && selectedProposal.catalysts.length > 0 ? (
+                <ul className="space-y-2">
+                  {selectedProposal.catalysts.map((catalyst: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                      <TrendingUp className="h-4 w-4 text-chart-2 mt-0.5" />
+                      {catalyst}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">No catalysts specified</p>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
+      )}
 
       {/* In-Session AI Agents */}
+      {selectedProposal && (
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <AgentPanel
           agentName="Contrarian Agent"
           description="Generates structured bear case analysis and identifies potential downside scenarios"
           isGenerating={contrarianMutation.isPending}
           response={contrarianAnalysis}
-          onInvoke={() => contrarianMutation.mutate('NVDA')}
+          onInvoke={() => contrarianMutation.mutate(selectedProposal.ticker)}
         />
 
         <AgentPanel
@@ -267,9 +338,10 @@ export default function ICMeeting() {
           description="Analyzes portfolio impact, risk metrics, and tracking error implications"
           isGenerating={scenarioMutation.isPending}
           response={scenarioAnalysis}
-          onInvoke={() => scenarioMutation.mutate({ ticker: 'NVDA', proposedWeight: 3.0 })}
+          onInvoke={() => scenarioMutation.mutate({ ticker: selectedProposal.ticker, proposedWeight: parseFloat(selectedProposal.proposedWeight) })}
         />
       </div>
+      )}
 
       {/* Contrarian Analysis Display */}
       {contrarianAnalysis && (
