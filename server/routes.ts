@@ -11,6 +11,14 @@ import {
   insertICMeetingSchema,
   insertVoteSchema,
   insertNotificationSchema,
+  insertUserProfileSchema,
+  insertResearchRequestSchema,
+  insertWorkflowStageSchema,
+  insertMeetingParticipantSchema,
+  insertDebateSessionSchema,
+  insertDebateMessageSchema,
+  insertPortfolioImpactSchema,
+  insertRiskComplianceActionSchema,
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -467,6 +475,439 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       res.status(500).json({ error: "Failed to mark all notifications as read" });
+    }
+  });
+
+  // User Profiles Routes
+  app.get("/api/users", async (_req, res) => {
+    try {
+      const users = await storage.getUserProfiles();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  app.get("/api/users/:id", async (req, res) => {
+    try {
+      const user = await storage.getUserProfile(req.params.id);
+      if (!user) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user" });
+    }
+  });
+
+  app.post("/api/users", async (req, res) => {
+    try {
+      const validated = insertUserProfileSchema.parse(req.body);
+      const user = await storage.createUserProfile(validated);
+      res.json(user);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to create user" });
+    }
+  });
+
+  app.patch("/api/users/:id", async (req, res) => {
+    try {
+      const validated = insertUserProfileSchema.partial().parse(req.body);
+      const user = await storage.updateUserProfile(req.params.id, validated);
+      if (!user) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+      res.json(user);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
+  app.delete("/api/users/:id", async (req, res) => {
+    try {
+      await storage.deleteUserProfile(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete user" });
+    }
+  });
+
+  // Research Requests Routes
+  app.get("/api/research-requests", async (req, res) => {
+    try {
+      const filters: any = {};
+      if (req.query.status) filters.status = req.query.status as string;
+      if (req.query.assignedTo) filters.assignedTo = req.query.assignedTo as string;
+      
+      const requests = await storage.getResearchRequests(filters);
+      res.json(requests);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch research requests" });
+    }
+  });
+
+  app.get("/api/research-requests/:id", async (req, res) => {
+    try {
+      const request = await storage.getResearchRequest(req.params.id);
+      if (!request) {
+        res.status(404).json({ error: "Research request not found" });
+        return;
+      }
+      res.json(request);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch research request" });
+    }
+  });
+
+  app.post("/api/research-requests", async (req, res) => {
+    try {
+      const validated = insertResearchRequestSchema.parse(req.body);
+      const request = await storage.createResearchRequest(validated);
+      
+      // Create workflow stage for research request
+      await storage.createWorkflowStage({
+        entityType: "RESEARCH",
+        entityId: request.id,
+        currentStage: "DISCOVERY",
+        discoveryStatus: "in_progress",
+      });
+      
+      res.json(request);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to create research request" });
+    }
+  });
+
+  app.patch("/api/research-requests/:id", async (req, res) => {
+    try {
+      const validated = insertResearchRequestSchema.partial().parse(req.body);
+      const request = await storage.updateResearchRequest(req.params.id, validated);
+      if (!request) {
+        res.status(404).json({ error: "Research request not found" });
+        return;
+      }
+      res.json(request);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to update research request" });
+    }
+  });
+
+  app.delete("/api/research-requests/:id", async (req, res) => {
+    try {
+      await storage.deleteResearchRequest(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete research request" });
+    }
+  });
+
+  // Workflow Stages Routes
+  app.get("/api/workflow-stages", async (req, res) => {
+    try {
+      const entityType = req.query.entityType as string | undefined;
+      const entityId = req.query.entityId as string | undefined;
+      const stages = await storage.getWorkflowStages(entityType, entityId);
+      res.json(stages);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch workflow stages" });
+    }
+  });
+
+  app.get("/api/workflow-stages/:id", async (req, res) => {
+    try {
+      const stage = await storage.getWorkflowStage(req.params.id);
+      if (!stage) {
+        res.status(404).json({ error: "Workflow stage not found" });
+        return;
+      }
+      res.json(stage);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch workflow stage" });
+    }
+  });
+
+  app.get("/api/workflow-stages/entity/:entityType/:entityId", async (req, res) => {
+    try {
+      const stage = await storage.getWorkflowStageByEntity(req.params.entityType, req.params.entityId);
+      if (!stage) {
+        res.status(404).json({ error: "Workflow stage not found" });
+        return;
+      }
+      res.json(stage);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch workflow stage" });
+    }
+  });
+
+  app.post("/api/workflow-stages", async (req, res) => {
+    try {
+      const validated = insertWorkflowStageSchema.parse(req.body);
+      const stage = await storage.createWorkflowStage(validated);
+      res.json(stage);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to create workflow stage" });
+    }
+  });
+
+  app.patch("/api/workflow-stages/:id", async (req, res) => {
+    try {
+      const validated = insertWorkflowStageSchema.partial().parse(req.body);
+      const stage = await storage.updateWorkflowStage(req.params.id, validated);
+      if (!stage) {
+        res.status(404).json({ error: "Workflow stage not found" });
+        return;
+      }
+      res.json(stage);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to update workflow stage" });
+    }
+  });
+
+  // Meeting Participants Routes
+  app.get("/api/meetings/:meetingId/participants", async (req, res) => {
+    try {
+      const participants = await storage.getMeetingParticipants(req.params.meetingId);
+      res.json(participants);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch meeting participants" });
+    }
+  });
+
+  app.post("/api/meetings/:meetingId/participants", async (req, res) => {
+    try {
+      const validated = insertMeetingParticipantSchema.parse({
+        ...req.body,
+        meetingId: req.params.meetingId,
+      });
+      const participant = await storage.createMeetingParticipant(validated);
+      res.json(participant);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to add meeting participant" });
+    }
+  });
+
+  // Debate Sessions Routes
+  app.get("/api/debate-sessions", async (req, res) => {
+    try {
+      const meetingId = req.query.meetingId as string | undefined;
+      const sessions = await storage.getDebateSessions(meetingId);
+      res.json(sessions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch debate sessions" });
+    }
+  });
+
+  app.get("/api/debate-sessions/:id", async (req, res) => {
+    try {
+      const session = await storage.getDebateSession(req.params.id);
+      if (!session) {
+        res.status(404).json({ error: "Debate session not found" });
+        return;
+      }
+      res.json(session);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch debate session" });
+    }
+  });
+
+  app.post("/api/debate-sessions", async (req, res) => {
+    try {
+      const validated = insertDebateSessionSchema.parse(req.body);
+      const session = await storage.createDebateSession(validated);
+      res.json(session);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to create debate session" });
+    }
+  });
+
+  app.patch("/api/debate-sessions/:id", async (req, res) => {
+    try {
+      const validated = insertDebateSessionSchema.partial().parse(req.body);
+      const session = await storage.updateDebateSession(req.params.id, validated);
+      if (!session) {
+        res.status(404).json({ error: "Debate session not found" });
+        return;
+      }
+      res.json(session);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to update debate session" });
+    }
+  });
+
+  // Debate Messages Routes
+  app.get("/api/debate-sessions/:sessionId/messages", async (req, res) => {
+    try {
+      const messages = await storage.getDebateMessages(req.params.sessionId);
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch debate messages" });
+    }
+  });
+
+  app.post("/api/debate-sessions/:sessionId/messages", async (req, res) => {
+    try {
+      const validated = insertDebateMessageSchema.parse({
+        ...req.body,
+        sessionId: req.params.sessionId,
+      });
+      const message = await storage.createDebateMessage(validated);
+      
+      // Update session message count
+      const session = await storage.getDebateSession(req.params.sessionId);
+      if (session) {
+        await storage.updateDebateSession(req.params.sessionId, {
+          messageCount: (session.messageCount || 0) + 1,
+        });
+      }
+      
+      res.json(message);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to create debate message" });
+    }
+  });
+
+  // Portfolio Impacts Routes
+  app.get("/api/portfolio-impacts", async (req, res) => {
+    try {
+      const proposalId = req.query.proposalId as string | undefined;
+      const impacts = await storage.getPortfolioImpacts(proposalId);
+      res.json(impacts);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch portfolio impacts" });
+    }
+  });
+
+  app.post("/api/portfolio-impacts", async (req, res) => {
+    try {
+      const validated = insertPortfolioImpactSchema.parse(req.body);
+      const impact = await storage.createPortfolioImpact(validated);
+      res.json(impact);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to create portfolio impact" });
+    }
+  });
+
+  app.patch("/api/portfolio-impacts/:id", async (req, res) => {
+    try {
+      const validated = insertPortfolioImpactSchema.partial().parse(req.body);
+      const impact = await storage.updatePortfolioImpact(req.params.id, validated);
+      if (!impact) {
+        res.status(404).json({ error: "Portfolio impact not found" });
+        return;
+      }
+      res.json(impact);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to update portfolio impact" });
+    }
+  });
+
+  // Risk/Compliance Actions Routes
+  app.get("/api/risk-compliance-actions", async (req, res) => {
+    try {
+      const filters: any = {};
+      if (req.query.entityType) filters.entityType = req.query.entityType as string;
+      if (req.query.entityId) filters.entityId = req.query.entityId as string;
+      if (req.query.status) filters.status = req.query.status as string;
+      
+      const actions = await storage.getRiskComplianceActions(filters);
+      res.json(actions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch risk/compliance actions" });
+    }
+  });
+
+  app.get("/api/risk-compliance-actions/:id", async (req, res) => {
+    try {
+      const action = await storage.getRiskComplianceAction(req.params.id);
+      if (!action) {
+        res.status(404).json({ error: "Risk/compliance action not found" });
+        return;
+      }
+      res.json(action);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch risk/compliance action" });
+    }
+  });
+
+  app.post("/api/risk-compliance-actions", async (req, res) => {
+    try {
+      const validated = insertRiskComplianceActionSchema.parse(req.body);
+      const action = await storage.createRiskComplianceAction(validated);
+      res.json(action);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to create risk/compliance action" });
+    }
+  });
+
+  app.patch("/api/risk-compliance-actions/:id", async (req, res) => {
+    try {
+      const validated = insertRiskComplianceActionSchema.partial().parse(req.body);
+      const action = await storage.updateRiskComplianceAction(req.params.id, validated);
+      if (!action) {
+        res.status(404).json({ error: "Risk/compliance action not found" });
+        return;
+      }
+      res.json(action);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to update risk/compliance action" });
     }
   });
 
