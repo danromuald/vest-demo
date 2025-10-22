@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AgentPanel } from "@/components/agent-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Check, X, Minus, TrendingUp, Shield, BarChart3, FileText, ChevronRight } from "lucide-react";
+import { Users, Check, X, Minus, TrendingUp, Shield, BarChart3, FileText, ChevronRight, ExternalLink } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 import type { ICMeeting as ICMeetingType, Proposal, WorkflowStageRecord } from "@shared/schema";
 
 export default function ICMeeting() {
@@ -234,9 +235,17 @@ export default function ICMeeting() {
             </CardTitle>
             <CardDescription>{selectedProposal.analyst} • {selectedProposal.companyName}</CardDescription>
           </div>
-          <Badge variant={selectedProposal.status === 'PENDING' ? 'default' : 'outline'} className="bg-chart-4/10 text-chart-4 border-chart-4/20">
-            {selectedProposal.status}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Link href={`/proposals/${selectedProposal.id}`}>
+              <Button variant="outline" size="sm" data-testid="button-view-proposal">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                View Details
+              </Button>
+            </Link>
+            <Badge variant={selectedProposal.status === 'PENDING' ? 'default' : 'outline'} className="bg-chart-4/10 text-chart-4 border-chart-4/20">
+              {selectedProposal.status}
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="thesis" className="w-full">

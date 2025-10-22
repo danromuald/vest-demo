@@ -1,12 +1,18 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { TrendingUp, TrendingDown, Minus, DollarSign, Clock, Percent, Target } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { TrendingUp, TrendingDown, Minus, DollarSign, Clock, Percent, Target, Plus, Loader2 } from "lucide-react";
 import type { AgentResponse } from "@shared/schema";
 import { format } from "date-fns";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface Scenario {
   price: number;
@@ -83,6 +89,9 @@ function validateDCFModel(response: unknown): DCFModel | null {
 
 export default function FinancialModelPage() {
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
+  const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
+  const [ticker, setTicker] = useState("");
+  const { toast } = useToast();
 
   const { data: agentResponses = [] } = useQuery<AgentResponse[]>({
     queryKey: ['/api/agent-responses'],
@@ -125,18 +134,61 @@ export default function FinancialModelPage() {
     }
   };
 
+  const dcfMutation = useMutation({
+    mutationFn: async (ticker: string) => {
+      const response = await apiRequest('POST', '/api/agents/financial-modeler', { ticker });
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/agent-responses'] });
+      setIsGenerateDialogOpen(false);
+      setTicker("");
+      toast({
+        title: "Success",
+        description: "DCF model generated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate DCF model",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleGenerate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (ticker.trim()) {
+      dcfMutation.mutate(ticker.trim().toUpperCase());
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] gap-6 p-6">
       {/* DCF Models List */}
       <Card className="w-80 flex flex-col">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-chart-1" />
-            Financial Models
-          </CardTitle>
-          <p className="text-sm text-muted-foreground mt-1">
-            {dcfModels.length} DCF {dcfModels.length === 1 ? 'model' : 'models'}
-          </p>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-chart-1" />
+                Financial Models
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                {dcfModels.length} DCF {dcfModels.length === 1 ? 'model' : 'models'}
+              </p>
+            </div>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => setIsGenerateDialogOpen(true)}
+              title="Generate new DCF model"
+              data-testid="button-generate-dcf"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden px-3">
           <ScrollArea className="h-full">
@@ -360,6 +412,62 @@ export default function FinancialModelPage() {
           </ScrollArea>
         )}
       </div>
+
+      {/* Generate DCF Model Dialog */}
+      <Dialog open={isGenerateDialogOpen} onOpenChange={setIsGenerateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Generate DCF Model</DialogTitle>
+            <DialogDescription>
+              Enter a ticker symbol to generate a DCF valuation model using AI
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleGenerate}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="ticker">Ticker Symbol</Label>
+                <Input
+                  id="ticker"
+                  placeholder="AAPL"
+                  value={ticker}
+                  onChange={(e) => setTicker(e.target.value)}
+                  className="mt-1 font-mono uppercase"
+                  data-testid="input-dcf-ticker"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <DialogFooter className="mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsGenerateDialogOpen(false)}
+                disabled={dcfMutation.isPending}
+                data-testid="button-cancel-dcf"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={!ticker.trim() || dcfMutation.isPending}
+                data-testid="button-submit-dcf"
+              >
+                {dcfMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Generate Model
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

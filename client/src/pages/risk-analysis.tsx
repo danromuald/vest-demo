@@ -1,12 +1,18 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { AlertTriangle, Clock, TrendingDown, FileWarning, Percent, Target } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { AlertTriangle, Clock, TrendingDown, FileWarning, Percent, Target, Plus, Loader2 } from "lucide-react";
 import type { AgentResponse } from "@shared/schema";
 import { format } from "date-fns";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface ContrarianAnalysis {
   ticker: string;
@@ -45,6 +51,9 @@ function validateContrarianAnalysis(response: unknown): ContrarianAnalysis | nul
 
 export default function RiskAnalysisPage() {
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
+  const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
+  const [ticker, setTicker] = useState("");
+  const { toast } = useToast();
 
   const { data: agentResponses = [] } = useQuery<AgentResponse[]>({
     queryKey: ['/api/agent-responses'],
@@ -71,18 +80,61 @@ export default function RiskAnalysisPage() {
     }
   };
 
+  const contrarianMutation = useMutation({
+    mutationFn: async (ticker: string) => {
+      const response = await apiRequest('POST', '/api/agents/contrarian', { ticker });
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/agent-responses'] });
+      setIsGenerateDialogOpen(false);
+      setTicker("");
+      toast({
+        title: "Success",
+        description: "Risk analysis generated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate risk analysis",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleGenerate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (ticker.trim()) {
+      contrarianMutation.mutate(ticker.trim().toUpperCase());
+    }
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] gap-6 p-6">
       {/* Risk Analyses List */}
       <Card className="w-80 flex flex-col">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-chart-3" />
-            Risk Analyses
-          </CardTitle>
-          <p className="text-sm text-muted-foreground mt-1">
-            {riskAnalyses.length} bear case {riskAnalyses.length === 1 ? 'analysis' : 'analyses'}
-          </p>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-chart-3" />
+                Risk Analyses
+              </CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                {riskAnalyses.length} bear case {riskAnalyses.length === 1 ? 'analysis' : 'analyses'}
+              </p>
+            </div>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => setIsGenerateDialogOpen(true)}
+              title="Generate new risk analysis"
+              data-testid="button-generate-risk"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden px-3">
           <ScrollArea className="h-full">
@@ -278,6 +330,62 @@ export default function RiskAnalysisPage() {
           </ScrollArea>
         )}
       </div>
+
+      {/* Generate Risk Analysis Dialog */}
+      <Dialog open={isGenerateDialogOpen} onOpenChange={setIsGenerateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Generate Risk Analysis</DialogTitle>
+            <DialogDescription>
+              Enter a ticker symbol to generate a contrarian bear case analysis using AI
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleGenerate}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="ticker">Ticker Symbol</Label>
+                <Input
+                  id="ticker"
+                  placeholder="AAPL"
+                  value={ticker}
+                  onChange={(e) => setTicker(e.target.value)}
+                  className="mt-1 font-mono uppercase"
+                  data-testid="input-risk-ticker"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <DialogFooter className="mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsGenerateDialogOpen(false)}
+                disabled={contrarianMutation.isPending}
+                data-testid="button-cancel-risk"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={!ticker.trim() || contrarianMutation.isPending}
+                data-testid="button-submit-risk"
+              >
+                {contrarianMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Generate Analysis
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

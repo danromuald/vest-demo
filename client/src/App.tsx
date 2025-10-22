@@ -22,6 +22,7 @@ import WorkflowTimeline from "@/pages/workflow-timeline";
 import ResearchBrief from "@/pages/research-brief";
 import FinancialModel from "@/pages/financial-model";
 import RiskAnalysis from "@/pages/risk-analysis";
+import ProposalDetail from "@/pages/proposal-detail";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/research-brief" component={ResearchBrief} />
       <Route path="/financial-model" component={FinancialModel} />
       <Route path="/risk-analysis" component={RiskAnalysis} />
+      <Route path="/proposals/:id" component={ProposalDetail} />
       <Route path="/ic-meeting" component={ICMeeting} />
       <Route path="/portfolio" component={Portfolio} />
       <Route path="/monitoring" component={Monitoring} />
