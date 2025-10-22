@@ -7,6 +7,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { NotificationBell } from "@/components/notification-bell";
 import Dashboard from "@/pages/dashboard";
 import Research from "@/pages/research";
 import ICMeeting from "@/pages/ic-meeting";
@@ -45,7 +46,10 @@ function App() {
               <div className="flex flex-1 flex-col">
                 <header className="flex items-center justify-between border-b border-border p-3">
                   <SidebarTrigger data-testid="button-sidebar-toggle" />
-                  <ThemeToggle />
+                  <div className="flex items-center gap-2">
+                    <NotificationBell />
+                    <ThemeToggle />
+                  </div>
                 </header>
                 <main className="flex-1 overflow-auto">
                   <Router />

@@ -197,6 +197,28 @@ export const insertMarketEventSchema = createInsertSchema(marketEvents).omit({
 export type MarketEvent = typeof marketEvents.$inferSelect;
 export type InsertMarketEvent = z.infer<typeof insertMarketEventSchema>;
 
+// Notifications
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey(),
+  type: text("type").notNull(), // THESIS_ALERT, MARKET_EVENT, IC_VOTE, SYSTEM
+  severity: text("severity").notNull(), // INFO, WARNING, CRITICAL
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  ticker: text("ticker"),
+  relatedId: varchar("related_id"), // Related position, proposal, meeting, etc.
+  isRead: boolean("is_read").notNull().default(false),
+  actionUrl: text("action_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
 // Workflow Stages
 export type WorkflowStage = 'discovery' | 'analysis' | 'ic_meeting' | 'execution' | 'monitoring';
 

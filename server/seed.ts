@@ -1,6 +1,6 @@
 import { db } from "./db";
 import {
-  companies, positions, proposals, icMeetings, votes, marketEvents, thesisMonitors
+  companies, positions, proposals, icMeetings, votes, marketEvents, thesisMonitors, notifications
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -8,6 +8,7 @@ async function seed() {
   console.log("🌱 Seeding database...");
 
   // Clear existing data
+  await db.delete(notifications);
   await db.delete(votes);
   await db.delete(marketEvents);
   await db.delete(thesisMonitors);
@@ -280,6 +281,51 @@ async function seed() {
   ]);
 
   console.log("✅ Seeded market events");
+
+  // Seed notifications
+  await db.insert(notifications).values([
+    {
+      id: randomUUID(),
+      type: "THESIS_ALERT",
+      severity: "CRITICAL",
+      title: "Thesis Alert: TSLA",
+      message: "TSLA thesis health is now ALERT. Elevated competition risk, margin compression detected. Review recommended.",
+      ticker: "TSLA",
+      isRead: false,
+      actionUrl: "/monitoring?ticker=TSLA",
+    },
+    {
+      id: randomUUID(),
+      type: "MARKET_EVENT",
+      severity: "WARNING",
+      title: "Market Event: Portfolio",
+      message: "MACRO detected - Federal Reserve signals potential pause in rate cuts as inflation remains sticky at 2.8%.",
+      isRead: false,
+      actionUrl: "/monitoring",
+    },
+    {
+      id: randomUUID(),
+      type: "IC_VOTE",
+      severity: "INFO",
+      title: "New Vote: NVDA",
+      message: "Michael Kim voted APPROVE on NVDA proposal",
+      ticker: "NVDA",
+      isRead: false,
+      actionUrl: "/ic-meeting",
+    },
+    {
+      id: randomUUID(),
+      type: "THESIS_ALERT",
+      severity: "WARNING",
+      title: "Thesis Alert: GOOGL",
+      message: "GOOGL thesis health is now WARNING. Regulatory headwinds increasing. Monitor closely.",
+      ticker: "GOOGL",
+      isRead: false,
+      actionUrl: "/monitoring?ticker=GOOGL",
+    },
+  ]);
+
+  console.log("✅ Seeded notifications");
   console.log("🎉 Database seeding complete!");
 }
 

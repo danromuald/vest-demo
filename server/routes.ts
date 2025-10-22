@@ -4,11 +4,13 @@ import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import { agentService } from "./services/agents";
 import { pdfService } from "./services/pdf";
+import { notificationService } from "./services/notifications";
 import {
   insertPositionSchema,
   insertProposalSchema,
   insertICMeetingSchema,
   insertVoteSchema,
+  insertNotificationSchema,
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -409,6 +411,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Portfolio summary export error:", error);
       res.status(500).json({ error: "Failed to generate portfolio summary" });
+    }
+  });
+
+  // Notification Routes
+  app.get("/api/notifications", async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const notifications = await storage.getNotifications(limit);
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch notifications" });
+    }
+  });
+
+  app.get("/api/notifications/unread", async (req, res) => {
+    try {
+      const notifications = await storage.getUnreadNotifications();
+      res.json(notifications);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch unread notifications" });
+    }
+  });
+
+  app.post("/api/notifications", async (req, res) => {
+    try {
+      const validated = insertNotificationSchema.parse(req.body);
+      const notification = await storage.createNotification(validated);
+      res.json(notification);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to create notification" });
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", async (req, res) => {
+    try {
+      const notification = await storage.markNotificationRead(req.params.id);
+      if (!notification) {
+        res.status(404).json({ error: "Notification not found" });
+        return;
+      }
+      res.json(notification);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark notification as read" });
+    }
+  });
+
+  app.post("/api/notifications/mark-all-read", async (req, res) => {
+    try {
+      await storage.markAllNotificationsRead();
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark all notifications as read" });
     }
   });
 
