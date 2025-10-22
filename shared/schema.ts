@@ -219,7 +219,210 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
-// Workflow Stages
+// User Profiles and Roles
+export const userProfiles = pgTable("user_profiles", {
+  id: varchar("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  role: text("role").notNull(), // ANALYST, PORTFOLIO_MANAGER, RISK_OFFICER, COMPLIANCE, TRADER, ADMIN
+  department: text("department"),
+  permissions: jsonb("permissions"), // array of permission strings
+  preferences: jsonb("preferences"), // UI preferences, notification settings
+  createdAt: timestamp("created_at").defaultNow(),
+  lastLoginAt: timestamp("last_login_at"),
+});
+
+export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type UserProfile = typeof userProfiles.$inferSelect;
+export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
+
+// Role Permissions Lookup
+export const rolePermissions = pgTable("role_permissions", {
+  id: varchar("id").primaryKey(),
+  role: text("role").notNull(),
+  resource: text("resource").notNull(), // PROPOSAL, MEETING, PORTFOLIO, RESEARCH, DEBATE
+  action: text("action").notNull(), // CREATE, READ, UPDATE, DELETE, APPROVE, VOTE
+  granted: boolean("granted").notNull().default(true),
+});
+
+export const insertRolePermissionSchema = createInsertSchema(rolePermissions).omit({
+  id: true,
+});
+
+export type RolePermission = typeof rolePermissions.$inferSelect;
+export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
+
+// Research Requests
+export const researchRequests = pgTable("research_requests", {
+  id: varchar("id").primaryKey(),
+  ticker: text("ticker").notNull(),
+  companyName: text("company_name").notNull(),
+  requestedBy: varchar("requested_by").notNull(), // user profile id
+  assignedTo: varchar("assigned_to"), // user profile id
+  status: text("status").notNull(), // PENDING, IN_PROGRESS, COMPLETED, CANCELLED
+  priority: text("priority").notNull(), // LOW, MEDIUM, HIGH, URGENT
+  description: text("description"),
+  researchType: text("research_type").notNull(), // INITIAL, UPDATE, DEEP_DIVE
+  dueDate: timestamp("due_date"),
+  completedAt: timestamp("completed_at"),
+  proposalId: varchar("proposal_id"), // linked proposal if created
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertResearchRequestSchema = createInsertSchema(researchRequests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type ResearchRequest = typeof researchRequests.$inferSelect;
+export type InsertResearchRequest = z.infer<typeof insertResearchRequestSchema>;
+
+// Workflow Stages (persisted instances)
+export const workflowStages = pgTable("workflow_stages", {
+  id: varchar("id").primaryKey(),
+  entityType: text("entity_type").notNull(), // PROPOSAL, MEETING, RESEARCH
+  entityId: varchar("entity_id").notNull(),
+  currentStage: text("current_stage").notNull(), // DISCOVERY, ANALYSIS, IC_MEETING, EXECUTION, MONITORING
+  discoveryStatus: text("discovery_status").notNull().default('pending'), // PENDING, IN_PROGRESS, COMPLETED
+  discoveryCompletedAt: timestamp("discovery_completed_at"),
+  analysisStatus: text("analysis_status").notNull().default('pending'),
+  analysisCompletedAt: timestamp("analysis_completed_at"),
+  icMeetingStatus: text("ic_meeting_status").notNull().default('pending'),
+  icMeetingCompletedAt: timestamp("ic_meeting_completed_at"),
+  executionStatus: text("execution_status").notNull().default('pending'),
+  executionCompletedAt: timestamp("execution_completed_at"),
+  monitoringStatus: text("monitoring_status").notNull().default('pending'),
+  monitoringCompletedAt: timestamp("monitoring_completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertWorkflowStageSchema = createInsertSchema(workflowStages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type WorkflowStageRecord = typeof workflowStages.$inferSelect;
+export type InsertWorkflowStage = z.infer<typeof insertWorkflowStageSchema>;
+
+// Meeting Participants
+export const meetingParticipants = pgTable("meeting_participants", {
+  id: varchar("id").primaryKey(),
+  meetingId: varchar("meeting_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  role: text("role").notNull(), // CHAIR, VOTING_MEMBER, OBSERVER, PRESENTER
+  attended: boolean("attended").default(false),
+  joinedAt: timestamp("joined_at"),
+  leftAt: timestamp("left_at"),
+});
+
+export const insertMeetingParticipantSchema = createInsertSchema(meetingParticipants).omit({
+  id: true,
+});
+
+export type MeetingParticipant = typeof meetingParticipants.$inferSelect;
+export type InsertMeetingParticipant = z.infer<typeof insertMeetingParticipantSchema>;
+
+// Debate Sessions
+export const debateSessions = pgTable("debate_sessions", {
+  id: varchar("id").primaryKey(),
+  meetingId: varchar("meeting_id").notNull(),
+  proposalId: varchar("proposal_id").notNull(),
+  topic: text("topic").notNull(),
+  status: text("status").notNull(), // ACTIVE, PAUSED, COMPLETED
+  startedAt: timestamp("started_at").defaultNow(),
+  endedAt: timestamp("ended_at"),
+  participantCount: integer("participant_count").default(0),
+  messageCount: integer("message_count").default(0),
+  metadata: jsonb("metadata"),
+});
+
+export const insertDebateSessionSchema = createInsertSchema(debateSessions).omit({
+  id: true,
+  startedAt: true,
+});
+
+export type DebateSession = typeof debateSessions.$inferSelect;
+export type InsertDebateSession = z.infer<typeof insertDebateSessionSchema>;
+
+// Debate Messages
+export const debateMessages = pgTable("debate_messages", {
+  id: varchar("id").primaryKey(),
+  sessionId: varchar("session_id").notNull(),
+  senderType: text("sender_type").notNull(), // HUMAN, AI_AGENT
+  senderId: varchar("sender_id").notNull(), // user id or agent type
+  senderName: text("sender_name").notNull(),
+  content: text("content").notNull(),
+  messageType: text("message_type").notNull(), // TEXT, VOICE_COMMENTARY, ANALYSIS, QUESTION, RESPONSE
+  metadata: jsonb("metadata"), // voice file references, citations, data
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+export const insertDebateMessageSchema = createInsertSchema(debateMessages).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type DebateMessage = typeof debateMessages.$inferSelect;
+export type InsertDebateMessage = z.infer<typeof insertDebateMessageSchema>;
+
+// Portfolio Impacts (proposal to position relationships)
+export const portfolioImpacts = pgTable("portfolio_impacts", {
+  id: varchar("id").primaryKey(),
+  proposalId: varchar("proposal_id").notNull(),
+  positionId: varchar("position_id"), // null for new positions
+  ticker: text("ticker").notNull(),
+  impactType: text("impact_type").notNull(), // NEW_POSITION, INCREASE, DECREASE, EXIT
+  proposedShares: integer("proposed_shares"),
+  proposedWeight: decimal("proposed_weight", { precision: 5, scale: 2 }),
+  expectedCost: decimal("expected_cost", { precision: 20, scale: 2 }),
+  riskImpact: text("risk_impact"),
+  complianceStatus: text("compliance_status").notNull(), // APPROVED, PENDING, FLAGGED
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertPortfolioImpactSchema = createInsertSchema(portfolioImpacts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type PortfolioImpact = typeof portfolioImpacts.$inferSelect;
+export type InsertPortfolioImpact = z.infer<typeof insertPortfolioImpactSchema>;
+
+// Risk and Compliance Actions
+export const riskComplianceActions = pgTable("risk_compliance_actions", {
+  id: varchar("id").primaryKey(),
+  entityType: text("entity_type").notNull(), // PROPOSAL, POSITION, MEETING
+  entityId: varchar("entity_id").notNull(),
+  actionType: text("action_type").notNull(), // RISK_REVIEW, COMPLIANCE_CHECK, LIMIT_MONITORING, APPROVAL
+  status: text("status").notNull(), // PENDING, IN_REVIEW, APPROVED, REJECTED, FLAGGED
+  assignedTo: varchar("assigned_to"), // risk officer or compliance user id
+  findings: text("findings"),
+  recommendation: text("recommendation"),
+  priority: text("priority").notNull(), // LOW, MEDIUM, HIGH, CRITICAL
+  dueDate: timestamp("due_date"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertRiskComplianceActionSchema = createInsertSchema(riskComplianceActions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type RiskComplianceAction = typeof riskComplianceActions.$inferSelect;
+export type InsertRiskComplianceAction = z.infer<typeof insertRiskComplianceActionSchema>;
+
+// Workflow Stages Type (for interfaces)
 export type WorkflowStage = 'discovery' | 'analysis' | 'ic_meeting' | 'execution' | 'monitoring';
 
 export interface WorkflowProgress {
