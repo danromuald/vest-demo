@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Search, BarChart3, Eye } from "lucide-react";
 import { Link } from "wouter";
+import { format } from "date-fns";
 import type { Position, ThesisMonitor, MarketEvent } from "@shared/schema";
 
 export default function MonitoringHub() {
@@ -162,7 +163,7 @@ export default function MonitoringHub() {
           const gainLossPercent = parseFloat(position.gainLossPercent);
           const positionMonitorCount = thesisMonitors.filter(tm => tm.positionId === position.id).length;
           const criticalAlerts = thesisMonitors.filter(
-            tm => tm.positionId === position.id && tm.status === "ACTIVE"
+            tm => tm.positionId === position.id && tm.healthStatus === "ALERT"
           ).length;
 
           return (
@@ -251,29 +252,28 @@ export default function MonitoringHub() {
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
-                            <p className="font-medium text-foreground">{monitor.metricName}</p>
-                            <p className="text-sm text-muted-foreground mt-1">{monitor.description}</p>
-                          </div>
-                          <Badge variant={monitor.status === "ACTIVE" ? "default" : "secondary"}>
-                            {monitor.status}
-                          </Badge>
-                        </div>
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Expected</span>
-                            <p className="font-medium text-foreground">{monitor.expectedValue}</p>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Actual</span>
-                            <p className="font-medium text-foreground">{monitor.actualValue || "N/A"}</p>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Variance</span>
-                            <p className={`font-medium ${parseFloat(monitor.variance || "0") < 0 ? 'text-destructive' : 'text-green-500'}`}>
-                              {monitor.variance}%
+                            <p className="font-medium text-foreground">{monitor.ticker} - Thesis Monitor</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Last checked: {format(new Date(monitor.lastCheck), 'MMM d, yyyy h:mm a')}
                             </p>
                           </div>
+                          <Badge variant={monitor.healthStatus === "HEALTHY" ? "default" : 
+                                       monitor.healthStatus === "WARNING" ? "secondary" : "destructive"}>
+                            {monitor.healthStatus}
+                          </Badge>
                         </div>
+                        {monitor.recommendations && (
+                          <div className="text-sm text-foreground bg-muted/50 p-3 rounded mt-3">
+                            {monitor.recommendations}
+                          </div>
+                        )}
+                        {monitor.alerts && (
+                          <div className="mt-3">
+                            <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-sans">
+                              {JSON.stringify(monitor.alerts, null, 2)}
+                            </pre>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   ))
@@ -297,9 +297,14 @@ export default function MonitoringHub() {
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">{event.description}</p>
-                        {event.impactAssessment && (
+                        {event.impact && (
                           <p className="text-sm text-foreground mt-2 bg-muted/50 p-2 rounded">
-                            Impact: {event.impactAssessment}
+                            Impact: {event.impact}
+                          </p>
+                        )}
+                        {event.portfolioImpact && (
+                          <p className="text-sm text-foreground mt-2 bg-muted/50 p-2 rounded">
+                            Portfolio Impact: {event.portfolioImpact}
                           </p>
                         )}
                       </CardContent>
@@ -327,7 +332,7 @@ export default function MonitoringHub() {
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Weight</dt>
-                        <dd className="font-medium text-foreground">{parseFloat(selectedPositionData.weight).toFixed(2)}%</dd>
+                        <dd className="font-medium text-foreground">{parseFloat(selectedPositionData.portfolioWeight).toFixed(2)}%</dd>
                       </div>
                     </dl>
                   </div>
@@ -335,8 +340,8 @@ export default function MonitoringHub() {
                     <h3 className="font-semibold text-foreground">Performance</h3>
                     <dl className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <dt className="text-muted-foreground">Cost Basis</dt>
-                        <dd className="font-medium text-foreground">${parseFloat(selectedPositionData.costBasis).toFixed(2)}</dd>
+                        <dt className="text-muted-foreground">Avg Cost</dt>
+                        <dd className="font-medium text-foreground">${parseFloat(selectedPositionData.avgCost).toFixed(2)}</dd>
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Total P&L</dt>

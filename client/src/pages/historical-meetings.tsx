@@ -27,10 +27,11 @@ export default function HistoricalMeetings() {
     queryKey: ['/api/votes'],
   });
 
-  const filteredMeetings = meetings.filter(meeting =>
-    meeting.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    meeting.agenda?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredMeetings = meetings.filter(meeting => {
+    const searchLower = searchQuery.toLowerCase();
+    const dateStr = format(new Date(meeting.meetingDate), 'MMMM d, yyyy').toLowerCase();
+    return dateStr.includes(searchLower) || meeting.status.toLowerCase().includes(searchLower);
+  });
 
   const selectedMeetingData = selectedMeeting
     ? meetings.find(m => m.id === selectedMeeting)
@@ -107,7 +108,9 @@ export default function HistoricalMeetings() {
                     data-testid={`button-meeting-${meeting.id}`}
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <span className="font-medium text-sm line-clamp-1">{meeting.title}</span>
+                      <span className="font-medium text-sm line-clamp-1">
+                        {format(new Date(meeting.meetingDate), 'MMMM d, yyyy')}
+                      </span>
                       <Badge variant={meeting.status === "COMPLETED" ? "default" : "secondary"} className="ml-2 shrink-0">
                         {meeting.status}
                       </Badge>
@@ -148,7 +151,9 @@ export default function HistoricalMeetings() {
             <CardHeader className="border-b">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <CardTitle className="text-xl font-semibold">{selectedMeetingData.title}</CardTitle>
+                  <CardTitle className="text-xl font-semibold">
+                    {format(new Date(selectedMeetingData.meetingDate), 'MMMM d, yyyy')}
+                  </CardTitle>
                   <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Clock className="h-4 w-4" />
@@ -188,7 +193,7 @@ export default function HistoricalMeetings() {
                     <div>
                       <h3 className="font-semibold text-foreground mb-2">Agenda</h3>
                       <div className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted/50 p-4 rounded-md">
-                        {selectedMeetingData.agenda || "No agenda available"}
+                        {selectedMeetingData.agenda ? JSON.stringify(selectedMeetingData.agenda, null, 2) : "No agenda available"}
                       </div>
                     </div>
 
@@ -227,8 +232,8 @@ export default function HistoricalMeetings() {
                     ) : (
                       meetingProposals.map((proposal) => {
                         const proposalVotes = meetingVotes.filter(v => v.proposalId === proposal.id);
-                        const approveCount = proposalVotes.filter(v => v.decision === "APPROVE").length;
-                        const rejectCount = proposalVotes.filter(v => v.decision === "REJECT").length;
+                        const approveCount = proposalVotes.filter(v => v.vote === "APPROVE").length;
+                        const rejectCount = proposalVotes.filter(v => v.vote === "REJECT").length;
                         
                         return (
                           <Card key={proposal.id} data-testid={`proposal-card-${proposal.id}`}>
@@ -236,12 +241,12 @@ export default function HistoricalMeetings() {
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-3">
-                                    <CardTitle className="text-base">{proposal.ticker}</CardTitle>
-                                    <Badge variant={proposal.recommendation === "BUY" ? "default" : "secondary"}>
-                                      {proposal.recommendation}
+                                    <CardTitle className="text-base">{proposal.ticker} - {proposal.companyName}</CardTitle>
+                                    <Badge variant={proposal.proposalType === "BUY" ? "default" : "secondary"}>
+                                      {proposal.proposalType}
                                     </Badge>
                                   </div>
-                                  <p className="text-sm text-muted-foreground mt-1">{proposal.proposalType}</p>
+                                  <p className="text-sm text-muted-foreground mt-1">Analyst: {proposal.analyst}</p>
                                 </div>
                                 <Badge variant={proposal.status === "APPROVED" ? "default" : "destructive"}>
                                   {proposal.status}
@@ -249,18 +254,16 @@ export default function HistoricalMeetings() {
                               </div>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                              <div className="grid grid-cols-3 gap-4 text-sm">
+                              <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
                                   <span className="text-muted-foreground">Target Price</span>
-                                  <p className="font-semibold text-foreground">${parseFloat(proposal.targetPrice).toFixed(2)}</p>
+                                  <p className="font-semibold text-foreground">
+                                    {proposal.targetPrice ? `$${parseFloat(proposal.targetPrice).toFixed(2)}` : 'N/A'}
+                                  </p>
                                 </div>
                                 <div>
-                                  <span className="text-muted-foreground">Upside</span>
-                                  <p className="font-semibold text-green-500">{parseFloat(proposal.upside).toFixed(1)}%</p>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">Conviction</span>
-                                  <p className="font-semibold text-foreground">{proposal.conviction}/5</p>
+                                  <span className="text-muted-foreground">Proposed Weight</span>
+                                  <p className="font-semibold text-foreground">{proposal.proposedWeight}%</p>
                                 </div>
                               </div>
 
@@ -291,22 +294,15 @@ export default function HistoricalMeetings() {
 
                   <TabsContent value="decisions" className="p-6 mt-0 space-y-4">
                     <div className="space-y-3">
-                      {selectedMeetingData.decisions?.map((decision, index) => (
-                        <div 
-                          key={index}
-                          className="p-4 border border-border rounded-md hover-elevate"
-                          data-testid={`decision-${index}`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm shrink-0">
-                              {index + 1}
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-sm text-foreground">{decision}</p>
-                            </div>
-                          </div>
+                      {selectedMeetingData.decisions ? (
+                        <div className="bg-muted/50 p-6 rounded-md">
+                          <pre className="text-sm text-foreground whitespace-pre-wrap font-sans">
+                            {JSON.stringify(selectedMeetingData.decisions, null, 2)}
+                          </pre>
                         </div>
-                      )) || <p className="text-sm text-muted-foreground">No decisions recorded</p>}
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No decisions recorded</p>
+                      )}
                     </div>
 
                     {meetingProposals.length > 0 && (
