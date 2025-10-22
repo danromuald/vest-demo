@@ -30,10 +30,26 @@ const researchRequestFormSchema = z.object({
 
 type ResearchRequestFormValues = z.infer<typeof researchRequestFormSchema>;
 
+const proposalFormSchema = z.object({
+  ticker: z.string().min(1, "Ticker is required"),
+  companyName: z.string().min(1, "Company name is required"),
+  analyst: z.string().min(1, "Analyst is required"),
+  proposalType: z.enum(["BUY", "SELL", "HOLD"]),
+  proposedWeight: z.string().min(1, "Weight is required"),
+  targetPrice: z.string().optional(),
+  thesis: z.string().min(10, "Thesis must be at least 10 characters"),
+  catalysts: z.string().optional(),
+  risks: z.string().optional(),
+  status: z.enum(["DRAFT", "PENDING", "APPROVED", "REJECTED"]),
+});
+
+type ProposalFormValues = z.infer<typeof proposalFormSchema>;
+
 export default function Research() {
   const [selectedRequest, setSelectedRequest] = useState<ResearchRequest | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isProposalDialogOpen, setIsProposalDialogOpen] = useState(false);
   const [showAIAgents, setShowAIAgents] = useState(false);
   const [researchBrief, setResearchBrief] = useState<any>(null);
   const [dcfModel, setDcfModel] = useState<any>(null);
@@ -53,6 +69,15 @@ export default function Research() {
 
   const editForm = useForm<ResearchRequestFormValues>({
     resolver: zodResolver(researchRequestFormSchema),
+  });
+
+  const proposalForm = useForm<ProposalFormValues>({
+    resolver: zodResolver(proposalFormSchema),
+    defaultValues: {
+      analyst: "Sarah Chen",
+      proposalType: "BUY",
+      status: "DRAFT",
+    },
   });
 
   const { data: researchRequests, isLoading } = useQuery<ResearchRequest[]>({
@@ -146,6 +171,58 @@ export default function Research() {
     },
   });
 
+  const createProposalMutation = useMutation({
+    mutationFn: async (data: ProposalFormValues) => {
+      // Guard: Ensure we have a selected research request
+      if (!selectedRequest) {
+        throw new Error("No research request selected");
+      }
+
+      const catalystsArray = data.catalysts ? data.catalysts.split('\n').filter(c => c.trim()) : [];
+      const risksArray = data.risks ? data.risks.split('\n').filter(r => r.trim()) : [];
+      
+      // Create the proposal
+      const proposal = await apiRequest("POST", "/api/proposals", {
+        ...data,
+        catalysts: catalystsArray,
+        risks: risksArray,
+        proposedWeight: data.proposedWeight,
+        targetPrice: data.targetPrice || null,
+      });
+
+      // Update the research request to link to the proposal
+      await apiRequest("PATCH", `/api/research-requests/${selectedRequest.id}`, {
+        proposalId: proposal.id,
+      });
+
+      // Advance workflow stage from ANALYSIS to IC_MEETING
+      // If workflow stage doesn't exist, this will fail and we'll surface the error
+      await apiRequest("POST", `/api/workflow/RESEARCH/${selectedRequest.id}/advance`, {
+        userId: "user-1",
+      });
+
+      return proposal;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/proposals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/research-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/workflow-stages"] });
+      setIsProposalDialogOpen(false);
+      proposalForm.reset();
+      toast({
+        title: "Success",
+        description: "Investment proposal created successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create proposal",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCreateSubmit = (values: ResearchRequestFormValues) => {
     createMutation.mutate(values);
   };
@@ -175,6 +252,27 @@ export default function Research() {
     setShowAIAgents(true);
     researchMutation.mutate(ticker);
     dcfMutation.mutate(ticker);
+  };
+
+  const handleCreateProposal = (request: ResearchRequest) => {
+    proposalForm.reset({
+      ticker: request.ticker,
+      companyName: request.companyName,
+      analyst: "Sarah Chen",
+      proposalType: "BUY",
+      proposedWeight: "",
+      targetPrice: "",
+      thesis: "",
+      catalysts: "",
+      risks: "",
+      status: "DRAFT",
+    });
+    setSelectedRequest(request);
+    setIsProposalDialogOpen(true);
+  };
+
+  const handleProposalSubmit = (values: ProposalFormValues) => {
+    createProposalMutation.mutate(values);
   };
 
   const getStatusIcon = (status: string) => {
@@ -415,6 +513,23 @@ export default function Research() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                      {request.status === "COMPLETED" && !request.proposalId && (() => {
+                        const workflowStage = getWorkflowStage(request.id);
+                        const isAnalysisStage = workflowStage?.currentStage === "ANALYSIS";
+                        return (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleCreateProposal(request)}
+                            disabled={!isAnalysisStage}
+                            data-testid={`button-create-proposal-${request.ticker}`}
+                            title={!isAnalysisStage ? "Workflow must be at Analysis stage to create proposal" : ""}
+                          >
+                            <Plus className="h-3 w-3" />
+                            Create Proposal
+                          </Button>
+                        );
+                      })()}
                       <Button
                         variant="outline"
                         size="sm"
@@ -523,6 +638,209 @@ export default function Research() {
               <DialogFooter>
                 <Button type="submit" disabled={updateMutation.isPending}>
                   Update Request
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Proposal Dialog */}
+      <Dialog open={isProposalDialogOpen} onOpenChange={setIsProposalDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Investment Proposal</DialogTitle>
+            <DialogDescription>
+              Submit an investment proposal based on completed research
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...proposalForm}>
+            <form onSubmit={proposalForm.handleSubmit(handleProposalSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={proposalForm.control}
+                  name="ticker"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ticker Symbol</FormLabel>
+                      <FormControl>
+                        <Input {...field} className="font-mono" disabled data-testid="input-proposal-ticker" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={proposalForm.control}
+                  name="companyName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Company Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} disabled data-testid="input-proposal-company" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={proposalForm.control}
+                  name="analyst"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Analyst</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-proposal-analyst" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={proposalForm.control}
+                  name="proposalType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Recommendation</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-proposal-type">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="BUY">Buy</SelectItem>
+                          <SelectItem value="SELL">Sell</SelectItem>
+                          <SelectItem value="HOLD">Hold</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={proposalForm.control}
+                  name="proposedWeight"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Proposed Weight (%)</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="number" step="0.01" placeholder="5.00" data-testid="input-proposal-weight" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={proposalForm.control}
+                  name="targetPrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Target Price (Optional)</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="number" step="0.01" placeholder="150.00" data-testid="input-proposal-target-price" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={proposalForm.control}
+                name="thesis"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Investment Thesis</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        {...field} 
+                        placeholder="Describe the core investment thesis and why this is a compelling opportunity..."
+                        className="min-h-[100px]"
+                        data-testid="input-proposal-thesis"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={proposalForm.control}
+                name="catalysts"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Catalysts (one per line)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        {...field} 
+                        placeholder="Product launch in Q2&#10;New market expansion&#10;Regulatory approval expected"
+                        className="min-h-[80px]"
+                        data-testid="input-proposal-catalysts"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={proposalForm.control}
+                name="risks"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Risks (one per line)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        {...field} 
+                        placeholder="Competition from larger players&#10;Regulatory uncertainty&#10;Execution risk on new products"
+                        className="min-h-[80px]"
+                        data-testid="input-proposal-risks"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={proposalForm.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-proposal-status">
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="DRAFT">Draft</SelectItem>
+                        <SelectItem value="PENDING">Pending</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button 
+                  type="submit" 
+                  disabled={createProposalMutation.isPending}
+                  data-testid="button-submit-proposal"
+                >
+                  {createProposalMutation.isPending ? "Creating..." : "Create Proposal"}
                 </Button>
               </DialogFooter>
             </form>

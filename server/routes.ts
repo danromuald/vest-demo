@@ -601,6 +601,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(404).json({ error: "Research request not found" });
         return;
       }
+
+      // Auto-advance workflow to ANALYSIS when research is marked COMPLETED
+      if (validated.status === "COMPLETED") {
+        try {
+          const workflowStage = await storage.getWorkflowStageByEntity("RESEARCH", req.params.id);
+          if (workflowStage && workflowStage.currentStage === "DISCOVERY") {
+            await workflowService.advanceStage("RESEARCH", req.params.id, "system");
+          }
+        } catch (error) {
+          // Log but don't fail the request update
+          console.warn("Failed to advance workflow stage:", error);
+        }
+      }
+
       res.json(request);
     } catch (error) {
       if (error instanceof z.ZodError) {
