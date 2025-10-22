@@ -14,6 +14,7 @@ import ICMeeting from "@/pages/ic-meeting";
 import Portfolio from "@/pages/portfolio";
 import Monitoring from "@/pages/monitoring";
 import Documents from "@/pages/documents";
+import DebateRoom from "@/pages/debate-room";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/portfolio" component={Portfolio} />
       <Route path="/monitoring" component={Monitoring} />
       <Route path="/documents" component={Documents} />
+      <Route path="/debate-room" component={DebateRoom} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -1,334 +1,535 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { AgentPanel } from "@/components/agent-panel";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Search, TrendingUp, Calculator, AlertTriangle } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { Search, Plus, Edit, Trash2, Clock, CheckCircle2, AlertCircle, TrendingUp } from "lucide-react";
+import { AgentPanel } from "@/components/agent-panel";
+import type { ResearchRequest } from "@shared/schema";
 
-const researchFormSchema = z.object({
-  ticker: z.string().min(1, "Ticker is required").max(10, "Ticker must be 10 characters or less").regex(/^[A-Z]+$/, "Ticker must contain only uppercase letters"),
+const researchRequestFormSchema = z.object({
+  ticker: z.string().min(1, "Ticker is required").max(10).regex(/^[A-Z]+$/, "Invalid ticker"),
+  requestedBy: z.string().min(1, "Requester is required"),
+  assignedTo: z.string().optional(),
+  status: z.enum(["PENDING", "IN_PROGRESS", "COMPLETED", "BLOCKED"]),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]),
+  description: z.string().optional(),
+  researchType: z.enum(["INITIAL", "UPDATE", "DEEP_DIVE"]),
 });
 
-type ResearchFormValues = z.infer<typeof researchFormSchema>;
+type ResearchRequestFormValues = z.infer<typeof researchRequestFormSchema>;
 
 export default function Research() {
+  const [selectedRequest, setSelectedRequest] = useState<ResearchRequest | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [showAIAgents, setShowAIAgents] = useState(false);
   const [researchBrief, setResearchBrief] = useState<any>(null);
   const [dcfModel, setDcfModel] = useState<any>(null);
   const { toast } = useToast();
 
-  const form = useForm<ResearchFormValues>({
-    resolver: zodResolver(researchFormSchema),
+  const form = useForm<ResearchRequestFormValues>({
+    resolver: zodResolver(researchRequestFormSchema),
     defaultValues: {
-      ticker: "NVDA",
+      ticker: "",
+      requestedBy: "user-1",
+      status: "PENDING",
+      priority: "MEDIUM",
+      researchType: "INITIAL",
+    },
+  });
+
+  const editForm = useForm<ResearchRequestFormValues>({
+    resolver: zodResolver(researchRequestFormSchema),
+  });
+
+  const { data: researchRequests, isLoading } = useQuery<ResearchRequest[]>({
+    queryKey: ["/api/research-requests"],
+  });
+
+  const { data: workflowStages } = useQuery({
+    queryKey: ["/api/workflow-stages"],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: ResearchRequestFormValues) => {
+      return await apiRequest("POST", "/api/research-requests", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/research-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/workflow-stages"] });
+      setIsCreateDialogOpen(false);
+      form.reset();
+      toast({
+        title: "Success",
+        description: "Research request created successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create research request",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<ResearchRequestFormValues> }) => {
+      return await apiRequest("PATCH", `/api/research-requests/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/research-requests"] });
+      setIsEditDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Research request updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update research request",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest("DELETE", `/api/research-requests/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/research-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/workflow-stages"] });
+      toast({
+        title: "Success",
+        description: "Research request deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete research request",
+        variant: "destructive",
+      });
     },
   });
 
   const researchMutation = useMutation({
     mutationFn: async (ticker: string) => {
-      const response = await apiRequest('POST', '/api/agents/research-synthesizer', { ticker });
-      return response;
+      return await apiRequest("POST", "/api/agents/research-synthesizer", { ticker });
     },
     onSuccess: (data) => {
       setResearchBrief(data);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to generate research brief",
-        variant: "destructive",
-      });
     },
   });
 
   const dcfMutation = useMutation({
     mutationFn: async (ticker: string) => {
-      const response = await apiRequest('POST', '/api/agents/financial-modeler', { ticker });
-      return response;
+      return await apiRequest("POST", "/api/agents/financial-modeler", { ticker });
     },
     onSuccess: (data) => {
       setDcfModel(data);
     },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to generate DCF model",
-        variant: "destructive",
-      });
-    },
   });
 
-  const onSubmit = (values: ResearchFormValues) => {
-    researchMutation.mutate(values.ticker);
-    dcfMutation.mutate(values.ticker);
+  const handleCreateSubmit = (values: ResearchRequestFormValues) => {
+    createMutation.mutate(values);
+  };
+
+  const handleEditSubmit = (values: ResearchRequestFormValues) => {
+    if (selectedRequest) {
+      updateMutation.mutate({ id: selectedRequest.id, data: values });
+    }
+  };
+
+  const handleEditClick = (request: ResearchRequest) => {
+    setSelectedRequest(request);
+    editForm.reset({
+      ticker: request.ticker,
+      requestedBy: request.requestedBy,
+      assignedTo: request.assignedTo || undefined,
+      status: request.status as any,
+      priority: request.priority as any,
+      description: request.description || undefined,
+      researchType: request.researchType as any,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleAIAnalysis = (ticker: string) => {
+    setShowAIAgents(true);
+    researchMutation.mutate(ticker);
+    dcfMutation.mutate(ticker);
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "COMPLETED":
+        return <CheckCircle2 className="h-4 w-4 text-chart-2" />;
+      case "IN_PROGRESS":
+        return <Clock className="h-4 w-4 text-primary" />;
+      case "BLOCKED":
+        return <AlertCircle className="h-4 w-4 text-destructive" />;
+      default:
+        return <Clock className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case "URGENT":
+        return "destructive";
+      case "HIGH":
+        return "default";
+      case "MEDIUM":
+        return "secondary";
+      default:
+        return "outline";
+    }
+  };
+
+  const getWorkflowStage = (entityId: string) => {
+    if (!workflowStages) return null;
+    return (workflowStages as any[]).find((s: any) => s.entityId === entityId && s.entityType === "RESEARCH");
   };
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <div>
-        <h1 className="text-3xl font-semibold text-foreground" data-testid="text-page-title">
-          Research & Analysis
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          AI-powered investment research and financial modeling
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold text-foreground" data-testid="text-page-title">
+            Research Pipeline
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage research requests and AI-powered investment analysis
+          </p>
+        </div>
+
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button data-testid="button-create-request">
+              <Plus className="h-4 w-4" />
+              New Request
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Research Request</DialogTitle>
+              <DialogDescription>
+                Submit a new research request for investment analysis
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="ticker"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Ticker Symbol</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="NVDA"
+                          className="font-mono uppercase"
+                          data-testid="input-ticker"
+                          onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Priority</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-priority">
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="LOW">Low</SelectItem>
+                            <SelectItem value="MEDIUM">Medium</SelectItem>
+                            <SelectItem value="HIGH">High</SelectItem>
+                            <SelectItem value="URGENT">Urgent</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="researchType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Research Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-type">
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="INITIAL">Initial</SelectItem>
+                            <SelectItem value="UPDATE">Update</SelectItem>
+                            <SelectItem value="DEEP_DIVE">Deep Dive</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          placeholder="Additional context or requirements..."
+                          data-testid="input-description"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <DialogFooter>
+                  <Button
+                    type="submit"
+                    disabled={createMutation.isPending}
+                    data-testid="button-submit-request"
+                  >
+                    Create Request
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Company Selection */}
+      {/* Research Requests List */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl font-semibold">Select Company for Analysis</CardTitle>
-          <CardDescription>Enter a ticker symbol to begin AI-powered research</CardDescription>
+          <CardTitle>Active Research Requests</CardTitle>
+          <CardDescription>Track and manage ongoing investment research</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex gap-3">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+              Loading research requests...
+            </div>
+          ) : !researchRequests || researchRequests.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Search className="h-12 w-12 text-muted-foreground/50 mb-4" />
+              <p className="text-sm text-muted-foreground">No research requests found</p>
+              <p className="text-xs text-muted-foreground mt-1">Create your first request to get started</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {researchRequests.map((request) => {
+                const workflowStage = getWorkflowStage(request.id);
+                return (
+                  <div
+                    key={request.id}
+                    className="flex items-center gap-4 rounded-md border p-4 hover-elevate"
+                    data-testid={`card-request-${request.ticker}`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-mono font-semibold text-foreground">{request.ticker}</span>
+                        <Badge variant={getPriorityColor(request.priority)} className="text-xs">
+                          {request.priority}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {request.researchType}
+                        </Badge>
+                      </div>
+                      {request.description && (
+                        <p className="text-sm text-muted-foreground mb-2 line-clamp-1">
+                          {request.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          {getStatusIcon(request.status)}
+                          <span>{request.status}</span>
+                        </div>
+                        {workflowStage && (
+                          <div className="flex items-center gap-1">
+                            <TrendingUp className="h-3 w-3" />
+                            <span className="capitalize">{workflowStage.currentStage.toLowerCase()}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleAIAnalysis(request.ticker)}
+                        data-testid={`button-analyze-${request.ticker}`}
+                      >
+                        <Search className="h-3 w-3" />
+                        AI Analysis
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditClick(request)}
+                        data-testid={`button-edit-${request.ticker}`}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteMutation.mutate(request.id)}
+                        data-testid={`button-delete-${request.ticker}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Research Request</DialogTitle>
+            <DialogDescription>Update research request details</DialogDescription>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(handleEditSubmit)} className="space-y-4">
               <FormField
-                control={form.control}
-                name="ticker"
+                control={editForm.control}
+                name="status"
                 render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Ticker Symbol
-                    </FormLabel>
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="PENDING">Pending</SelectItem>
+                        <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
+                        <SelectItem value="COMPLETED">Completed</SelectItem>
+                        <SelectItem value="BLOCKED">Blocked</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Priority</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="LOW">Low</SelectItem>
+                        <SelectItem value="MEDIUM">Medium</SelectItem>
+                        <SelectItem value="HIGH">High</SelectItem>
+                        <SelectItem value="URGENT">Urgent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="NVDA"
-                        className="font-mono uppercase"
-                        data-testid="input-ticker"
-                        onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                      />
+                      <Textarea {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <div className="flex items-end">
-                <Button
-                  type="submit"
-                  disabled={researchMutation.isPending || dcfMutation.isPending}
-                  data-testid="button-analyze"
-                >
-                  <Search className="h-4 w-4" />
-                  Analyze Company
+
+              <DialogFooter>
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  Update Request
                 </Button>
-              </div>
+              </DialogFooter>
             </form>
           </Form>
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
 
       {/* AI Agents */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <AgentPanel
-          agentName="Research Synthesizer"
-          description="Generates comprehensive investment briefs from SEC filings, earnings transcripts, and market data"
-          isGenerating={researchMutation.isPending}
-          response={researchBrief}
-          onInvoke={() => {
-            const ticker = form.getValues('ticker');
-            if (ticker) researchMutation.mutate(ticker);
-          }}
-        />
+      {showAIAgents && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <AgentPanel
+            agentName="Research Synthesizer"
+            description="Comprehensive investment briefs from SEC filings and market data"
+            isGenerating={researchMutation.isPending}
+            response={researchBrief}
+            onInvoke={() => {
+              if (selectedRequest) researchMutation.mutate(selectedRequest.ticker);
+            }}
+          />
 
-        <AgentPanel
-          agentName="Financial Modeler"
-          description="Builds DCF models with bull/base/bear scenarios and valuation analysis"
-          isGenerating={dcfMutation.isPending}
-          response={dcfModel}
-          onInvoke={() => {
-            const ticker = form.getValues('ticker');
-            if (ticker) dcfMutation.mutate(ticker);
-          }}
-        />
-      </div>
-
-      {/* Research Brief Display */}
-      {researchBrief && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Investment Brief: {researchBrief.ticker}
-            </CardTitle>
-            <CardDescription>{researchBrief.companyName}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-2">
-                Executive Summary
-              </h3>
-              <p className="text-sm text-foreground">{researchBrief.summary}</p>
-            </div>
-
-            {researchBrief.keyMetrics && (
-              <div>
-                <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-3">
-                  Key Metrics
-                </h3>
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                  {Object.entries(researchBrief.keyMetrics).map(([key, value]) => (
-                    <div key={key} className="rounded-md bg-muted/50 p-3">
-                      <p className="text-xs text-muted-foreground capitalize">{key}</p>
-                      <p className="text-sm font-mono font-medium text-foreground mt-1">{value as string}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {researchBrief.strengths && (
-                <div>
-                  <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-2">
-                    Strengths
-                  </h3>
-                  <ul className="space-y-1.5">
-                    {researchBrief.strengths.map((strength: string, i: number) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-foreground">
-                        <span className="text-chart-2 mt-0.5">✓</span>
-                        {strength}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {researchBrief.risks && (
-                <div>
-                  <h3 className="text-sm font-medium uppercase tracking-wide text-muted-foreground mb-2">
-                    Key Risks
-                  </h3>
-                  <ul className="space-y-1.5">
-                    {researchBrief.risks.map((risk: string, i: number) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-foreground">
-                        <AlertTriangle className="h-3.5 w-3.5 text-chart-4 mt-0.5" />
-                        {risk}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            {researchBrief.recommendation && (
-              <div className="flex items-center gap-2 pt-2 border-t">
-                <span className="text-sm font-medium text-muted-foreground">Recommendation:</span>
-                <Badge variant="default">{researchBrief.recommendation}</Badge>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* DCF Model Display */}
-      {dcfModel && dcfModel.scenarios && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold flex items-center gap-2">
-              <Calculator className="h-5 w-5 text-primary" />
-              DCF Valuation Model: {dcfModel.ticker}
-            </CardTitle>
-            <CardDescription>Three-scenario discounted cash flow analysis</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              {/* Bull Case */}
-              <div className="rounded-md border border-chart-2/20 bg-chart-2/5 p-4">
-                <h3 className="text-xs font-medium uppercase tracking-wide text-chart-2 mb-3">
-                  Bull Case
-                </h3>
-                <div className="space-y-2">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Target Price</p>
-                    <p className="text-2xl font-mono font-semibold text-chart-2">
-                      ${dcfModel.scenarios.bull.price}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">IRR</p>
-                    <p className="text-sm font-mono font-medium text-foreground">
-                      {dcfModel.scenarios.bull.irr}%
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Assumptions</p>
-                    <p className="text-xs text-foreground">{dcfModel.scenarios.bull.assumptions}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Base Case */}
-              <div className="rounded-md border border-primary/20 bg-primary/5 p-4">
-                <h3 className="text-xs font-medium uppercase tracking-wide text-primary mb-3">
-                  Base Case
-                </h3>
-                <div className="space-y-2">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Target Price</p>
-                    <p className="text-2xl font-mono font-semibold text-primary">
-                      ${dcfModel.scenarios.base.price}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">IRR</p>
-                    <p className="text-sm font-mono font-medium text-foreground">
-                      {dcfModel.scenarios.base.irr}%
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Assumptions</p>
-                    <p className="text-xs text-foreground">{dcfModel.scenarios.base.assumptions}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bear Case */}
-              <div className="rounded-md border border-chart-3/20 bg-chart-3/5 p-4">
-                <h3 className="text-xs font-medium uppercase tracking-wide text-chart-3 mb-3">
-                  Bear Case
-                </h3>
-                <div className="space-y-2">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Target Price</p>
-                    <p className="text-2xl font-mono font-semibold text-chart-3">
-                      ${dcfModel.scenarios.bear.price}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">IRR</p>
-                    <p className="text-sm font-mono font-medium text-foreground">
-                      {dcfModel.scenarios.bear.irr}%
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Assumptions</p>
-                    <p className="text-xs text-foreground">{dcfModel.scenarios.bear.assumptions}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 flex items-center gap-4 rounded-md bg-muted/50 p-3 text-sm">
-              <div>
-                <span className="text-muted-foreground">WACC:</span>
-                <span className="ml-2 font-mono font-medium text-foreground">{dcfModel.wacc}%</span>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Terminal Growth:</span>
-                <span className="ml-2 font-mono font-medium text-foreground">{dcfModel.terminalGrowth}%</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          <AgentPanel
+            agentName="Financial Modeler"
+            description="DCF models with bull/base/bear scenarios"
+            isGenerating={dcfMutation.isPending}
+            response={dcfModel}
+            onInvoke={() => {
+              if (selectedRequest) dcfMutation.mutate(selectedRequest.ticker);
+            }}
+          />
+        </div>
       )}
     </div>
   );
