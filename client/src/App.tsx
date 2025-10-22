@@ -23,6 +23,7 @@ import ResearchBrief from "@/pages/research-brief";
 import FinancialModel from "@/pages/financial-model";
 import RiskAnalysis from "@/pages/risk-analysis";
 import ScenarioSimulator from "@/pages/scenario-simulator";
+import ThesisMonitor from "@/pages/thesis-monitor";
 import ProposalDetail from "@/pages/proposal-detail";
 import NotFound from "@/pages/not-found";
 
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/financial-model" component={FinancialModel} />
       <Route path="/risk-analysis" component={RiskAnalysis} />
       <Route path="/scenario-simulator" component={ScenarioSimulator} />
+      <Route path="/thesis-monitor" component={ThesisMonitor} />
       <Route path="/proposals/:id" component={ProposalDetail} />
       <Route path="/ic-meeting" component={ICMeeting} />
       <Route path="/portfolio" component={Portfolio} />
