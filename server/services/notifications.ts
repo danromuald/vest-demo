@@ -8,17 +8,20 @@ export class NotificationService {
   async createThesisAlert(monitor: ThesisMonitor): Promise<void> {
     let severity: "INFO" | "WARNING" | "CRITICAL" = "INFO";
     
-    if (monitor.status === "ALERT") {
+    if (monitor.healthStatus === "ALERT") {
       severity = "CRITICAL";
-    } else if (monitor.status === "WARNING") {
+    } else if (monitor.healthStatus === "WARNING") {
       severity = "WARNING";
     }
+
+    const alerts = monitor.alerts as any;
+    const concerns = alerts?.keyConcerns || [];
 
     const notification: InsertNotification = {
       type: "THESIS_ALERT",
       severity,
       title: `Thesis Alert: ${monitor.ticker}`,
-      message: `${monitor.ticker} thesis health is now ${monitor.status}. ${monitor.keyConcerns?.join(", ") || "Review recommended."}`,
+      message: `${monitor.ticker} thesis health is now ${monitor.healthStatus}. ${Array.isArray(concerns) ? concerns.join(", ") : "Review recommended."}`,
       ticker: monitor.ticker,
       relatedId: monitor.id,
       actionUrl: `/monitoring?ticker=${monitor.ticker}`,
@@ -103,7 +106,7 @@ export class NotificationService {
     const monitors = await storage.getThesisMonitors();
     
     for (const monitor of monitors) {
-      if (monitor.status === "WARNING" || monitor.status === "ALERT") {
+      if (monitor.healthStatus === "WARNING" || monitor.healthStatus === "ALERT") {
         await this.createThesisAlert(monitor);
       }
     }
