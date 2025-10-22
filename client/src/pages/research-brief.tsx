@@ -74,6 +74,17 @@ export default function ResearchBriefPage() {
 
   const briefData = selectedBrief ? validateResearchBrief(selectedBrief.response) : null;
 
+  const formatDate = (dateValue: string | Date | null | undefined, formatStr: string): string => {
+    if (!dateValue) return 'N/A';
+    try {
+      const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
+      if (isNaN(date.getTime())) return 'N/A';
+      return format(date, formatStr);
+    } catch {
+      return 'N/A';
+    }
+  };
+
   const getRecommendationColor = (recommendation: string) => {
     switch (recommendation) {
       case "BUY": return "bg-chart-2 border-chart-2 text-white";
@@ -139,7 +150,7 @@ export default function ResearchBriefPage() {
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
                         <Clock className="h-3 w-3" />
-                        <span>{format(new Date(brief.generatedAt!), 'MMM d, yyyy')}</span>
+                        <span>{formatDate(brief.generatedAt, 'MMM d, yyyy')}</span>
                       </div>
                     </button>
                   );
@@ -182,7 +193,7 @@ export default function ResearchBriefPage() {
                       <p className="text-lg text-foreground">{briefData.companyName}</p>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
                         <Clock className="h-4 w-4" />
-                        <span>Generated {format(new Date(selectedBrief.generatedAt!), 'MMMM d, yyyy h:mm a')}</span>
+                        <span>Generated {formatDate(selectedBrief.generatedAt, 'MMMM d, yyyy h:mm a')}</span>
                       </div>
                     </div>
                   </div>

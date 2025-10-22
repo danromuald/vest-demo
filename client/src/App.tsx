@@ -20,6 +20,7 @@ import AgentOutputs from "@/pages/agent-outputs";
 import MonitoringHub from "@/pages/monitoring-hub";
 import WorkflowTimeline from "@/pages/workflow-timeline";
 import ResearchBrief from "@/pages/research-brief";
+import FinancialModel from "@/pages/financial-model";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/workflow-timeline" component={WorkflowTimeline} />
       <Route path="/research" component={Research} />
       <Route path="/research-brief" component={ResearchBrief} />
+      <Route path="/financial-model" component={FinancialModel} />
       <Route path="/ic-meeting" component={ICMeeting} />
       <Route path="/portfolio" component={Portfolio} />
       <Route path="/monitoring" component={Monitoring} />

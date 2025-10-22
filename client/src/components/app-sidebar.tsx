@@ -57,6 +57,11 @@ const agentItems = [
     url: "/research-brief",
     icon: FileText,
   },
+  {
+    title: "Financial Model",
+    url: "/financial-model",
+    icon: DollarSign,
+  },
 ];
 
 export function AppSidebar() {
