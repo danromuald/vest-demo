@@ -22,6 +22,7 @@ The backend uses Node.js with TypeScript and Express.js, serving RESTful APIs an
 
 Vest supports a comprehensive workflow from `DISCOVERY` to `MONITORING`, including automated progression based on task completion (e.g., research completion advances to `ANALYSIS`, proposal creation to `IC_MEETING`). Critical features include:
 - **Proposal Creation Workflow**: Links research to IC meetings, guiding users through thesis, catalysts, risks, and target price definition.
+- **Workflow Timeline**: Visual timeline showing all 5 workflow stages (Discovery → Analysis → IC Meeting → Execution → Monitoring) with entity counts, status indicators, and deep links to detail pages.
 - **AI Agent Integration**: Five specialized agents (Research Synthesizer, DCF Modeler, Contrarian Analyst, Scenario Simulator, Thesis Monitor) provide analysis and recommendations with JSON-structured outputs.
 - **WorkflowStageNavigator**: Dashboard component for tracking workflow progression.
 - **Historical Meetings**: Page to review past meetings, decisions, and voting.
