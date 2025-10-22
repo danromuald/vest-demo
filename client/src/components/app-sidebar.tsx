@@ -62,6 +62,11 @@ const agentItems = [
     url: "/financial-model",
     icon: DollarSign,
   },
+  {
+    title: "Risk Analysis",
+    url: "/risk-analysis",
+    icon: AlertTriangle,
+  },
 ];
 
 export function AppSidebar() {
