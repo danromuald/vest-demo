@@ -1,17 +1,89 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AgentPanel } from "@/components/agent-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Check, X, Minus, TrendingUp, Shield, BarChart3 } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useWebSocket } from "@/hooks/use-websocket";
+import { useToast } from "@/hooks/use-toast";
+import type { ICMeeting as ICMeetingType } from "@shared/schema";
 
 export default function ICMeeting() {
+  const { toast } = useToast();
   const [contrarianAnalysis, setContrarianAnalysis] = useState<any>(null);
   const [scenarioAnalysis, setScenarioAnalysis] = useState<any>(null);
   const [votes, setVotes] = useState<{ name: string; vote: 'APPROVE' | 'REJECT' | 'ABSTAIN' }[]>([]);
+  const [meetingId, setMeetingId] = useState<string | null>(null);
+
+  // Fetch IC meetings
+  const { data: meetings = [] } = useQuery<ICMeetingType[]>({
+    queryKey: ['/api/ic-meetings'],
+  });
+
+  // Use first scheduled or in-progress meeting
+  useEffect(() => {
+    const activeMeeting = meetings.find(m => m.status === 'SCHEDULED' || m.status === 'IN_PROGRESS');
+    if (activeMeeting) {
+      setMeetingId(activeMeeting.id);
+    }
+  }, [meetings]);
+
+  // WebSocket connection for real-time collaboration
+  const { isConnected, lastMessage, sendMessage } = useWebSocket("/ws");
+
+  // Join meeting room when meeting ID is available
+  useEffect(() => {
+    if (meetingId && isConnected) {
+      sendMessage({
+        type: "join_meeting",
+        meetingId,
+      });
+    }
+
+    return () => {
+      if (meetingId && isConnected) {
+        sendMessage({
+          type: "leave_meeting",
+          meetingId,
+        });
+      }
+    };
+  }, [meetingId, isConnected, sendMessage]);
+
+  // Handle WebSocket messages
+  useEffect(() => {
+    if (!lastMessage) return;
+
+    switch (lastMessage.type) {
+      case "vote_cast":
+        const vote = lastMessage.vote;
+        setVotes(prev => {
+          const filtered = prev.filter(v => v.name !== vote.voterName);
+          return [...filtered, { name: vote.voterName, vote: vote.vote }];
+        });
+        toast({
+          title: "Vote Cast",
+          description: `${vote.voterName} voted ${vote.vote}`,
+        });
+        break;
+
+      case "agent_response":
+        if (lastMessage.agentType === "contrarian") {
+          setContrarianAnalysis(lastMessage.result);
+        }
+        break;
+
+      case "agent_started":
+        toast({
+          title: "Agent Started",
+          description: `${lastMessage.agentType} analysis in progress...`,
+        });
+        break;
+    }
+  }, [lastMessage, toast]);
 
   const contrarianMutation = useMutation({
     mutationFn: async (ticker: string) => {
@@ -34,10 +106,25 @@ export default function ICMeeting() {
   });
 
   const handleVote = (voterName: string, vote: 'APPROVE' | 'REJECT' | 'ABSTAIN') => {
-    setVotes(prev => {
-      const filtered = prev.filter(v => v.name !== voterName);
-      return [...filtered, { name: voterName, vote }];
-    });
+    if (meetingId && isConnected) {
+      // Send vote via WebSocket for real-time updates
+      sendMessage({
+        type: "cast_vote",
+        meetingId,
+        vote: {
+          proposalId: "mock-proposal-id", // In real app, would be from selected proposal
+          voterName,
+          voterRole: "Committee Member",
+          vote,
+        },
+      });
+    } else {
+      // Fallback to local state if WebSocket not connected
+      setVotes(prev => {
+        const filtered = prev.filter(v => v.name !== voterName);
+        return [...filtered, { name: voterName, vote }];
+      });
+    }
   };
 
   const voteCount = {

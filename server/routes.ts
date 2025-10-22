@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import { agentService } from "./services/agents";
 import {
@@ -346,5 +347,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+
+  // WebSocket server for real-time collaboration
+  const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
+
+  // Track active IC meeting rooms
+  const icMeetingRooms = new Map<string, Set<any>>();
+
+  wss.on("connection", (ws, req) => {
+    console.log("WebSocket client connected");
+
+    ws.on("message", async (data) => {
+      try {
+        const message = JSON.parse(data.toString());
+        
+        switch (message.type) {
+          case "join_meeting":
+            // Join IC meeting room
+            const meetingId = message.meetingId;
+            if (!icMeetingRooms.has(meetingId)) {
+              icMeetingRooms.set(meetingId, new Set());
+            }
+            icMeetingRooms.get(meetingId)!.add(ws);
+            
+            // Send current meeting state
+            const meeting = await storage.getICMeeting(meetingId);
+            if (meeting) {
+              ws.send(JSON.stringify({
+                type: "meeting_state",
+                meeting,
+              }));
+            }
+            break;
+
+          case "leave_meeting":
+            // Leave IC meeting room
+            icMeetingRooms.get(message.meetingId)?.delete(ws);
+            break;
+
+          case "cast_vote":
+            // Broadcast vote to all meeting participants
+            const vote = await storage.createVote(message.vote);
+            const meetingClients = icMeetingRooms.get(message.meetingId);
+            if (meetingClients) {
+              const voteUpdate = JSON.stringify({
+                type: "vote_cast",
+                vote,
+              });
+              meetingClients.forEach(client => {
+                if (client.readyState === 1) { // OPEN
+                  client.send(voteUpdate);
+                }
+              });
+            }
+            break;
+
+          case "update_meeting":
+            // Broadcast meeting updates
+            const updated = await storage.updateICMeeting(message.meetingId, message.updates);
+            const clients = icMeetingRooms.get(message.meetingId);
+            if (clients && updated) {
+              const updateMsg = JSON.stringify({
+                type: "meeting_updated",
+                meeting: updated,
+              });
+              clients.forEach(client => {
+                if (client.readyState === 1) {
+                  client.send(updateMsg);
+                }
+              });
+            }
+            break;
+
+          case "agent_invocation":
+            // Stream agent responses in real-time
+            ws.send(JSON.stringify({
+              type: "agent_started",
+              agentType: message.agentType,
+            }));
+
+            // Invoke agent and stream response
+            let result;
+            switch (message.agentType) {
+              case "contrarian":
+                result = await agentService.generateContrarianAnalysis(message.ticker);
+                break;
+              default:
+                throw new Error(`Unknown agent type: ${message.agentType}`);
+            }
+
+            ws.send(JSON.stringify({
+              type: "agent_response",
+              agentType: message.agentType,
+              result,
+            }));
+            break;
+        }
+      } catch (error) {
+        console.error("WebSocket message error:", error);
+        ws.send(JSON.stringify({
+          type: "error",
+          message: error instanceof Error ? error.message : "Unknown error",
+        }));
+      }
+    });
+
+    ws.on("close", () => {
+      // Clean up: remove client from all rooms
+      icMeetingRooms.forEach((clients, meetingId) => {
+        clients.delete(ws);
+        if (clients.size === 0) {
+          icMeetingRooms.delete(meetingId);
+        }
+      });
+      console.log("WebSocket client disconnected");
+    });
+
+    ws.on("error", (error) => {
+      console.error("WebSocket error:", error);
+    });
+  });
+
   return httpServer;
 }
