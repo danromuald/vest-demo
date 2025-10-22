@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
 import { agentService } from "./services/agents";
+import { pdfService } from "./services/pdf";
 import {
   insertPositionSchema,
   insertProposalSchema,
@@ -343,6 +344,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(models);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch financial models" });
+    }
+  });
+
+  // PDF Export Routes
+  app.get("/api/export/investment-memo/:proposalId", async (req, res) => {
+    try {
+      const proposal = await storage.getProposal(req.params.proposalId);
+      if (!proposal) {
+        res.status(404).json({ error: "Proposal not found" });
+        return;
+      }
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="investment-memo-${proposal.ticker}-${Date.now()}.pdf"`
+      );
+
+      await pdfService.generateInvestmentMemo(proposal, res);
+    } catch (error) {
+      console.error("Investment memo export error:", error);
+      res.status(500).json({ error: "Failed to generate investment memo" });
+    }
+  });
+
+  app.get("/api/export/meeting-minutes/:meetingId", async (req, res) => {
+    try {
+      const meeting = await storage.getICMeeting(req.params.meetingId);
+      if (!meeting) {
+        res.status(404).json({ error: "Meeting not found" });
+        return;
+      }
+
+      const proposals = await storage.getProposals();
+      const meetingProposals = proposals.filter(
+        (p) => p.icMeetingId === meeting.id
+      );
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="meeting-minutes-${meeting.meetingDate.toISOString().split("T")[0]}-${Date.now()}.pdf"`
+      );
+
+      await pdfService.generateMeetingMinutes(meeting, meetingProposals, res);
+    } catch (error) {
+      console.error("Meeting minutes export error:", error);
+      res.status(500).json({ error: "Failed to generate meeting minutes" });
+    }
+  });
+
+  app.get("/api/export/portfolio-summary", async (req, res) => {
+    try {
+      const positions = await storage.getPositions();
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="portfolio-summary-${Date.now()}.pdf"`
+      );
+
+      await pdfService.generatePortfolioSummary(positions, res);
+    } catch (error) {
+      console.error("Portfolio summary export error:", error);
+      res.status(500).json({ error: "Failed to generate portfolio summary" });
     }
   });
 
