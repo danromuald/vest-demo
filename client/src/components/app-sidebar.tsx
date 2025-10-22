@@ -10,7 +10,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, Search, Users, TrendingUp, Bell, FileText } from "lucide-react";
+import { LayoutDashboard, GitBranch, Search, Users, TrendingUp, Bell, FileText } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 const menuItems = [
@@ -18,6 +18,11 @@ const menuItems = [
     title: "Dashboard",
     url: "/",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Workflow Timeline",
+    url: "/workflow-timeline",
+    icon: GitBranch,
   },
   {
     title: "Research",
