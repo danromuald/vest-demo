@@ -510,3 +510,57 @@ export interface ThesisHealthReport {
   thesisDrift: number;
   recommendation: 'HOLD' | 'REVIEW' | 'SELL';
 }
+
+export interface FactorAnalysis {
+  ticker: string;
+  factorExposures: {
+    growth: number;
+    value: number;
+    momentum: number;
+    quality: number;
+    size: number;
+    volatility: number;
+  };
+  statisticalMetrics: {
+    sharpeRatio: number;
+    beta: number;
+    alpha: number;
+    volatility: number;
+  };
+  portfolioCorrelation: number;
+  riskAdjustedReturn: number;
+  quantScore: number;
+  summary: string;
+}
+
+export interface MarketEventReport {
+  ticker: string;
+  priceMovement: {
+    current: number;
+    change: number;
+    changePercent: number;
+    trigger: string;
+  };
+  newsEvents: string[];
+  analystChanges: string[];
+  technicalAlerts: string[];
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  recommendation: string;
+}
+
+export interface InvestmentMemo {
+  ticker: string;
+  title: string;
+  executiveSummary: string;
+  investmentThesis: string;
+  valuationAnalysis: string;
+  riskFactors: string[];
+  recommendation: {
+    action: 'BUY' | 'SELL' | 'HOLD';
+    targetPrice: number;
+    timeframe: string;
+    conviction: 'LOW' | 'MEDIUM' | 'HIGH';
+  };
+  preparedBy: string;
+  date: string;
+}

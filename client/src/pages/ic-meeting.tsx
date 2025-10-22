@@ -19,6 +19,8 @@ export default function ICMeeting() {
   const [votes, setVotes] = useState<{ name: string; vote: 'APPROVE' | 'REJECT' | 'ABSTAIN' }[]>([]);
   const [meetingId, setMeetingId] = useState<string | null>(null);
   const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
+  const [researchBrief, setResearchBrief] = useState<any>(null);
+  const [financialModel, setFinancialModel] = useState<any>(null);
 
   // Fetch IC meetings
   const { data: meetings = [] } = useQuery<ICMeetingType[]>({
@@ -59,6 +61,27 @@ export default function ICMeeting() {
       setSelectedProposal(icProposals[0]);
     }
   }, [icProposals, selectedProposal]);
+
+  // Fetch agent responses for selected proposal
+  const { data: agentResponses = [] } = useQuery<any[]>({
+    queryKey: ['/api/agent-responses', selectedProposal?.ticker],
+    enabled: !!selectedProposal?.ticker,
+  });
+
+  // Extract research brief and financial model from agent responses
+  useEffect(() => {
+    // Reset state whenever selected proposal changes to prevent stale data
+    setResearchBrief(null);
+    setFinancialModel(null);
+    
+    if (agentResponses && agentResponses.length > 0) {
+      const brief = agentResponses.find(r => r.agentType === 'RESEARCH_SYNTHESIZER');
+      const model = agentResponses.find(r => r.agentType === 'FINANCIAL_MODELER');
+      
+      if (brief) setResearchBrief(brief.response);
+      if (model) setFinancialModel(model.response);
+    }
+  }, [agentResponses, selectedProposal?.id]);
 
   // WebSocket connection for real-time collaboration
   const { isConnected, lastMessage, sendMessage } = useWebSocket("/ws");
@@ -249,9 +272,10 @@ export default function ICMeeting() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="thesis" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="thesis" data-testid="tab-thesis">Investment Thesis</TabsTrigger>
-              <TabsTrigger value="financials" data-testid="tab-financials">Financials</TabsTrigger>
+              <TabsTrigger value="research" data-testid="tab-research">Research</TabsTrigger>
+              <TabsTrigger value="financials" data-testid="tab-financials">Valuation</TabsTrigger>
               <TabsTrigger value="risks" data-testid="tab-risks">Risks</TabsTrigger>
               <TabsTrigger value="catalysts" data-testid="tab-catalysts">Catalysts</TabsTrigger>
             </TabsList>
@@ -278,25 +302,143 @@ export default function ICMeeting() {
                 </div>
               )}
             </TabsContent>
+            
+            <TabsContent value="research" className="space-y-4 pt-4">
+              {researchBrief ? (
+                <>
+                  <div>
+                    <h4 className="text-sm font-medium text-foreground mb-2">Executive Summary</h4>
+                    <p className="text-sm text-muted-foreground">{researchBrief.summary}</p>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-foreground mb-3">Key Metrics</h4>
+                    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                      <div className="rounded-md bg-muted/50 p-3">
+                        <p className="text-xs text-muted-foreground">Revenue</p>
+                        <p className="text-lg font-mono font-semibold text-foreground">{researchBrief.keyMetrics?.revenue}</p>
+                      </div>
+                      <div className="rounded-md bg-muted/50 p-3">
+                        <p className="text-xs text-muted-foreground">Growth</p>
+                        <p className="text-lg font-mono font-semibold text-foreground">{researchBrief.keyMetrics?.growth}</p>
+                      </div>
+                      <div className="rounded-md bg-muted/50 p-3">
+                        <p className="text-xs text-muted-foreground">Margins</p>
+                        <p className="text-lg font-mono font-semibold text-foreground">{researchBrief.keyMetrics?.margins}</p>
+                      </div>
+                      <div className="rounded-md bg-muted/50 p-3">
+                        <p className="text-xs text-muted-foreground">Valuation</p>
+                        <p className="text-lg font-mono font-semibold text-foreground">{researchBrief.keyMetrics?.valuation}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-foreground mb-2">Key Strengths</h4>
+                    <ul className="space-y-2">
+                      {researchBrief.strengths?.map((strength: string, i: number) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <TrendingUp className="h-4 w-4 text-chart-2 mt-0.5 flex-shrink-0" />
+                          {strength}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium text-foreground mb-2">Research Recommendation</h4>
+                    <Badge variant="outline" className="bg-chart-2/10 text-chart-2 border-chart-2/20">
+                      {researchBrief.recommendation}
+                    </Badge>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <FileText className="h-12 w-12 text-muted-foreground/50 mb-3" />
+                  <p className="text-sm text-muted-foreground">No research brief available</p>
+                  <p className="text-xs text-muted-foreground mt-1">Generate one from the Research Brief page</p>
+                </div>
+              )}
+            </TabsContent>
+
             <TabsContent value="financials" className="pt-4">
-              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                <div className="rounded-md bg-muted/50 p-3">
-                  <p className="text-xs text-muted-foreground">Revenue Growth</p>
-                  <p className="text-lg font-mono font-semibold text-foreground">+126% YoY</p>
+              {financialModel ? (
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-medium text-foreground mb-3">DCF Scenarios</h4>
+                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+                      {/* Bull Case */}
+                      <div className="rounded-md border border-chart-2/20 bg-chart-2/5 p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h5 className="text-xs font-medium text-chart-2">Bull Case</h5>
+                          <TrendingUp className="h-4 w-4 text-chart-2" />
+                        </div>
+                        <p className="text-2xl font-mono font-bold text-chart-2 mb-1">
+                          ${typeof financialModel.scenarios?.bull?.price === 'number' ? financialModel.scenarios.bull.price.toFixed(0) : financialModel.scenarios?.bull?.price}
+                        </p>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          IRR: {typeof financialModel.scenarios?.bull?.irr === 'number' ? financialModel.scenarios.bull.irr.toFixed(1) : financialModel.scenarios?.bull?.irr}%
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {financialModel.scenarios?.bull?.assumptions}
+                        </p>
+                      </div>
+
+                      {/* Base Case */}
+                      <div className="rounded-md border border-primary/20 bg-primary/5 p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h5 className="text-xs font-medium text-primary">Base Case</h5>
+                          <BarChart3 className="h-4 w-4 text-primary" />
+                        </div>
+                        <p className="text-2xl font-mono font-bold text-primary mb-1">
+                          ${typeof financialModel.scenarios?.base?.price === 'number' ? financialModel.scenarios.base.price.toFixed(0) : financialModel.scenarios?.base?.price}
+                        </p>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          IRR: {typeof financialModel.scenarios?.base?.irr === 'number' ? financialModel.scenarios.base.irr.toFixed(1) : financialModel.scenarios?.base?.irr}%
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {financialModel.scenarios?.base?.assumptions}
+                        </p>
+                      </div>
+
+                      {/* Bear Case */}
+                      <div className="rounded-md border border-chart-3/20 bg-chart-3/5 p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h5 className="text-xs font-medium text-chart-3">Bear Case</h5>
+                          <Shield className="h-4 w-4 text-chart-3" />
+                        </div>
+                        <p className="text-2xl font-mono font-bold text-chart-3 mb-1">
+                          ${typeof financialModel.scenarios?.bear?.price === 'number' ? financialModel.scenarios.bear.price.toFixed(0) : financialModel.scenarios?.bear?.price}
+                        </p>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          IRR: {typeof financialModel.scenarios?.bear?.irr === 'number' ? financialModel.scenarios.bear.irr.toFixed(1) : financialModel.scenarios?.bear?.irr}%
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {financialModel.scenarios?.bear?.assumptions}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-md bg-muted/50 p-3">
+                      <p className="text-xs text-muted-foreground">WACC</p>
+                      <p className="text-lg font-mono font-semibold text-foreground">
+                        {typeof financialModel.wacc === 'number' ? financialModel.wacc.toFixed(1) : financialModel.wacc}%
+                      </p>
+                    </div>
+                    <div className="rounded-md bg-muted/50 p-3">
+                      <p className="text-xs text-muted-foreground">Terminal Growth</p>
+                      <p className="text-lg font-mono font-semibold text-foreground">
+                        {typeof financialModel.terminalGrowth === 'number' ? financialModel.terminalGrowth.toFixed(1) : financialModel.terminalGrowth}%
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div className="rounded-md bg-muted/50 p-3">
-                  <p className="text-xs text-muted-foreground">Gross Margin</p>
-                  <p className="text-lg font-mono font-semibold text-foreground">74.0%</p>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <BarChart3 className="h-12 w-12 text-muted-foreground/50 mb-3" />
+                  <p className="text-sm text-muted-foreground">No financial model available</p>
+                  <p className="text-xs text-muted-foreground mt-1">Generate one from the Financial Model page</p>
                 </div>
-                <div className="rounded-md bg-muted/50 p-3">
-                  <p className="text-xs text-muted-foreground">P/E Ratio</p>
-                  <p className="text-lg font-mono font-semibold text-foreground">32.1x</p>
-                </div>
-                <div className="rounded-md bg-muted/50 p-3">
-                  <p className="text-xs text-muted-foreground">FCF Yield</p>
-                  <p className="text-lg font-mono font-semibold text-foreground">2.8%</p>
-                </div>
-              </div>
+              )}
             </TabsContent>
             <TabsContent value="risks" className="pt-4">
               {selectedProposal.risks && selectedProposal.risks.length > 0 ? (

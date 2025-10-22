@@ -313,6 +313,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/agents/quant-analyst", async (req, res) => {
+    try {
+      const { ticker } = agentTickerSchema.parse(req.body);
+
+      const analysis = await agentService.generateFactorAnalysis(ticker);
+      
+      // Store the agent response
+      await storage.createAgentResponse({
+        agentType: "QUANT_ANALYST",
+        ticker,
+        prompt: `Generate factor analysis for ${ticker}`,
+        response: analysis,
+        metadata: {},
+      });
+
+      res.json(analysis);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      console.error("Quant analyst error:", error);
+      res.status(500).json({ error: "Failed to generate factor analysis" });
+    }
+  });
+
+  app.post("/api/agents/market-monitor", async (req, res) => {
+    try {
+      const { ticker } = agentTickerSchema.parse(req.body);
+
+      const report = await agentService.generateMarketEventReport(ticker);
+      
+      // Store the agent response
+      await storage.createAgentResponse({
+        agentType: "MARKET_MONITOR",
+        ticker,
+        prompt: `Monitor market events for ${ticker}`,
+        response: report,
+        metadata: {},
+      });
+
+      res.json(report);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      console.error("Market monitor error:", error);
+      res.status(500).json({ error: "Failed to generate market event report" });
+    }
+  });
+
+  app.post("/api/agents/document-generator", async (req, res) => {
+    try {
+      const { ticker, proposalData } = req.body;
+      if (!ticker) {
+        res.status(400).json({ error: "Ticker is required" });
+        return;
+      }
+
+      const memo = await agentService.generateInvestmentMemo(ticker, proposalData);
+      
+      // Store the agent response
+      await storage.createAgentResponse({
+        agentType: "DOCUMENT_GENERATOR",
+        ticker,
+        prompt: `Generate investment memo for ${ticker}`,
+        response: memo,
+        metadata: { proposalData },
+      });
+
+      res.json(memo);
+    } catch (error) {
+      console.error("Document generator error:", error);
+      res.status(500).json({ error: "Failed to generate investment memo" });
+    }
+  });
+
   // Agent Responses (history)
   app.get("/api/agent-responses", async (req, res) => {
     try {
@@ -1128,6 +1206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Save and broadcast debate message
             const newMessage = await storage.createDebateMessage({
               sessionId: message.sessionId,
+              senderType: message.senderType || "USER",
               senderId: message.senderId,
               senderName: message.senderName,
               content: message.content,
@@ -1184,6 +1263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Save agent message to debate
             const agentMessage = await storage.createDebateMessage({
               sessionId: message.sessionId,
+              senderType: "AGENT",
               senderId: message.agentType,
               senderName: `${message.agentType} Agent`,
               content: JSON.stringify(agentResult),

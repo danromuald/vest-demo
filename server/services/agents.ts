@@ -5,6 +5,9 @@ import type {
   ContrarianAnalysis,
   ScenarioAnalysis,
   ThesisHealthReport,
+  FactorAnalysis,
+  MarketEventReport,
+  InvestmentMemo,
 } from "@shared/schema";
 
 export class AgentService {
@@ -236,6 +239,166 @@ Return ONLY valid JSON matching this exact structure:
       return JSON.parse(content) as ThesisHealthReport;
     } catch (error) {
       console.error("Error generating thesis health report:", error);
+      throw error;
+    }
+  }
+
+  // Quant Analyst Agent
+  async generateFactorAnalysis(ticker: string): Promise<FactorAnalysis> {
+    try {
+      const prompt = `You are a quantitative analyst. Generate a comprehensive factor analysis for ${ticker}.
+
+Analyze:
+1. Factor exposures (growth, value, momentum, quality, size, volatility)
+2. Statistical metrics (sharpe ratio, beta, alpha, volatility)
+3. Correlation with portfolio
+4. Risk-adjusted returns
+5. Overall quant score (0-100)
+
+Return ONLY valid JSON matching this exact structure:
+{
+  "ticker": "${ticker}",
+  "factorExposures": {
+    "growth": 0.85,
+    "value": 0.15,
+    "momentum": 0.72,
+    "quality": 0.88,
+    "size": 0.95,
+    "volatility": 0.45
+  },
+  "statisticalMetrics": {
+    "sharpeRatio": 1.85,
+    "beta": 1.25,
+    "alpha": 5.2,
+    "volatility": 28.5
+  },
+  "portfolioCorrelation": 0.65,
+  "riskAdjustedReturn": 15.3,
+  "quantScore": 82,
+  "summary": "Strong momentum and quality characteristics with elevated volatility"
+}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 1024,
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (!content) throw new Error("No response from AI");
+
+      return JSON.parse(content) as FactorAnalysis;
+    } catch (error) {
+      console.error("Error generating factor analysis:", error);
+      throw error;
+    }
+  }
+
+  // Market Event Monitor Agent
+  async generateMarketEventReport(ticker: string): Promise<MarketEventReport> {
+    try {
+      const prompt = `You are a market monitoring analyst. Generate a real-time market event report for ${ticker}.
+
+Include:
+1. Recent price movements and triggers
+2. News events impacting the stock
+3. Analyst rating changes
+4. Volume and technical alerts
+5. Severity level (LOW, MEDIUM, HIGH, CRITICAL)
+
+Return ONLY valid JSON matching this exact structure:
+{
+  "ticker": "${ticker}",
+  "priceMovement": {
+    "current": 185.50,
+    "change": -3.2,
+    "changePercent": -1.69,
+    "trigger": "Earnings miss"
+  },
+  "newsEvents": [
+    "Q3 earnings below estimates; revenue guidance reduced",
+    "CFO departure announced",
+    "Major customer contract renewal delayed"
+  ],
+  "analystChanges": [
+    "Morgan Stanley downgrade from Overweight to Equal Weight",
+    "JP Morgan cuts target from $210 to $175"
+  ],
+  "technicalAlerts": [
+    "Broke 200-day moving average",
+    "Volume 2.5x average"
+  ],
+  "severity": "HIGH",
+  "recommendation": "Review position immediately; thesis may be compromised"
+}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 2048,
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (!content) throw new Error("No response from AI");
+
+      return JSON.parse(content) as MarketEventReport;
+    } catch (error) {
+      console.error("Error generating market event report:", error);
+      throw error;
+    }
+  }
+
+  // Document Generator Agent
+  async generateInvestmentMemo(ticker: string, proposalData: any): Promise<InvestmentMemo> {
+    try {
+      const prompt = `You are a professional investment memo writer. Generate a comprehensive investment memo for ${ticker}.
+
+Include:
+1. Executive summary
+2. Investment thesis
+3. Valuation analysis
+4. Risk factors
+5. Recommendation with target price and timeframe
+
+Use this proposal data: ${JSON.stringify(proposalData, null, 2)}
+
+Return ONLY valid JSON matching this exact structure:
+{
+  "ticker": "${ticker}",
+  "title": "Investment Memorandum: ${ticker}",
+  "executiveSummary": "2-3 paragraph executive summary",
+  "investmentThesis": "Detailed multi-paragraph investment thesis",
+  "valuationAnalysis": "Comprehensive valuation framework with DCF, comparables, and precedent transactions",
+  "riskFactors": [
+    "Competitive pressure from established players",
+    "Regulatory uncertainty in key markets",
+    "Execution risk on new product launches"
+  ],
+  "recommendation": {
+    "action": "BUY",
+    "targetPrice": 250,
+    "timeframe": "12 months",
+    "conviction": "HIGH"
+  },
+  "preparedBy": "Investment Committee",
+  "date": "${new Date().toISOString().split('T')[0]}"
+}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 4096,
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (!content) throw new Error("No response from AI");
+
+      return JSON.parse(content) as InvestmentMemo;
+    } catch (error) {
+      console.error("Error generating investment memo:", error);
       throw error;
     }
   }
