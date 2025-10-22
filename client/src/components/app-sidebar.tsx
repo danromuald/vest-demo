@@ -30,6 +30,11 @@ const menuItems = [
     icon: Search,
   },
   {
+    title: "Proposals",
+    url: "/proposals",
+    icon: FileText,
+  },
+  {
     title: "IC Meeting",
     url: "/ic-meeting",
     icon: Users,
