@@ -1,0 +1,5349 @@
+# AI-Powered Investment Committee Workflow System
+## Technical Specifications Document
+
+**Version**: 1.0  
+**Date**: February 2025  
+**Document Type**: Technical Specifications & Implementation Guide  
+**Status**: Draft for Implementation
+
+---
+
+## Document Control
+
+| Version | Date | Author | Changes |
+|---------|------|--------|---------|
+| 1.0 | Feb 2025 | System Architect | Initial draft |
+
+---
+
+## Table of Contents
+
+1. [Executive Summary](#1-executive-summary)
+2. [The Plot: Players, Roles & Interactions](#2-the-plot-players-roles--interactions)
+3. [System Architecture](#3-system-architecture)
+4. [Agent Specifications](#4-agent-specifications)
+5. [Artifact Schema & Templates](#5-artifact-schema--templates)
+6. [React Application Specifications](#6-react-application-specifications)
+7. [Data Flow & Integration](#7-data-flow--integration)
+8. [Security & Compliance](#8-security--compliance)
+9. [Implementation Roadmap](#9-implementation-roadmap)
+10. [Sample Artifacts](#10-sample-artifacts)
+
+---
+
+# 1. EXECUTIVE SUMMARY
+
+## 1.1 Project Overview
+
+This document specifies a multi-agent AI system powered by Google ADK to automate and enhance the investment committee (IC) workflow from initial research through execution and ongoing monitoring. The system comprises four agent types operating across six workflow stages, producing standardized artifacts, and interfacing through a React-based orchestration application.
+
+## 1.2 Core Objectives
+
+1. **Reduce analyst workload by 60%** through automated research synthesis
+2. **Enhance IC meeting quality** with real-time contrarian analysis
+3. **Ensure compliance and risk protocols** through automated checks
+4. **Enable continuous thesis monitoring** with intelligent alerting
+5. **Maintain institutional knowledge** through structured artifact generation
+
+## 1.3 Technology Stack
+
+```
+Frontend:
+├── React 18+ with TypeScript
+├── Tailwind CSS + shadcn/ui
+├── Redux Toolkit + React Query
+├── Recharts for visualization
+└── Socket.io for real-time
+
+Backend:
+├── Google ADK (Agent Development Kit)
+├── Claude (Anthropic) for LLM
+├── FastAPI for agent gateway
+├── Temporal.io for orchestration
+└── Existing Rust microservices
+
+Data:
+├── PostgreSQL (structured data)
+├── Redis (cache + real-time)
+├── S3 (documents)
+└── pgvector (embeddings)
+
+Infrastructure:
+├── Kubernetes (EKS)
+├── AWS Cloud Services
+└── Prometheus + Grafana
+```
+
+## 1.4 Key Metrics
+
+| Metric | Current | Target | Improvement |
+|--------|---------|--------|-------------|
+| Research Report Time | 20 hours | 8 hours | 60% faster |
+| IC Prep Time | 4 hours | 1.5 hours | 62% faster |
+| Minutes Generation | 24 hours | 2 hours | 92% faster |
+| Thesis Monitoring | Manual | Automated | 100% coverage |
+| Risk Approval Time | 2 hours | 15 minutes | 87% faster |
+
+## 1.5 Expected Costs
+
+| Component | Monthly Cost | Annual Cost |
+|-----------|-------------|-------------|
+| Claude API Usage | $2,000-5,000 | $24,000-60,000 |
+| Infrastructure (EKS, RDS, etc.) | $3,000 | $36,000 |
+| External APIs (Bloomberg, etc.) | Existing | Existing |
+| **Total Additional** | **$5,000-8,000** | **$60,000-96,000** |
+
+**ROI Calculation**:
+- Analyst time saved: 12 hours/week × 4 analysts = 48 hours/week
+- At $100/hour loaded cost = $4,800/week = $250,000/year
+- **Net Savings: ~$150,000-190,000/year**
+
+---
+
+# 2. THE PLOT: PLAYERS, ROLES & INTERACTIONS
+
+## 2.1 The Narrative Arc
+
+### Act 1: Discovery & Research (Weeks -4 to -1)
+*The analyst identifies an opportunity. Pre-work agents spring into action, transforming raw data into structured intelligence.*
+
+**Scene**: Sarah Chen, technology analyst, identifies NVIDIA as a potential investment. She prompts the Research Synthesizer agent which immediately:
+- Fetches SEC filings (10-K, 10-Q, 8-K)
+- Analyzes 2 years of earnings transcripts
+- Compiles financial data across 8 quarters
+- Aggregates 30 days of news
+- Generates a comprehensive Initial Idea Brief in 60 seconds
+
+Sarah reviews the brief, finds it compelling, and asks for deeper analysis. The Financial Modeler agent builds a DCF model with bull/base/bear scenarios while the Quant Analyst calculates factor exposures and portfolio risk impact—all in parallel, completing in 3 minutes.
+
+### Act 2: Preparation & Review (Week -1)
+*The portfolio team assembles materials. Risk and compliance agents perform their gatekeeping duties. The stage is set.*
+
+**Scene**: Five days before the IC meeting, Katherine (IC Administrator) triggers the pre-IC workflow. The Document Generator agent compiles all research into a 40-page formatted report following the house template. Risk agents automatically calculate pro forma portfolio metrics, checking against mandate limits. Compliance agents verify no restricted list violations.
+
+By Monday, the full IC package (100+ pages) is ready—portfolio review, macro update, three investment proposals, position reviews, and risk analysis—all compiled, formatted, and distributed automatically.
+
+### Act 3: The Investment Committee (Day 0)
+*Decision-makers convene. In-session agents stand ready, prepared to challenge, defend, and illuminate. A decision is reached.*
+
+**Scene**: Friday, 9:48 AM. Sarah presents the NVIDIA buy case to the Investment Committee. Jonathan Price (Value PM) raises concerns: "32x P/E seems expensive. What if we're at peak margins?"
+
+Michael Torres (CIO) invokes the Contrarian Agent: "Let's hear the bear case."
+
+Within 30 seconds, the Contrarian Agent presents a structured analysis:
+- Historical precedents (Intel's margin compression, Cisco's commoditization)
+- Quantified bear case ($450 stock price in downside scenario)
+- Probability assessment (30% over 3 years)
+- 40-second audio summary plays for the committee
+
+The discussion deepens. Rebecca Zhang asks about comparable situations. The Data Retrieval Agent instantly provides Cisco's customer concentration history from 1995-2000.
+
+Michael asks: "What if we do 4% instead of 3%?"
+
+The Scenario Simulator generates risk/reward analysis in 25 seconds, showing tracking error would approach the 2.5% limit.
+
+**Decision**: Approved at 3.0% position (modified from 3.5% proposed), 4-0-1 vote.
+
+### Act 4: Execution (Days +1 to +5)
+*Post-session agents mobilize trading teams. The decision becomes reality. Every trade is documented.*
+
+**Scene**: 12:15 PM, meeting ends. Within 45 minutes:
+- Minutes Scribe agent transcribes the meeting, generates draft minutes
+- Trade Order Generator creates formal order tickets with execution parameters
+- Risk Reporter generates pre-trade approval memos
+- Katherine reviews and approves minutes by 2 PM
+- All materials distributed same day (vs. next day previously)
+
+Monday morning, Michelle (Head of Trading) receives the NVDA order: "Buy 137,450 shares via VWAP algo over 3 days." Execution begins. Each day, automated execution reports are generated showing performance vs. benchmarks.
+
+By Thursday, execution complete. TCA analysis shows 52 bps outperformance vs. arrival price, saving $629,000 through execution skill.
+
+### Act 5: Vigilance (Ongoing)
+*Sleeper agents never rest. They watch markets, monitor theses, and alert when reality diverges from expectations.*
+
+**Scene**: March 18, 10:42 AM. NVIDIA drops 6.2% in 25 minutes. The Market Event Monitor detects the move within 3 minutes, identifies the cause (Microsoft CFO comments on AI capex), assesses portfolio impact (-$7.5M), and alerts Sarah Chen and Michael Torres.
+
+Sarah has until noon to assess if this is a thesis-breaking event or noise. She queries the Thesis Monitor agent for a comprehensive analysis. Within 2 minutes, she receives:
+- Microsoft commentary analysis (timing shift, not demand destruction)
+- Historical precedent review (similar commentary in prior cycles)
+- Thesis health assessment (⚠ CUSTOMER CONCENTRATION RISK materializing but manageable)
+- Recommendation: HOLD, monitor closely
+
+Every evening at 4 PM (market close), the Thesis Monitor checks all 48 positions:
+- Compares actual performance vs. thesis expectations
+- Identifies material news or developments
+- Checks sell discipline triggers
+- Generates alerts for positions requiring attention
+
+Sarah receives weekly position updates for her holdings, keeping her informed without manual work.
+
+---
+
+## 2.2 The Players (Human Cast)
+
+### Primary Decision Makers
+
+#### Michael Torres - Chief Investment Officer (CIO)
+**Role**: IC Chair, final decision authority  
+**Age**: 52 | **Experience**: 28 years in investment management  
+**Background**: Former PM at large mutual fund, MBA from Wharton
+
+**Personality**:
+- Decisive but collaborative
+- Values diverse perspectives
+- Risk-aware but not risk-averse
+- Appreciates data-driven arguments
+
+**Daily Routine**:
+- 7:00 AM: Review overnight markets, portfolio dashboard
+- 8:30 AM: Portfolio manager check-ins
+- IC meetings: Fridays 9 AM - 12 PM (monthly)
+- Afternoons: Client meetings, strategy sessions
+
+**Pain Points**:
+- Drowning in pre-reading (100+ pages per IC)
+- Insufficient time to explore alternative perspectives
+- Concerned about groupthink in IC
+- Wants faster post-IC execution
+
+**What He Wants from AI Agents**:
+- Concise executive summaries
+- Real-time access to contrarian views
+- Confidence that nothing is overlooked
+- Faster IC preparation and follow-through
+
+**Interaction with Agents**:
+- **Before IC**: Reviews AI-generated IC package summaries
+- **During IC**: Invokes in-session agents for quick analysis
+- **After IC**: Receives automated minutes and execution updates
+- **Ongoing**: Dashboard showing portfolio health from sleeper agents
+
+---
+
+#### Sarah Chen - Technology Sector Analyst
+**Role**: Equity research analyst covering technology  
+**Age**: 34 | **Experience**: 11 years (5 at this firm)  
+**Background**: Engineer at Google (3 years), MBA from Stanford, CFA
+
+**Personality**:
+- Deeply analytical
+- Perfectionist tendencies
+- Excited by technology trends
+- Wants to be right more than liked
+
+**Coverage Universe**: 
+- 20 stocks under coverage
+- Focus areas: Semiconductors, software, internet
+- Generate 3-4 new ideas per quarter
+
+**Typical Week**:
+- Monday: Company calls, industry research
+- Tuesday-Thursday: Model building, report writing
+- Friday: IC meetings or position monitoring
+- Weekends: Often works on big research projects
+
+**Pain Points**:
+- 40% of time spent on data gathering (feels like busywork)
+- Struggles to synthesize 100+ pages of SEC filings quickly
+- Needs to monitor 20 positions continuously
+- Pressure to produce high-conviction ideas monthly
+- Research reports take 15-20 hours to write
+
+**What She Wants from AI Agents**:
+- Instant data synthesis from filings, transcripts, news
+- First draft of research reports
+- Automated position monitoring
+- More time for high-value analysis (not data gathering)
+
+**Interaction with Agents**:
+- **Discovery Phase**: "Analyze NVIDIA as potential investment"
+- **Deep Dive**: "Build DCF model with three scenarios"
+- **Refinement**: Iterates with agents, adjusting assumptions
+- **Monitoring**: Receives automated weekly position updates
+- **Alerts**: Gets real-time notifications on material developments
+
+**Typical Prompts to Agents**:
+```
+"Pull together an initial brief on NVIDIA - focus on datacenter 
+segment growth and competitive positioning vs AMD."
+
+"Build me a DCF with bull case (50% revenue CAGR) and bear case 
+(20% revenue CAGR). Use 10.5% WACC."
+
+"What's changed with NVIDIA since we bought it 3 weeks ago? Any 
+thesis-breaking developments?"
+
+"Compare NVIDIA's customer concentration to Cisco's during its 
+growth phase in the late 1990s."
+```
+
+---
+
+#### Rebecca Zhang - Growth Portfolio Manager
+**Role**: Portfolio manager for large cap growth strategy  
+**Age**: 41 | **Experience**: 17 years  
+**Background**: Analyst at Fidelity (7 years), PM (10 years), CFA
+
+**Personality**:
+- Detail-oriented
+- Process-driven
+- Collaborative with analysts
+- Balances conviction with risk management
+
+**Portfolio**:
+- $4 billion AUM
+- 45-50 holdings
+- Benchmark: Russell 1000 Growth
+- Target: 2-3% annual alpha
+
+**Daily Routine**:
+- 6:30 AM: Review overnight markets, portfolio P&L
+- Morning: Portfolio construction, rebalancing analysis
+- Afternoon: Analyst meetings, IC participation
+- Evening: Review research, trade execution
+
+**Pain Points**:
+- Portfolio impact analysis is manual (2-3 hours per IC)
+- Needs to understand factor implications of every decision
+- Wants to see historical patterns in similar decisions
+- Struggles with optimal trade sizing and timing
+
+**What She Wants from AI Agents**:
+- Automated portfolio impact analysis
+- Real-time risk metrics for proposed changes
+- Historical decision analysis (what worked, what didn't)
+- Scenario analysis (what if we do X instead of Y)
+
+**Interaction with Agents**:
+- **Pre-IC**: Reviews automated portfolio impact reports
+- **During IC**: Uses Scenario Simulator for position sizing
+- **Post-IC**: Receives trade execution recommendations
+- **Ongoing**: Monitors portfolio risk metrics from sleeper agents
+
+---
+
+#### Jonathan Price - Value Portfolio Manager
+**Role**: Portfolio manager for value strategy, IC member  
+**Age**: 56 | **Experience**: 32 years  
+**Background**: Traditional value investor, Columbia Business School
+
+**Personality**:
+- Skeptical by nature
+- Valuation-focused
+- Plays "devil's advocate" in IC
+- Respects discipline over conviction
+
+**Philosophy**:
+- "Price is what you pay, value is what you get"
+- Never pays >25x P/E without exceptional reason
+- Margin of safety is paramount
+- Contrarian when others are greedy
+
+**Role in IC**:
+- Challenges optimistic assumptions
+- Questions valuations relentlessly
+- Ensures bear cases are articulated
+- Prevents groupthink
+
+**Pain Points**:
+- Being contrarian is time-consuming (needs data to back arguments)
+- Often feels like the "bad guy" in IC
+- Wants quick access to historical valuation ranges
+- Needs bear case scenarios articulated clearly
+
+**What He Wants from AI Agents**:
+- Instant contrarian analysis
+- Historical valuation comparisons
+- Bear case quantification
+- Precedent analysis (similar situations that ended poorly)
+
+**Interaction with Agents**:
+- **During IC**: Primary user of Contrarian Agent
+- **Challenge Mode**: "What if margins compress to historical norms?"
+- **Validation**: Asks Data Retrieval Agent for comps and precedents
+- **Decision Support**: Uses Scenario Simulator to test assumptions
+
+**Typical Requests**:
+```
+"What's NVIDIA's historical valuation range over 10 years? 
+Where does 32x P/E fall?"
+
+"Show me companies with similar customer concentration that 
+faced pricing pressure. What happened?"
+
+"If NVIDIA's gross margins revert to 60% (from 75%), what's 
+the impact on EPS and valuation?"
+```
+
+---
+
+#### Dr. Eric Hansen - Quantitative Portfolio Manager
+**Role**: PM for quantitative strategy, IC member  
+**Age**: 45 | **Experience**: 20 years (10 in quant PM)  
+**Background**: PhD Physics MIT, worked at AQR, DE Shaw
+
+**Personality**:
+- Systematic, data-driven
+- Less swayed by narratives
+- Factor-focused
+- Probabilistic thinking
+
+**Approach**:
+- Factor-based portfolio construction
+- Risk management via quantitative models
+- Backtesting and historical analysis
+- Combines fundamental with quantitative signals
+
+**Daily Routine**:
+- Morning: Model runs, factor exposure analysis
+- IC: Provide quantitative perspective
+- Afternoon: Research, model development
+- Continuous: Monitor systematic strategies
+
+**Pain Points**:
+- Manual factor analysis takes 2-3 hours per position
+- Difficult to explain complex quant concepts in IC
+- Wants automated scenario analysis
+- Needs real-time risk impact calculations
+
+**What He Wants from AI Agents**:
+- Automated factor exposure calculations
+- Real-time portfolio optimization
+- Backtesting on demand
+- Scenario simulations with probability distributions
+
+**Interaction with Agents**:
+- **Pre-IC**: Reviews Quant Analyst agent outputs
+- **During IC**: Validates systematic signals
+- **Analysis**: "Run factor analysis on adding NVDA at 3.5%"
+- **Optimization**: "Show efficient frontier with and without NVDA"
+
+---
+
+#### Alex Reyes - Head of Risk Management
+**Role**: Risk oversight, pre-trade approval authority  
+**Age**: 44 | **Experience**: 19 years in risk management  
+**Background**: Risk analyst at JP Morgan, CFA, FRM
+
+**Personality**:
+- Cautious but pragmatic
+- Process-oriented
+- Independent thinker (reports to CIO but acts independently)
+- Gatekeeper role
+
+**Responsibilities**:
+- Pre-trade compliance and risk approval
+- Daily risk monitoring (VaR, tracking error, factor exposures)
+- Stress testing and scenario analysis
+- Risk limit management
+- Regulatory risk reporting
+
+**Daily Routine**:
+- Pre-market: Review overnight risk metrics
+- Morning: Pre-trade approval reviews
+- Afternoon: Risk committee meetings, stress tests
+- Continuous: Monitor portfolio risk vs. limits
+
+**Pain Points**:
+- Manual pre-trade checks are error-prone
+- Stress testing is time-consuming (4-6 hours per major test)
+- Needs automated limit monitoring
+- Wants predictive risk alerts
+
+**What He Wants from AI Agents**:
+- Automated pre-trade risk analysis
+- Real-time risk limit monitoring
+- Instant stress test results
+- Predictive risk alerts (before breaches occur)
+
+**Interaction with Agents**:
+- **Pre-Trade**: Reviews Risk Reporter agent outputs
+- **Approval**: Signs off on automated risk memos
+- **Monitoring**: Receives alerts from Risk Monitor sleeper agent
+- **Analysis**: "Run stress test: tech selloff -15%"
+
+---
+
+#### Michelle O'Brien - Head of Trading
+**Role**: Execution specialist, responsible for all trading  
+**Age**: 39 | **Experience**: 16 years in trading  
+**Background**: Equity trader at Goldman Sachs, Series 7 & 63
+
+**Personality**:
+- Detail-obsessed
+- Calm under pressure
+- Relationship-focused (broker relationships)
+- Competitive (wants best execution)
+
+**Responsibilities**:
+- Execute all portfolio trades
+- Achieve best execution
+- Manage market impact
+- Transaction cost analysis
+- Broker relationships
+
+**Team**:
+- 3 traders covering different asset classes
+- Use algorithms for large orders
+- Direct market access (DMA) for urgent orders
+
+**Daily Routine**:
+- Pre-market: Review order flow, plan execution
+- Market hours: Active trading, algo monitoring
+- Post-market: TCA analysis, daily reports
+
+**Pain Points**:
+- Manual execution reporting (2 hours per day)
+- TCA analysis is retrospective (not predictive)
+- Needs better execution strategy recommendations
+- Wants automated daily reporting
+
+**What She Wants from AI Agents**:
+- Automated trade order generation
+- Execution strategy recommendations
+- Real-time execution monitoring
+- Automated TCA reports
+
+**Interaction with Agents**:
+- **Order Receipt**: Gets trade orders from Post-Session agents
+- **Execution**: Follows AI-recommended strategies
+- **Reporting**: Receives automated daily execution reports
+- **TCA**: Reviews Attribution Analyst agent outputs
+
+---
+
+#### Patricia Moore - Chief Compliance Officer
+**Role**: Regulatory compliance, legal oversight  
+**Age**: 51 | **Experience**: 26 years (lawyer + compliance)  
+**Background**: SEC attorney (6 years), compliance (20 years)
+
+**Personality**:
+- Risk-averse
+- Process-driven
+- Detail-oriented
+- Protective of firm reputation
+
+**Responsibilities**:
+- Pre-trade compliance checks
+- Regulatory filings (13F, Form PF, etc.)
+- Restricted list management
+- Trading surveillance
+- Audit trail maintenance
+- Regulatory change monitoring
+
+**Daily Routine**:
+- Morning: Review overnight trading activity
+- Pre-trade: Compliance approvals for new orders
+- Ongoing: Monitor restricted list changes
+- Periodic: Regulatory filings, audits
+
+**Pain Points**:
+- Manual compliance checks slow down trading
+- Difficult to interpret complex regulations
+- Needs automated audit trail generation
+- Wants proactive regulatory change monitoring
+
+**What She Wants from AI Agents**:
+- Automated pre-trade compliance checks
+- Regulatory change impact analysis
+- Automated audit trail generation
+- Continuous compliance monitoring
+
+**Interaction with Agents**:
+- **Pre-Trade**: Reviews automated compliance checks
+- **Approvals**: Signs off on compliant orders
+- **Monitoring**: Receives alerts from Compliance Monitor
+- **Regulatory**: Uses agents to interpret new regulations
+
+---
+
+#### Jennifer Liu - Chief Economist
+**Role**: Macroeconomic analysis, IC member  
+**Age**: 48 | **Experience**: 23 years  
+**Background**: PhD Economics Yale, Fed economist (5 years)
+
+**Personality**:
+- Academic, thoughtful
+- Big-picture thinker
+- Less interested in individual stocks
+- Provides macro context
+
+**Responsibilities**:
+- Macro economic forecasts
+- Fed policy analysis
+- Scenario planning (recession, inflation, etc.)
+- Inform investment committee on macro backdrop
+
+**Monthly IC Contribution**:
+- 15-minute macro update
+- Economic scenario probabilities
+- Factor regime assessment
+- Market implications
+
+**Pain Points**:
+- Macro synthesis is time-consuming (12+ hours for IC update)
+- Difficult to link macro to micro decisions
+- Needs scenario modeling tools
+- Wants automated macro indicator tracking
+
+**What She Wants from AI Agents**:
+- Automated macro data synthesis
+- Scenario modeling tools
+- Economic indicator tracking
+- Linking macro themes to stock implications
+
+**Interaction with Agents**:
+- **Pre-IC**: Uses agents to compile macro data
+- **Analysis**: "What's market pricing for Fed rate cuts?"
+- **Scenarios**: "Model recession scenario impact on portfolio"
+- **Monitoring**: Tracks macro indicators via sleeper agents
+
+---
+
+## 2.3 Supporting Cast (Humans)
+
+#### Katherine Sullivan - IC Administrator
+**Role**: Investment committee coordinator  
+**Responsibilities**: Schedule IC, compile materials, take minutes, track action items
+
+**Agent Dependency**: Heavy user of:
+- Document Generator (pre-IC package compilation)
+- Minutes Scribe (automated minute-taking)
+- Action Item Tracker (follow-up management)
+
+**Time Savings**: 60% reduction (from 12 hours to 5 hours per IC)
+
+---
+
+#### Dr. Lisa Wong - Head of Quantitative Research
+**Role**: Quantitative analysis lead  
+**Responsibilities**: Factor models, risk analytics, portfolio optimization
+
+**Agent Dependency**: Pre-work Quant Agent automates 70% of routine work
+
+**Time Savings**: 25 hours per week → 8 hours (67% reduction)
+
+---
+
+#### Marcus Thompson - Lead Trader
+**Role**: Senior equity trader  
+**Responsibilities**: Execute large orders, manage algorithms, report performance
+
+**Agent Dependency**: Post-session agents (trade order generation, TCA reports)
+
+**Time Savings**: 2 hours per day on reporting (40% reduction)
+
+---
+
+## 2.4 The AI Agents (Digital Cast)
+
+### Pre-Work Agents (The Research Team)
+
+#### 1. Research Synthesizer Agent
+**Agent ID**: `pre_research_synthesizer_001`  
+**Persona**: Tireless research associate who reads everything  
+**Human Equivalent**: Junior analyst doing literature reviews
+
+**Capabilities**:
+- Ingest SEC filings (10-K, 10-Q, 8-K, DEF 14A)
+- Extract earnings transcripts and analyze management commentary
+- Aggregate financial data across periods
+- Synthesize news and industry reports
+- Generate Initial Idea Briefs (2-3 pages)
+- Create comparable company analyses
+
+**Tools (MCPs)**:
+- `sec_edgar_mcp`: Access SEC EDGAR filings
+- `earnings_transcript_mcp`: Earnings call transcripts
+- `financial_data_mcp`: FactSet/Bloomberg data
+- `news_aggregator_mcp`: Reuters, Bloomberg news
+- `document_processor_mcp`: Parse PDFs, extract tables
+- `web_scraper_mcp`: Company websites, IR pages
+
+**Typical Workflow**:
+```
+INPUT: "Analyze NVIDIA as potential investment"
+  ↓
+1. Fetch 10-K, 10-Q (latest 2)
+2. Get earnings transcripts (latest 2)
+3. Pull 8 quarters of financials
+4. Aggregate 30 days of news
+5. Scrape company IR page
+  ↓
+6. Synthesize with Claude
+7. Structure as Initial Idea Brief
+  ↓
+OUTPUT: 2-3 page brief in 60 seconds
+```
+
+**Output Artifact**: Initial Idea Brief (markdown/PDF)
+
+**Performance Metrics**:
+- Speed: 60-90 seconds for initial brief
+- Accuracy: 95%+ (human-validated)
+- Coverage: 100% of requested data sources
+- Cost: $0.50-1.00 per brief (Claude API)
+
+---
+
+#### 2. Financial Modeler Agent
+**Agent ID**: `pre_financial_modeler_001`  
+**Persona**: Spreadsheet wizard, valuation expert  
+**Human Equivalent**: Analyst building DCF models
+
+**Capabilities**:
+- Build 3-statement financial models
+- Generate DCF valuations with sensitivity analysis
+- Create comparable company analyses
+- Calculate valuation multiples across scenarios
+- Perform scenario analysis (bull/base/bear)
+
+**Tools (MCPs)**:
+- `financial_modeling_mcp`: Excel/Python modeling
+- `market_data_mcp`: Historical prices, multiples
+- `assumptions_library_mcp`: Industry assumptions
+- `scenario_builder_mcp`: Scenario generation
+- `sensitivity_analyzer_mcp`: Tornado charts
+
+**Typical Workflow**:
+```
+INPUT: "Build DCF for NVIDIA with 3 scenarios"
+  ↓
+1. Load financial statements
+2. Project 10-year income statement
+3. Calculate FCF
+4. Compute WACC (risk-free + beta * MRP)
+5. Apply terminal value
+6. Run sensitivity analysis
+  ↓
+OUTPUT: DCF model with fair value in 2-3 minutes
+```
+
+**Output Artifact**: Financial Model (Excel/JSON)
+
+**Performance Metrics**:
+- Speed: 2-3 minutes for full DCF
+- Accuracy: 98% (formula validation)
+- Scenarios: Bull/Base/Bear + sensitivities
+- Cost: $0.30-0.50 per model
+
+---
+
+#### 3. Quant Analyst Agent
+**Agent ID**: `pre_quant_analyst_001`  
+**Persona**: Data scientist, factor expert  
+**Human Equivalent**: Quantitative researcher
+
+**Capabilities**:
+- Calculate factor exposures (value, growth, momentum, quality, size, volatility)
+- Analyze portfolio risk impact (VaR, tracking error, beta)
+- Run backtests and historical simulations
+- Generate peer quintile rankings
+- Create risk-adjusted return forecasts
+
+**Tools (MCPs)**:
+- `factor_model_mcp`: MSCI Barra or custom factors
+- `risk_analytics_mcp`: VaR, CVaR, stress testing
+- `backtest_engine_mcp`: Historical simulations
+- `portfolio_optimizer_mcp`: Mean-variance optimization
+- `correlation_matrix_mcp`: Historical correlations
+
+**Typical Workflow**:
+```
+INPUT: "Factor analysis on NVDA at 3.5% weight"
+  ↓
+1. Get security factor loadings
+2. Calculate portfolio factor exposures
+3. Compute risk metrics (VaR, TE)
+4. Analyze correlations to existing holdings
+5. Run mean reversion analysis
+  ↓
+OUTPUT: Quant Supplement in 2-3 minutes
+```
+
+**Output Artifact**: Quantitative Analysis Report
+
+**Performance Metrics**:
+- Speed: 2-3 minutes for full analysis
+- Accuracy: 99%+ (mathematical precision)
+- Coverage: All major factors + custom
+- Cost: $0.40-0.60 per analysis
+
+---
+
+#### 4. Document Generator Agent
+**Agent ID**: `pre_document_generator_001`  
+**Persona**: Technical writer, report specialist  
+**Human Equivalent**: Analyst formatting reports
+
+**Capabilities**:
+- Compile research reports (40+ pages)
+- Create IC presentation materials
+- Generate portfolio impact analyses
+- Format tables, charts, exhibits
+- Apply consistent house styling
+
+**Tools (MCPs)**:
+- `template_engine_mcp`: Report templates
+- `document_formatter_mcp`: Markdown → PDF/DOCX
+- `chart_generator_mcp`: Plotly, Matplotlib
+- `table_formatter_mcp`: Financial tables
+- `style_guide_mcp`: House style enforcement
+
+**Typical Workflow**:
+```
+INPUT: Research Synthesizer + Financial Model + Quant Analysis
+  ↓
+1. Structure content per template
+2. Format tables and charts
+3. Generate executive summary
+4. Create table of contents
+5. Apply house style (fonts, colors, headers)
+  ↓
+OUTPUT: 40-page formatted PDF in 5 minutes
+```
+
+**Output Artifact**: Full Research Report (PDF/DOCX)
+
+**Performance Metrics**:
+- Speed: 5-10 minutes for full report
+- Consistency: 100% (template-based)
+- Format: PDF, DOCX, Markdown
+- Cost: $0.20-0.30 per report
+
+---
+
+### In-Session Agents (The Debate Team)
+
+#### 5. Contrarian Analyst Agent
+**Agent ID**: `session_contrarian_001`  
+**Persona**: Devil's advocate, bear case expert  
+**Human Equivalent**: Analyst arguing opposite side
+
+**Capabilities**:
+- Generate bear case arguments in 30-45 seconds
+- Identify thesis risks and holes
+- Challenge valuation assumptions
+- Find contrary evidence and precedents
+- Present alternative scenarios with probabilities
+
+**Tools (MCPs)**:
+- `argument_generator_mcp`: Counter-arguments
+- `risk_identifier_mcp`: Overlooked risks
+- `precedent_finder_mcp`: Historical analogies
+- `news_monitor_mcp`: Negative news
+- `short_thesis_mcp`: Short-seller reports
+
+**Typical Workflow (Real-Time)**:
+```
+IC QUESTION: "What if we're at peak margins?"
+  ↓ (30 seconds)
+1. Identify margin compression risks
+2. Find historical precedents (Intel, Cisco)
+3. Quantify bear case impact
+4. Assess probability
+5. Calculate expected value impact
+  ↓
+OUTPUT: Structured bear case with audio summary
+```
+
+**Output Artifact**: Contrarian Analysis (markdown + audio)
+
+**Performance Metrics**:
+- Speed: 30-45 seconds (hard constraint)
+- Relevance: 90%+ (addresses IC question)
+- Depth: 3-5 material risks with evidence
+- Audio: 40-second summary
+
+---
+
+#### 6. Data Retrieval Specialist Agent
+**Agent ID**: `session_data_retriever_001`  
+**Persona**: Research librarian, fact-checker  
+**Human Equivalent**: Analyst pulling data mid-meeting
+
+**Capabilities**:
+- Answer specific data questions in 20-30 seconds
+- Pull historical analogies and precedents
+- Fetch competitor data for comparison
+- Retrieve regulatory filings quickly
+- Fact-check statements
+
+**Tools (MCPs)**:
+- `historical_data_mcp`: Time-series databases
+- `comparable_finder_mcp`: Similar situations
+- `fact_checker_mcp`: Verify claims
+- `regulatory_database_mcp`: SEC, FINRA
+- `earnings_database_mcp`: Historical earnings
+
+**Typical Workflow (Real-Time)**:
+```
+IC QUESTION: "How concentrated were Cisco's customers in the 1990s?"
+  ↓ (20 seconds)
+1. Query historical database
+2. Extract customer concentration data
+3. Compare to current situation (NVDA)
+4. Format findings
+  ↓
+OUTPUT: Data summary with comparison
+```
+
+**Output Artifact**: Data Brief (structured text/table)
+
+**Performance Metrics**:
+- Speed: 20-30 seconds
+- Accuracy: 99%+ (fact-based)
+- Relevance: 95%+ (answers question)
+- Format: Tables, bullets, quick-scan
+
+---
+
+#### 7. Scenario Simulator Agent
+**Agent ID**: `session_scenario_simulator_001`  
+**Persona**: What-if analyst, Monte Carlo expert  
+**Human Equivalent**: Analyst running sensitivity
+
+**Capabilities**:
+- Run quick scenario analyses in 25-30 seconds
+- Calculate impact of assumption changes
+- Simulate portfolio impact of decisions
+- Generate probability distributions
+- Show risk/return trade-offs
+
+**Tools (MCPs)**:
+- `monte_carlo_mcp`: Simulations
+- `scenario_engine_mcp`: Custom scenarios
+- `portfolio_impact_mcp`: Real-time impact
+- `probability_calculator_mcp`: Bayesian updates
+- `visualization_mcp`: Quick charts
+
+**Typical Workflow (Real-Time)**:
+```
+IC QUESTION: "What if we do 4% instead of 3%?"
+  ↓ (25 seconds)
+1. Calculate upside scenario (stock to $1,200)
+2. Calculate downside scenario (stock to $650)
+3. Compute risk metrics (TE, VaR)
+4. Compare 3% vs 4% outcomes
+  ↓
+OUTPUT: Risk/reward comparison with table
+```
+
+**Output Artifact**: Scenario Analysis (table + chart)
+
+**Performance Metrics**:
+- Speed: 25-30 seconds
+- Scenarios: 2-4 simultaneous
+- Metrics: Returns, risk, probabilities
+- Visualization: Tables, charts
+
+---
+
+#### 8. Voice Synthesizer Agent
+**Agent ID**: `session_voice_synthesizer_001`  
+**Persona**: Broadcaster, audio producer  
+**Human Equivalent**: Someone reading summary aloud
+
+**Capabilities**:
+- Convert written analysis to natural speech
+- Generate 30-45 second audio summaries
+- Adjust pacing for comprehension
+- Professional voice quality
+
+**Tools (MCPs)**:
+- `text_to_speech_mcp`: Google TTS / ElevenLabs
+- `script_condenser_mcp`: Shorten to 30-45 sec
+- `audio_mixer_mcp`: Normalize volume
+
+**Typical Workflow**:
+```
+INPUT: 500-word bear case analysis
+  ↓
+1. Extract key points
+2. Condense to 40-second script
+3. Convert to speech
+4. Upload to S3, return URL
+  ↓
+OUTPUT: Audio file URL (MP3)
+```
+
+**Output Artifact**: Audio file (MP3)
+
+**Performance Metrics**:
+- Speed: 10-15 seconds to generate
+- Duration: 30-45 seconds per summary
+- Quality: Professional voice
+- Format: MP3, 128 kbps
+
+---
+
+### Post-Session Agents (The Operations Team)
+
+#### 9. Minutes Scribe Agent
+**Agent ID**: `post_minutes_scribe_001`  
+**Persona**: Court reporter, professional note-taker  
+**Human Equivalent**: IC Administrator
+
+**Capabilities**:
+- Transcribe IC meeting (if recorded)
+- Structure minutes per template
+- Capture decisions, votes, action items
+- Generate decision summary emails
+- Create audit trail documentation
+
+**Tools (MCPs)**:
+- `transcription_mcp`: Audio → text (Google Speech)
+- `meeting_parser_mcp`: Identify structure
+- `action_item_extractor_mcp`: Find todos
+- `sentiment_analyzer_mcp`: Gauge conviction
+- `template_formatter_mcp`: Apply template
+
+**Typical Workflow**:
+```
+INPUT: IC meeting recording (2.5 hours)
+  ↓ (30 minutes processing)
+1. Transcribe audio with speaker labels
+2. Parse into sections (by agenda item)
+3. Extract decisions and votes
+4. Identify action items with owners
+5. Format per IC minutes template
+  ↓
+OUTPUT: Full IC minutes (15-20 pages)
+```
+
+**Output Artifact**: IC Meeting Minutes (PDF/DOCX)
+
+**Performance Metrics**:
+- Speed: 30-45 minutes after meeting
+- Accuracy: 95%+ (human review recommended)
+- Completeness: All decisions captured
+- Format: Standard template
+
+---
+
+#### 10. Trade Order Generator Agent
+**Agent ID**: `post_trade_order_generator_001`  
+**Persona**: Trade operations specialist  
+**Human Equivalent**: PM writing trade orders
+
+**Capabilities**:
+- Generate trade order tickets from IC decisions
+- Specify execution parameters (VWAP, TWAP, etc.)
+- Calculate share quantities from target weights
+- Add risk and compliance annotations
+- Route to trading desk
+
+**Tools (MCPs)**:
+- `order_template_mcp`: Standard formats
+- `price_feed_mcp`: Current market prices
+- `position_calculator_mcp`: Share quantity math
+- `execution_strategy_mcp`: Algo recommendations
+- `compliance_checker_mcp`: Pre-trade validation
+
+**Typical Workflow**:
+```
+INPUT: IC Decision "Buy NVDA to 3.0% weight"
+  ↓ (2 minutes)
+1. Current portfolio value: $4B
+2. Target position: 3.0% × $4B = $120M
+3. Current price: $875.32
+4. Shares needed: $120M / $875.32 = 137,086
+5. Recommend execution: VWAP 3-day
+6. Generate order ticket
+  ↓
+OUTPUT: Trade Order Ticket (structured)
+```
+
+**Output Artifact**: Trade Order Ticket
+
+**Performance Metrics**:
+- Speed: 1-2 minutes per order
+- Accuracy: 100% (mathematical)
+- Compliance: Automated checks
+- Routing: Direct to trading desk
+
+---
+
+#### 11. Risk Report Generator Agent
+**Agent ID**: `post_risk_reporter_001`  
+**Persona**: Risk analyst, compliance specialist  
+**Human Equivalent**: Risk team
+
+**Capabilities**:
+- Generate post-IC risk approval memos
+- Calculate pro forma portfolio metrics
+- Run compliance checks
+- Create pre-trade risk reports
+- Document risk sign-offs
+
+**Tools (MCPs)**:
+- `risk_calculator_mcp`: VaR, TE, factors
+- `compliance_rules_mcp`: Mandate limits
+- `stress_tester_mcp`: Scenarios
+- `limit_checker_mcp`: Policy validation
+- `report_generator_mcp`: Format reports
+
+**Typical Workflow**:
+```
+INPUT: Approved IC decisions
+  ↓ (5 minutes)
+1. Calculate pro forma risk metrics
+2. Check mandate compliance
+3. Run stress tests
+4. Validate execution feasibility
+5. Generate approval memo
+  ↓
+OUTPUT: Pre-Trade Risk Approval (5-7 pages)
+```
+
+**Output Artifact**: Risk Approval Memo
+
+**Performance Metrics**:
+- Speed: 5-10 minutes
+- Compliance: 100% policy checks
+- Risk Metrics: VaR, TE, factors
+- Approval: Ready for sign-off
+
+---
+
+#### 12. Attribution Analyst Agent
+**Agent ID**: `post_attribution_analyst_001`  
+**Persona**: Performance analyst  
+**Human Equivalent**: Performance team
+
+**Capabilities**:
+- Generate daily/weekly position updates
+- Calculate performance attribution
+- Track thesis vs. reality
+- Monitor sell disciplines
+- Alert on material changes
+
+**Tools (MCPs)**:
+- `returns_calculator_mcp`: Position returns
+- `attribution_engine_mcp`: Brinson-Fachler
+- `thesis_tracker_mcp`: Actual vs expected
+- `alert_generator_mcp`: Deviations
+- `report_formatter_mcp`: Structure updates
+
+**Typical Workflow**:
+```
+INPUT: Position (NVDA) after 1 week
+  ↓ (2 minutes)
+1. Calculate return since entry
+2. Compare to benchmark
+3. Check vs. thesis expectations
+4. Identify material news
+5. Assess sell discipline triggers
+  ↓
+OUTPUT: Weekly Position Update (2-3 pages)
+```
+
+**Output Artifact**: Position Update Report
+
+**Performance Metrics**:
+- Frequency: Daily/Weekly/Monthly
+- Speed: 2-3 minutes per position
+- Coverage: All positions
+- Alerts: Automated flagging
+
+---
+
+### Sleeper Agents (The Monitoring Team)
+
+#### 13. Thesis Monitor Agent
+**Agent ID**: `sleeper_thesis_monitor_001`  
+**Persona**: Vigilant watchdog  
+**Human Equivalent**: Analyst checking thesis
+
+**Activation**: Daily at market close (4:00 PM EST)
+
+**Capabilities**:
+- Monitor key thesis points daily
+- Track KPIs vs. expectations
+- Identify thesis-breaking events
+- Alert on deviations
+- Suggest thesis updates
+
+**Tools (MCPs)**:
+- `kpi_tracker_mcp`: Metrics vs thesis
+- `news_monitor_mcp`: Material news
+- `earnings_tracker_mcp`: vs guidance
+- `alert_engine_mcp`: Threshold alerts
+- `thesis_comparison_mcp`: Actual vs expected
+
+**Daily Workflow**:
+```
+FOR EACH position (48 total):
+  ↓
+1. Check price vs entry (>10% → alert)
+2. Scan news mentions
+3. Verify sell disciplines
+4. Compare KPIs to thesis
+  ↓
+IF deviation detected:
+  Generate alert to analyst
+```
+
+**Output Artifact**: Daily Position Checks + Alerts
+
+**Performance Metrics**:
+- Frequency: Daily (automated)
+- Coverage: 100% of positions
+- Alert Rate: ~5-10% (2-5 alerts/day)
+- False Positives: <5%
+
+---
+
+#### 14. Market Event Monitor Agent
+**Agent ID**: `sleeper_market_monitor_001`  
+**Persona**: News junkie, event detector  
+**Human Equivalent**: Analyst watching Bloomberg
+
+**Activation**: Real-time (continuous) + EOD summary
+
+**Capabilities**:
+- Monitor real-time news feeds
+- Detect material events (earnings, M&A, regulatory)
+- Flag price movements >5%
+- Track sector/macro developments
+- Generate event-based alerts
+
+**Tools (MCPs)**:
+- `real_time_news_mcp`: Bloomberg, Reuters, Twitter
+- `price_monitor_mcp`: Real-time prices
+- `event_classifier_mcp`: Materiality
+- `impact_analyzer_mcp`: Portfolio impact
+- `alert_router_mcp`: Send to analyst
+
+**Event Detection Logic**:
+```
+REAL-TIME MONITORING:
+  ↓
+IF stock moves >5% in 30 minutes:
+  1. Investigate cause
+  2. Analyze news/filings
+  3. Assess thesis impact
+  4. Alert analyst (within 5 min)
+```
+
+**Output Artifact**: Real-time Alerts
+
+**Performance Metrics**:
+- Response Time: <5 minutes
+- Accuracy: 90%+ (material events)
+- False Positives: <10%
+- Coverage: All positions
+
+---
+
+#### 15. Compliance Monitor Agent
+**Agent ID**: `sleeper_compliance_monitor_001`  
+**Persona**: Compliance officer  
+**Human Equivalent**: Compliance team
+
+**Activation**: Daily pre-market (7:00 AM) + Continuous
+
+**Capabilities**:
+- Daily portfolio compliance checks
+- Monitor restricted list changes
+- Track position limit breaches
+- Detect unusual trading patterns
+- Generate compliance reports
+
+**Tools (MCPs)**:
+- `compliance_rules_mcp`: Mandate rules
+- `restricted_list_mcp`: Broker lists
+- `limit_checker_mcp`: Position limits
+- `trade_surveillance_mcp`: Patterns
+- `regulatory_calendar_mcp`: Deadlines
+
+**Daily Checks**:
+```
+PRE-MARKET (7:00 AM):
+  ↓
+1. Check restricted list updates
+2. Verify no insider trading concerns
+3. Review pending orders
+4. Check approaching limits
+  ↓
+POST-CLOSE (5:00 PM):
+  ↓
+1. Verify trades settled
+2. Check position limits
+3. Validate mandate compliance
+4. Generate daily report
+```
+
+**Output Artifact**: Daily Compliance Report
+
+**Performance Metrics**:
+- Frequency: Daily + continuous
+- Coverage: 100% of activity
+- Breach Detection: Real-time
+- Reporting: Automated
+
+---
+
+#### 16. Risk Regime Monitor Agent
+**Agent ID**: `sleeper_risk_monitor_001`  
+**Persona**: Risk manager  
+**Human Equivalent**: Risk analyst
+
+**Activation**: Every 15 minutes during market hours
+
+**Capabilities**:
+- Monitor portfolio VaR, TE continuously
+- Detect risk regime changes
+- Track correlations and volatility
+- Identify tail risk scenarios
+- Alert on limit approaches
+
+**Tools (MCPs)**:
+- `var_calculator_mcp`: Real-time VaR
+- `correlation_monitor_mcp`: Correlation shifts
+- `volatility_tracker_mcp`: Realized/implied vol
+- `stress_tester_mcp`: Real-time stress
+- `risk_alert_mcp`: Threshold alerts
+
+**Monitoring Logic**:
+```
+EVERY 15 MINUTES:
+  ↓
+1. Calculate real-time VaR
+2. Check vs limit (2.00%)
+3. IF >90% → Warning alert
+4. IF >100% → Breach alert
+  ↓
+DAILY (EOD):
+  ↓
+1. Calculate tracking error
+2. Measure factor exposures
+3. Run stress tests
+4. Generate dashboard
+```
+
+**Output Artifact**: Risk Dashboard + Alerts
+
+**Performance Metrics**:
+- Frequency: Every 15 minutes
+- Latency: <30 seconds
+- Coverage: All risk metrics
+- Predictive Alerts: Yes
+
+---
+
+## 2.5 Interaction Patterns & Workflows
+
+### Workflow 1: Standard Research to IC Decision
+
+```
+Week -4: Sarah identifies NVIDIA opportunity
+  ↓
+Sarah → Pre-Research Synthesizer: "Analyze NVIDIA as investment"
+  ↓ (30 seconds)
+Pre-Research Synthesizer → Sarah: Initial Idea Brief
+  ↓
+Sarah reviews, decides to proceed
+  ↓
+Sarah → Pre-Financial Modeler: "Build DCF model with 3 scenarios"
+Sarah → Pre-Quant Analyst: "Run factor analysis and risk impact"
+  ↓ (parallel, 2-3 minutes)
+Both agents return outputs
+  ↓
+Sarah reviews, refines assumptions, re-runs
+  ↓ (iterative over 2-3 days)
+Sarah → Pre-Document Generator: "Compile into full research report"
+  ↓ (5 minutes)
+Pre-Document Generator → Sarah: 40-page formatted report
+  ↓
+Sarah reviews, edits, finalizes
+  ↓
+Week -1: Report submitted to IC package
+  ↓
+IC Administrators compile package (automated)
+  ↓
+Week 0 (Monday): IC package distributed
+  ↓
+Week 0 (Friday): Investment Committee Meeting
+  ↓
+  DURING MEETING:
+  Jonathan questions valuation
+    ↓
+  Michael Torres → Session-Contrarian: "Present bear case"
+    ↓ (30 seconds)
+  Session-Contrarian → IC: Bear case analysis + audio
+    ↓
+  Discussion ensues
+    ↓
+  Rebecca asks: "What's historical precedent for customer concentration?"
+    ↓
+  Michael Torres → Session-Data-Retriever: "Find similar situations"
+    ↓ (20 seconds)
+  Session-Data-Retriever → IC: Cisco 1995-2000 analysis
+    ↓
+  More discussion
+    ↓
+  Michael: "What if we do 4% instead of 3%?"
+    ↓
+  Michael Torres → Session-Scenario-Simulator: "Compare 3% vs 4%"
+    ↓ (25 seconds)
+  Session-Scenario-Simulator → IC: Risk/reward analysis
+    ↓
+  IC votes and decides: 3.0% position approved
+  ↓
+MEETING ENDS
+  ↓
+Post-Minutes-Scribe → Katherine: Draft minutes (30 mins)
+Post-Trade-Order-Generator → Michelle: Trade order tickets
+Post-Risk-Reporter → Alex: Pre-trade risk approval
+  ↓ (all within 1 hour of meeting end)
+Katherine reviews minutes, approves
+Alex reviews risk report, signs off
+  ↓
+Same day (2 PM): Minutes distributed
+Same day (3 PM): Orders ready for execution
+  ↓
+Next trading day: Execution begins
+  ↓
+Post-Attribution-Analyst: Daily execution reports
+  ↓
+After execution complete:
+Post-Attribution-Analyst: Final execution summary with TCA
+  ↓
+ONGOING:
+Sleeper-Thesis-Monitor: Daily checks on NVDA thesis
+Sleeper-Market-Monitor: Real-time news/price alerts
+Sleeper-Compliance-Monitor: Daily compliance checks
+Sleeper-Risk-Monitor: Continuous risk monitoring
+```
+
+---
+
+### Workflow 2: Urgent Intra-Day Decision
+
+```
+SCENARIO: Major news breaks on existing position
+
+10:42 AM: Microsoft CFO comments on moderating AI capex
+  ↓
+Sleeper-Market-Monitor detects NVDA down 6.2%
+  ↓ (within 3 minutes)
+Alert generated and sent to:
+  - Sarah Chen (analyst)
+  - Michael Torres (CIO)
+  - Rebecca Zhang (PM)
+  ↓
+Michael calls emergency meeting (11:00 AM)
+  ↓
+Sarah → Pre-Research-Synthesizer: "Analyze Microsoft commentary"
+  ↓ (2 minutes)
+Pre-Research-Synthesizer → Sarah: Summary and implications
+  ↓
+Sarah → Pre-Financial-Modeler: "Update with 20% lower capex"
+  ↓ (1 minute)
+Pre-Financial-Modeler → Sarah: Revised valuation: $820 (-8%)
+  ↓
+11:00 AM: Quick IC meeting (virtual)
+  ↓
+Sarah presents analysis
+  ↓
+Michael → Session-Scenario-Simulator: "Show hold, trim 50%, exit"
+  ↓ (30 seconds)
+Session-Scenario-Simulator → IC: Three-path comparison
+  ↓
+Discussion
+  ↓
+Michael → Session-Contrarian: "Buying opportunity or thesis break?"
+  ↓ (45 seconds)
+Session-Contrarian → IC: "Timing issue not demand destruction. HOLD."
+  ↓
+Decision: HOLD position, no action
+  ↓
+11:20 AM: Meeting ends
+  ↓
+Post-Minutes-Scribe → Katherine: Emergency meeting minutes
+  ↓
+Same day: Documentation complete, decision logged
+  ↓
+Sleeper-Thesis-Monitor: Updated to watch Microsoft closely
+```
+
+---
+
+### Workflow 3: Monthly Monitoring & Reporting
+
+```
+Month End (March 31):
+  ↓
+Sleeper-Thesis-Monitor: Monthly position updates (48 holdings)
+  ↓ (automated, runs overnight)
+48 updates generated
+  ↓
+Post-Attribution-Analyst: Monthly attribution report
+  ↓ (automated)
+Performance attribution completed
+  ↓
+Morning (April 1):
+Sarah Chen receives:
+  - NVDA monthly position update
+  - AAPL monthly position update
+  - META monthly position update
+  (all her positions)
+  ↓
+Sarah reviews each, adds commentary
+  ↓
+Sleeper-Compliance-Monitor: Monthly compliance report
+  ↓
+Patricia Moore receives report
+  ↓
+Sleeper-Risk-Monitor: Monthly risk review
+  ↓
+Alex Reyes receives report
+  ↓
+All reports compiled into monthly IC package
+  ↓
+Next IC meeting: Portfolio review with automated materials
+```
+
+---
+
+# 3. SYSTEM ARCHITECTURE
+
+## 3.1 High-Level Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    PRESENTATION LAYER                            │
+│                                                                   │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │         React Application (TypeScript)                     │  │
+│  │                                                             │  │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────────────────────┐│  │
+│  │  │IC Flow   │  │Agent     │  │Artifact Viewer           ││  │
+│  │  │Timeline  │  │Panel     │  │(Reports, Charts)         ││  │
+│  │  └──────────┘  └──────────┘  └──────────────────────────┘│  │
+│  │                                                             │  │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────────────────────┐│  │
+│  │  │Dashboard │  │Live      │  │Monitoring                ││  │
+│  │  │(Portfolio│  │Meeting   │  │Console                   ││  │
+│  │  └──────────┘  └──────────┘  └──────────────────────────┘│  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                   │
+│  WebSocket (Real-time) ←───────────→  REST API (CRUD)           │
+└──────────────┬──────────────────────────────────┬───────────────┘
+               │                                  │
+┌──────────────┴──────────────────────────────────┴───────────────┐
+│                  ORCHESTRATION LAYER                             │
+│                                                                   │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │            Temporal Workflow Engine                        │  │
+│  │  (Research → IC → Trading → Monitoring workflows)          │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                   │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │              Agent Gateway (Rust/FastAPI)                  │  │
+│  │  • Request routing                                         │  │
+│  │  • Authentication / authorization                          │  │
+│  │  • Rate limiting                                           │  │
+│  │  • WebSocket management                                    │  │
+│  └───────────────────────────────────────────────────────────┘  │
+└──────────────┬──────────────────────────────────┬───────────────┘
+               │                                  │
+┌──────────────┴──────────────────────────────────┴───────────────┐
+│                       AGENT LAYER                                │
+│                                                                   │
+│  ┌────────────┐  ┌────────────┐  ┌──────────────────────────┐  │
+│  │Pre-Work    │  │In-Session  │  │Post-Session              │  │
+│  │Agents      │  │Agents      │  │Agents                    │  │
+│  │            │  │            │  │                          │  │
+│  │• Research  │  │• Contrarian│  │• Minutes Scribe          │  │
+│  │• FinModel  │  │• Data Ret  │  │• Trade Order Generator   │  │
+│  │• Quant     │  │• Scenario  │  │• Risk Reporter           │  │
+│  │• DocGen    │  │• Voice     │  │• Attribution             │  │
+│  └────────────┘  └────────────┘  └──────────────────────────┘  │
+│                                                                   │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │                  Sleeper Agents                            │  │
+│  │  (Cron-scheduled + Event-triggered)                        │  │
+│  │                                                             │  │
+│  │  • Thesis Monitor    • Market Event Monitor                │  │
+│  │  • Compliance Monitor • Risk Regime Monitor                │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                   │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │         Google ADK Runtime (Python)                        │  │
+│  │  • Agent lifecycle management                              │  │
+│  │  • Claude API integration                                  │  │
+│  │  • MCP tool execution                                      │  │
+│  │  • Context window management                               │  │
+│  └───────────────────────────────────────────────────────────┘  │
+└──────────────┬──────────────────────────────────┬───────────────┘
+               │                                  │
+┌──────────────┴──────────────────────────────────┴───────────────┐
+│                    TOOL LAYER (MCPs)                             │
+│                                                                   │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │  External Data MCPs                                         │ │
+│  │  • sec_edgar_mcp (SEC filings)                             │ │
+│  │  • earnings_transcript_mcp (AlphaSense, Seeking Alpha)     │ │
+│  │  • financial_data_mcp (FactSet, Bloomberg)                 │ │
+│  │  • news_aggregator_mcp (Reuters, Bloomberg)                │ │
+│  │  • market_data_mcp (Real-time prices)                      │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                                                                   │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │  Internal System MCPs                                       │ │
+│  │  • portfolio_mcp (Position data)                           │ │
+│  │  • order_management_mcp (Orders, executions)               │ │
+│  │  • risk_analytics_mcp (VaR, TE, factors)                   │ │
+│  │  • compliance_mcp (Rules, limits)                          │ │
+│  │  • document_store_mcp (S3 access)                          │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                                                                   │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │  Computation MCPs                                           │ │
+│  │  • financial_modeling_mcp (DCF, comps)                     │ │
+│  │  • factor_model_mcp (Factor analysis)                      │ │
+│  │  • monte_carlo_mcp (Simulations)                           │ │
+│  │  • optimization_mcp (Portfolio optimizer)                  │ │
+│  │  • attribution_engine_mcp (Brinson-Fachler)                │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                                                                   │
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │  Generation MCPs                                            │ │
+│  │  • document_formatter_mcp (MD → PDF/DOCX)                  │ │
+│  │  • chart_generator_mcp (Plotly, Matplotlib)                │ │
+│  │  • text_to_speech_mcp (Google TTS, ElevenLabs)            │ │
+│  │  • template_engine_mcp (Jinja2 templates)                  │ │
+│  └────────────────────────────────────────────────────────────┘ │
+└──────────────┬──────────────────────────────────┬───────────────┘
+               │                                  │
+┌──────────────┴──────────────────────────────────┴───────────────┐
+│                  DATA & SERVICES LAYER                           │
+│                                                                   │
+│  ┌────────┐  ┌────────┐  ┌────────┐  ┌──────────────────────┐  │
+│  │PostgreSQL Redis    S3       VectorDB                       │  │
+│  │        │  │        │  │        │  │(pgvector)             │  │
+│  │• Positions Cache   │• Reports │  │                       │  │
+│  │• Orders │• Sessions │• Models  │  │• Embeddings           │  │
+│  │• Minutes│• State   │• Docs    │  │• RAG                  │  │
+│  └────────┘  └────────┘  └────────┘  └──────────────────────┘  │
+│                                                                   │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │         Existing Rust Microservices (DDD)                  │  │
+│  │  • portfolio_management  • order_management                │  │
+│  │  • risk_management       • compliance                      │  │
+│  │  • market_data           • settlement                      │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                   │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │         External API Integrations                          │  │
+│  │  • Bloomberg API       • FactSet API                       │  │
+│  │  • SEC EDGAR          • AlphaSense                         │  │
+│  │  • Claude API         • Google Cloud (TTS, Speech)         │  │
+│  └───────────────────────────────────────────────────────────┘  │
+└───────────────────────────────────────────────────────────────────┘
+
+                   INFRASTRUCTURE LAYER
+┌───────────────────────────────────────────────────────────────────┐
+│  Kubernetes (EKS) │ Monitoring (Prometheus, Grafana)              │
+│  Load Balancing   │ Logging (ELK Stack)                           │
+│  TLS/SSL         │ Secrets (AWS Secrets Manager)                  │
+└───────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 3.2 Component Specifications
+
+### Frontend (React Application)
+
+**Technology Stack**:
+```typescript
+// Core
+- React 18.3+
+- TypeScript 5.0+
+- Vite 5.0+ (build tool)
+
+// State Management
+- Redux Toolkit (global state)
+- React Query / TanStack Query (server state)
+- Zustand (lightweight local state)
+
+// UI Framework
+- Tailwind CSS 3.0+
+- shadcn/ui (component library)
+- Radix UI (primitives)
+- Framer Motion (animations)
+
+// Data Visualization
+- Recharts (charts)
+- Visx (advanced viz)
+- D3.js (custom visualizations)
+
+// Real-time
+- Socket.io-client (WebSocket)
+- SWR (data fetching)
+
+// Forms
+- React Hook Form
+- Zod (validation)
+
+// Routing
+- React Router v6
+
+// Rich Text
+- React Markdown
+- MDX (interactive docs)
+
+// Audio
+- Howler.js (audio playback)
+
+// Testing
+- Vitest (unit tests)
+- React Testing Library
+- Playwright (E2E)
+```
+
+**Application Structure**:
+```
+src/
+├── app/
+│   ├── store.ts              # Redux store config
+│   └── hooks.ts              # Typed hooks
+├── features/
+│   ├── ic-workflow/
+│   │   ├── components/
+│   │   │   ├── ICTimeline.tsx
+│   │   │   ├── AgentPanel.tsx
+│   │   │   └── MeetingInterface.tsx
+│   │   ├── hooks/
+│   │   │   ├── useAgents.ts
+│   │   │   └── useArtifacts.ts
+│   │   ├── slices/
+│   │   │   └── workflowSlice.ts
+│   │   └── api/
+│   │       └── workflowApi.ts
+│   ├── agents/
+│   │   ├── components/
+│   │   │   ├── AgentCard.tsx
+│   │   │   ├── AgentModal.tsx
+│   │   │   └── AgentOutput.tsx
+│   │   └── types/
+│   │       └── agent.types.ts
+│   ├── artifacts/
+│   │   ├── components/
+│   │   │   ├── ArtifactViewer.tsx
+│   │   │   ├── ResearchReport.tsx
+│   │   │   └── FinancialModel.tsx
+│   │   └── types/
+│   │       └── artifact.types.ts
+│   ├── monitoring/
+│   │   ├── components/
+│   │   │   ├── AlertsPanel.tsx
+│   │   │   ├── ThesisMonitor.tsx
+│   │   │   └── RiskDashboard.tsx
+│   │   └── hooks/
+│   │       └── useMonitoring.ts
+│   └── portfolio/
+│       ├── components/
+│       │   ├── PortfolioOverview.tsx
+│       │   └── PositionDetail.tsx
+│       └── hooks/
+│           └── usePortfolio.ts
+├── components/
+│   ├── ui/              # shadcn/ui components
+│   ├── layout/
+│   └── common/
+├── lib/
+│   ├── api.ts           # API client
+│   ├── websocket.ts     # WebSocket client
+│   └── utils.ts
+├── hooks/
+│   └── useWebSocket.ts
+└── types/
+    └── index.ts
+```
+
+---
+
+### Backend (Agent Layer)
+
+**Technology Stack**:
+```python
+# Core Framework
+- Python 3.11+
+- Google ADK (Agent Development Kit)
+- Anthropic SDK (Claude)
+
+# Web Framework
+- FastAPI (REST API)
+- WebSockets (real-time)
+- Pydantic (validation)
+
+# Orchestration
+- Temporal SDK (workflows)
+- Celery (background jobs)
+- Redis (message broker)
+
+# Data Processing
+- Pandas (data manipulation)
+- NumPy (numerical)
+- Polars (faster alternative)
+
+# Document Generation
+- ReportLab (PDF)
+- WeasyPrint (HTML → PDF)
+- python-docx (DOCX)
+
+# Audio
+- Google Cloud TTS
+- ElevenLabs SDK
+
+# Testing
+- pytest
+- pytest-asyncio
+- httpx (API testing)
+```
+
+**Application Structure**:
+```
+backend/
+├── agents/
+│   ├── base.py                 # BaseAgent class
+│   ├── pre_work/
+│   │   ├── research_synthesizer.py
+│   │   ├── financial_modeler.py
+│   │   ├── quant_analyst.py
+│   │   └── document_generator.py
+│   ├── in_session/
+│   │   ├── contrarian.py
+│   │   ├── data_retriever.py
+│   │   ├── scenario_simulator.py
+│   │   └── voice_synthesizer.py
+│   ├── post_session/
+│   │   ├── minutes_scribe.py
+│   │   ├── trade_order_generator.py
+│   │   ├── risk_reporter.py
+│   │   └── attribution_analyst.py
+│   └── sleeper/
+│       ├── thesis_monitor.py
+│       ├── market_monitor.py
+│       ├── compliance_monitor.py
+│       └── risk_monitor.py
+├── mcp_tools/
+│   ├── external/
+│   │   ├── sec_edgar.py
+│   │   ├── earnings_transcript.py
+│   │   ├── financial_data.py
+│   │   └── news_aggregator.py
+│   ├── internal/
+│   │   ├── portfolio.py
+│   │   ├── order_management.py
+│   │   ├── risk_analytics.py
+│   │   └── compliance.py
+│   ├── computation/
+│   │   ├── financial_modeling.py
+│   │   ├── factor_model.py
+│   │   ├── monte_carlo.py
+│   │   └── optimization.py
+│   └── generation/
+│       ├── document_formatter.py
+│       ├── chart_generator.py
+│       └── text_to_speech.py
+├── api/
+│   ├── main.py                 # FastAPI app
+│   ├── routes/
+│   │   ├── agents.py
+│   │   ├── artifacts.py
+│   │   ├── workflow.py
+│   │   └── monitoring.py
+│   ├── dependencies.py
+│   └── websocket.py
+├── models/
+│   ├── agent.py
+│   ├── artifact.py
+│   ├── execution.py
+│   └── alert.py
+├── services/
+│   ├── agent_service.py
+│   ├── artifact_service.py
+│   └── notification_service.py
+├── workflows/
+│   ├── research_workflow.py
+│   ├── ic_workflow.py
+│   └── monitoring_workflow.py
+├── config/
+│   ├── settings.py
+│   └── templates/
+│       ├── research_report.md
+│       ├── ic_minutes.md
+│       └── risk_approval.md
+└── tests/
+    ├── test_agents/
+    ├── test_mcp_tools/
+    └── test_workflows/
+```
+
+---
+
+## 3.3 Database Schema
+
+### PostgreSQL Schema
+
+```sql
+-- Artifacts Table
+CREATE TABLE artifacts (
+    artifact_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    artifact_type VARCHAR(50) NOT NULL,
+    workflow_stage VARCHAR(50) NOT NULL,
+    created_by VARCHAR(100) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    content JSONB NOT NULL,
+    document_path TEXT,
+    metadata JSONB,
+    parent_artifact_id UUID REFERENCES artifacts(artifact_id),
+    related_security_id VARCHAR(20),
+    related_portfolio_id VARCHAR(20),
+    version INTEGER DEFAULT 1,
+    status VARCHAR(20) DEFAULT 'draft'
+);
+
+CREATE INDEX idx_artifacts_type ON artifacts(artifact_type);
+CREATE INDEX idx_artifacts_security ON artifacts(related_security_id);
+CREATE INDEX idx_artifacts_created ON artifacts(created_at DESC);
+CREATE INDEX idx_artifacts_status ON artifacts(status);
+
+-- Agent Executions Table
+CREATE TABLE agent_executions (
+    execution_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    agent_type VARCHAR(50) NOT NULL,
+    agent_name VARCHAR(100) NOT NULL,
+    triggered_by VARCHAR(50) NOT NULL,
+    trigger_context JSONB,
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    completed_at TIMESTAMPTZ,
+    status VARCHAR(20) NOT NULL DEFAULT 'running',
+    input_data JSONB,
+    output_data JSONB,
+    artifacts_generated UUID[],
+    error_message TEXT,
+    execution_time_ms INTEGER,
+    tokens_used INTEGER,
+    cost_usd NUMERIC(10,4)
+);
+
+CREATE INDEX idx_executions_agent ON agent_executions(agent_name);
+CREATE INDEX idx_executions_status ON agent_executions(status);
+CREATE INDEX idx_executions_started ON agent_executions(started_at DESC);
+
+-- Agent Alerts Table
+CREATE TABLE agent_alerts (
+    alert_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    alert_type VARCHAR(50) NOT NULL,
+    severity VARCHAR(20) NOT NULL,
+    agent_name VARCHAR(100) NOT NULL,
+    security_id VARCHAR(20),
+    portfolio_id VARCHAR(20),
+    alert_message TEXT NOT NULL,
+    alert_data JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    acknowledged_at TIMESTAMPTZ,
+    acknowledged_by VARCHAR(100),
+    resolved_at TIMESTAMPTZ,
+    resolution_notes TEXT
+);
+
+CREATE INDEX idx_alerts_unresolved ON agent_alerts(created_at DESC) 
+    WHERE resolved_at IS NULL;
+CREATE INDEX idx_alerts_severity ON agent_alerts(severity);
+CREATE INDEX idx_alerts_security ON agent_alerts(security_id);
+
+-- IC Decisions Table
+CREATE TABLE ic_decisions (
+    decision_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    ic_meeting_date DATE NOT NULL,
+    security_id VARCHAR(20) NOT NULL,
+    decision_type VARCHAR(20) NOT NULL,
+    proposed_weight NUMERIC(5,2),
+    actual_weight NUMERIC(5,2),
+    vote_result VARCHAR(20) NOT NULL,
+    voting_members JSONB NOT NULL,
+    research_report_id UUID REFERENCES artifacts(artifact_id),
+    ic_minutes_id UUID REFERENCES artifacts(artifact_id),
+    contrarian_analysis_id UUID REFERENCES artifacts(artifact_id),
+    decision_rationale TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_decisions_date ON ic_decisions(ic_meeting_date DESC);
+CREATE INDEX idx_decisions_security ON ic_decisions(security_id);
+
+-- Workflow States Table
+CREATE TABLE workflow_states (
+    workflow_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    workflow_type VARCHAR(50) NOT NULL,
+    security_id VARCHAR(20),
+    current_stage VARCHAR(50) NOT NULL,
+    state_data JSONB NOT NULL,
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    completed_at TIMESTAMPTZ,
+    status VARCHAR(20) NOT NULL DEFAULT 'in_progress'
+);
+
+CREATE INDEX idx_workflows_type ON workflow_states(workflow_type);
+CREATE INDEX idx_workflows_status ON workflow_states(status);
+
+-- Thesis Tracking Table
+CREATE TABLE thesis_tracking (
+    tracking_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    security_id VARCHAR(20) NOT NULL,
+    original_thesis JSONB NOT NULL,
+    entry_date DATE NOT NULL,
+    entry_price NUMERIC(12,4) NOT NULL,
+    target_price NUMERIC(12,4),
+    sell_disciplines JSONB NOT NULL,
+    last_check_date DATE,
+    thesis_status VARCHAR(20) DEFAULT 'healthy',
+    deviations JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_thesis_security ON thesis_tracking(security_id);
+CREATE INDEX idx_thesis_status ON thesis_tracking(thesis_status);
+```
+
+---
+
+## 3.4 API Specifications
+
+### REST API Endpoints
+
+```
+Base URL: https://api.company.com/v1
+
+Authentication: Bearer Token (JWT)
+
+Agents:
+  POST   /agents/execute                    # Execute an agent
+  GET    /agents/{agent_id}/executions      # List executions
+  GET    /agents/executions/{execution_id}  # Get execution details
+  DELETE /agents/executions/{execution_id}  # Cancel execution
+
+Artifacts:
+  GET    /artifacts                         # List artifacts
+  GET    /artifacts/{artifact_id}           # Get artifact
+  POST   /artifacts                         # Create artifact
+  PATCH  /artifacts/{artifact_id}           # Update artifact
+  DELETE /artifacts/{artifact_id}           # Delete artifact
+  GET    /artifacts/{artifact_id}/download  # Download file
+
+Workflow:
+  POST   /workflow/research                 # Start research workflow
+  POST   /workflow/ic-meeting               # Start IC workflow
+  GET    /workflow/{workflow_id}/status     # Get workflow status
+  POST   /workflow/{workflow_id}/cancel     # Cancel workflow
+
+Monitoring:
+  GET    /monitoring/alerts                 # List alerts
+  PATCH  /monitoring/alerts/{alert_id}/ack  # Acknowledge alert
+  PATCH  /monitoring/alerts/{alert_id}/resolve # Resolve alert
+  GET    /monitoring/thesis/{security_id}   # Get thesis health
+
+Portfolio:
+  GET    /portfolio/{portfolio_id}/positions # List positions
+  GET    /portfolio/{portfolio_id}/metrics   # Get risk metrics
+  GET    /positions/{security_id}/updates    # Position updates
+
+IC:
+  GET    /ic/meetings                       # List meetings
+  GET    /ic/meetings/{meeting_id}          # Get meeting details
+  POST   /ic/meetings/{meeting_id}/minutes  # Upload minutes
+  GET    /ic/decisions                      # List decisions
+```
+
+---
+
+### WebSocket Events
+
+```
+Client → Server:
+  agent.execute          # Execute agent
+  agent.cancel           # Cancel execution
+  meeting.join           # Join IC meeting
+  meeting.invoke_agent   # Invoke in-session agent
+  monitoring.subscribe   # Subscribe to alerts
+
+Server → Client:
+  agent.progress         # Execution progress update
+  agent.completed        # Execution completed
+  agent.failed           # Execution failed
+  artifact.created       # New artifact available
+  alert.new              # New alert generated
+  meeting.agent_response # Agent response in meeting
+  monitoring.update      # Position update
+```
+
+---
+
+# 4. AGENT SPECIFICATIONS
+
+## 4.1 Agent Definition Template
+
+```python
+from typing import Dict, Any, List, Optional
+from pydantic import BaseModel
+from anthropic import Anthropic
+
+class AgentConfig(BaseModel):
+    """Configuration for an agent"""
+    agent_id: str
+    agent_name: str
+    agent_type: str  # 'pre_work', 'in_session', 'post_session', 'sleeper'
+    persona: str
+    model: str = "claude-sonnet-4-5"
+    temperature: float = 0.7
+    max_tokens: int = 4000
+    tools: List[str]
+    system_prompt: str
+    activation_trigger: str
+    activation_schedule: Optional[str] = None
+    output_format: str
+    timeout_seconds: int = 300
+
+class AgentExecution(BaseModel):
+    """Runtime execution context"""
+    execution_id: str
+    agent_config: AgentConfig
+    input_context: Dict[str, Any]
+    user_id: str
+    session_id: str
+    parent_execution_id: Optional[str] = None
+    started_at: datetime
+    status: str = "running"
+
+class AgentOutput(BaseModel):
+    """Agent's output"""
+    execution_id: str
+    status: str
+    content: Dict[str, Any]
+    artifacts: List[str]
+    follow_up_questions: Optional[List[str]] = None
+    audio_url: Optional[str] = None
+    error_message: Optional[str] = None
+    execution_time_ms: int
+    tokens_used: int
+    cost_usd: float
+
+class BaseAgent:
+    """Base class for all agents"""
+    
+    def __init__(self, config: AgentConfig):
+        self.config = config
+        self.client = Anthropic()
+        self.tools = self._load_tools()
+        
+    def _load_tools(self) -> List[Tool]:
+        """Load MCP tools"""
+        pass
+    
+    async def execute(self, input_context: Dict[str, Any]) -> AgentOutput:
+        """Main execution method"""
+        pass
+    
+    async def _call_claude(self, prompt: str, context: Dict) -> str:
+        """Call Claude API"""
+        pass
+    
+    async def _generate_artifact(self, content: Dict) -> str:
+        """Generate artifact"""
+        pass
+    
+    async def _call_tool(self, tool_name: str, params: Dict) -> Any:
+        """Execute MCP tool"""
+        pass
+```
+
+---
+
+## 4.2 Sample Agent Implementation: Research Synthesizer
+
+```python
+# agents/pre_work/research_synthesizer.py
+
+from agents.base import BaseAgent, AgentConfig, AgentOutput
+from typing import Dict, Any
+import asyncio
+
+RESEARCH_SYNTHESIZER_CONFIG = AgentConfig(
+    agent_id="pre_research_synthesizer_001",
+    agent_name="Research Synthesizer",
+    agent_type="pre_work",
+    persona="Tireless research associate",
+    model="claude-sonnet-4-5",
+    temperature=0.3,
+    max_tokens=8000,
+    tools=[
+        "sec_edgar_mcp",
+        "earnings_transcript_mcp",
+        "financial_data_mcp",
+        "news_aggregator_mcp",
+        "web_scraper_mcp",
+    ],
+    system_prompt="""You are a senior research analyst tasked with 
+    synthesizing investment research on public companies. Your role is to:
+    
+    1. Gather comprehensive data from multiple sources
+    2. Extract key financial metrics and management themes
+    3. Identify bull/bear arguments with evidence
+    4. Compare to peer companies
+    5. Structure findings in clear, investment-focused format
+    
+    Output Format: Structured markdown with sections, tables, bullets.
+    """,
+    activation_trigger="user_prompt",
+    output_format="markdown",
+    timeout_seconds=180,
+)
+
+class ResearchSynthesizerAgent(BaseAgent):
+    """Agent that synthesizes research on securities"""
+    
+    def __init__(self):
+        super().__init__(RESEARCH_SYNTHESIZER_CONFIG)
+        
+    async def execute(self, input_context: Dict[str, Any]) -> AgentOutput:
+        """Execute research synthesis"""
+        
+        ticker = input_context.get("ticker")
+        depth = input_context.get("depth", "initial_brief")
+        
+        # Step 1: Gather data
+        data = await self._gather_data(ticker)
+        
+        # Step 2: Synthesize with Claude
+        synthesis = await self._synthesize_research(ticker, data, depth)
+        
+        # Step 3: Generate artifact
+        artifact_id = await self._generate_artifact({
+            "type": "initial_brief" if depth == "initial_brief" 
+                    else "research_report",
+            "ticker": ticker,
+            "content": synthesis,
+            "sources": data["sources"],
+        })
+        
+        return AgentOutput(
+            execution_id=self.execution_id,
+            status="success",
+            content=synthesis,
+            artifacts=[artifact_id],
+            follow_up_questions=[
+                "Dig deeper into specific segment?",
+                "Analyze 5-year financial trends?",
+                "Detailed competitive analysis?",
+            ]
+        )
+    
+    async def _gather_data(self, ticker: str) -> Dict[str, Any]:
+        """Gather data from all sources"""
+        
+        results = await asyncio.gather(
+            self._fetch_sec_filings(ticker),
+            self._fetch_earnings_transcripts(ticker),
+            self._fetch_financial_data(ticker),
+            self._fetch_recent_news(ticker),
+        )
+        
+        return {
+            "sec_filings": results[0],
+            "earnings": results[1],
+            "financials": results[2],
+            "news": results[3],
+            "sources": self._compile_sources(results),
+        }
+    
+    async def _synthesize_research(
+        self, 
+        ticker: str, 
+        data: Dict, 
+        depth: str
+    ) -> Dict:
+        """Use Claude to synthesize data"""
+        
+        context = f"""
+        Synthesize this data on {ticker}:
+        
+        SEC Filings: {data['sec_filings']}
+        Earnings: {data['earnings']}
+        Financials: {data['financials']}
+        News: {data['news']}
+        
+        Provide:
+        1. Executive summary
+        2. Business overview
+        3. Financial analysis
+        4. Investment thesis (bull case)
+        5. Key risks (bear case)
+        6. Competitive positioning
+        7. Valuation assessment
+        """
+        
+        response = await self._call_claude(context, {
+            "ticker": ticker,
+            "depth": depth,
+        })
+        
+        return self._parse_response(response)
+```
+
+---
+
+## 4.3 MCP Tool Template
+
+```python
+# mcp_tools/base.py
+
+from typing import Dict, Any, Optional
+from pydantic import BaseModel
+
+class ToolInput(BaseModel):
+    """Input schema for MCP tool"""
+    data: Dict[str, Any]
+    
+class ToolOutput(BaseModel):
+    """Output from MCP tool"""
+    success: bool
+    data: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+
+class MCPTool:
+    """Base class for MCP tools"""
+    
+    name: str
+    description: str
+    input_schema: Dict[str, Any]
+    
+    async def execute(self, input: ToolInput) -> ToolOutput:
+        """Execute the tool"""
+        raise NotImplementedError
+```
+
+---
+
+# 5. ARTIFACT SCHEMA & TEMPLATES
+
+## 5.1 Artifact Type Definitions
+
+```python
+from enum import Enum
+from pydantic import BaseModel
+from typing import Dict, Any, List, Optional
+
+class ArtifactType(Enum):
+    # Pre-work artifacts
+    INITIAL_BRIEF = "initial_brief"
+    RESEARCH_REPORT = "research_report"
+    FINANCIAL_MODEL = "financial_model"
+    QUANT_ANALYSIS = "quant_analysis"
+    
+    # In-session artifacts
+    CONTRARIAN_ANALYSIS = "contrarian_analysis"
+    DATA_BRIEF = "data_brief"
+    SCENARIO_ANALYSIS = "scenario_analysis"
+    AUDIO_SUMMARY = "audio_summary"
+    
+    # Post-session artifacts
+    IC_MINUTES = "ic_minutes"
+    TRADE_ORDER = "trade_order"
+    RISK_APPROVAL = "risk_approval"
+    EXECUTION_REPORT = "execution_report"
+    
+    # Monitoring artifacts
+    DAILY_CHECK = "daily_check"
+    POSITION_UPDATE = "position_update"
+    ALERT = "alert"
+    COMPLIANCE_REPORT = "compliance_report"
+
+class Artifact(BaseModel):
+    """Base artifact model"""
+    artifact_id: str
+    artifact_type: ArtifactType
+    workflow_stage: str
+    created_by: str
+    created_at: datetime
+    content: Dict[str, Any]
+    document_path: Optional[str]
+    metadata: Dict[str, Any]
+    related_security_id: Optional[str]
+    related_portfolio_id: Optional[str]
+```
+
+---
+
+## 5.2 Sample Artifact Templates
+
+### Initial Idea Brief Template
+
+```markdown
+# Investment Research Brief: {{company_name}} ({{ticker}})
+
+**Analyst**: {{analyst_name}}  
+**Date**: {{date}}  
+**Current Price**: ${{price}}  
+**Market Cap**: ${{market_cap}}B  
+
+---
+
+## Executive Summary
+
+{{executive_summary}}
+
+**Key Thesis Points**:
+- {{thesis_point_1}}
+- {{thesis_point_2}}
+- {{thesis_point_3}}
+
+**Preliminary View**: {{recommendation}} - {{rationale}}
+
+---
+
+## Business Overview
+
+{{business_description}}
+
+### Segment Breakdown ({{fiscal_year}})
+
+| Segment | Revenue ($M) | % of Total | YoY Growth |
+|---------|-------------|------------|------------|
+{{#each segments}}
+| {{name}} | {{revenue}} | {{pct_total}}% | {{yoy_growth}}% |
+{{/each}}
+
+---
+
+## Financial Analysis
+
+### Revenue Growth
+
+{{revenue_analysis}}
+
+| Metric | {{fy_minus_2}} | {{fy_minus_1}} | {{fy_current}} | {{fy_plus_1}}E |
+|--------|---------------|---------------|---------------|----------------|
+| Revenue ($M) | {{rev_m2}} | {{rev_m1}} | {{rev_c}} | {{rev_p1}} |
+| YoY Growth % | {{growth_m2}} | {{growth_m1}} | {{growth_c}} | {{growth_p1}} |
+
+### Profitability
+
+{{profitability_analysis}}
+
+| Metric | {{fy_minus_2}} | {{fy_minus_1}} | {{fy_current}} | {{fy_plus_1}}E |
+|--------|---------------|---------------|---------------|----------------|
+| Gross Margin % | {{gm_m2}} | {{gm_m1}} | {{gm_c}} | {{gm_p1}} |
+| Operating Margin % | {{om_m2}} | {{om_m1}} | {{om_c}} | {{om_p1}} |
+| Net Margin % | {{nm_m2}} | {{nm_m1}} | {{nm_c}} | {{nm_p1}} |
+
+---
+
+## Investment Thesis (Bull Case)
+
+{{#each bull_points}}
+### {{number}}. {{title}}
+
+{{description}}
+
+**Supporting Evidence**:
+{{#each evidence}}
+- {{this}}
+{{/each}}
+
+{{/each}}
+
+---
+
+## Key Risks (Bear Case)
+
+{{#each bear_points}}
+### {{number}}. {{title}}
+
+{{description}}
+
+**Probability**: {{probability}}  
+**Impact**: {{impact}}
+
+{{/each}}
+
+---
+
+## Competitive Positioning
+
+{{competitive_analysis}}
+
+### Key Competitors
+
+| Company | Market Share | Strengths | Weaknesses |
+|---------|-------------|-----------|------------|
+{{#each competitors}}
+| {{name}} | {{share}}% | {{strengths}} | {{weaknesses}} |
+{{/each}}
+
+---
+
+## Preliminary Valuation
+
+### Current Valuation Multiples
+
+| Metric | {{ticker}} | Peer Avg | Premium/(Discount) |
+|--------|-----------|----------|-------------------|
+| P/E (FWD) | {{pe_fwd}}x | {{pe_peer}}x | {{pe_prem}}% |
+| EV/Sales | {{ev_sales}}x | {{evs_peer}}x | {{evs_prem}}% |
+| EV/EBITDA | {{ev_ebitda}}x | {{eve_peer}}x | {{eve_prem}}% |
+
+**Qualitative Assessment**: {{valuation_view}}
+
+---
+
+## Appendix
+
+### Data Sources
+{{#each sources}}
+- {{this}}
+{{/each}}
+
+### Analyst Notes
+{{notes}}
+```
+
+---
+
+### Full Research Report Template
+
+```markdown
+# Investment Research Report
+## {{company_name}} ({{ticker}})
+
+---
+
+**Recommendation**: {{recommendation}}  
+**Price Target**: ${{price_target}} ({{upside}}% upside)  
+**Risk Rating**: {{risk_rating}}  
+
+**Analyst**: {{analyst_name}}  
+**Date**: {{date}}  
+**Current Price**: ${{current_price}}  
+
+---
+
+## Table of Contents
+
+1. Executive Summary
+2. Investment Thesis
+3. Business Overview
+4. Financial Analysis
+5. Valuation
+6. Risks
+7. Conclusion
+8. Appendices
+
+---
+
+## 1. Executive Summary
+
+{{executive_summary}}
+
+### Key Investment Highlights
+
+{{#each highlights}}
+- **{{title}}**: {{description}}
+{{/each}}
+
+### Financial Summary
+
+| Metric | FY{{year_m1}} | FY{{year_c}} | FY{{year_p1}}E | FY{{year_p2}}E |
+|--------|--------------|-------------|---------------|---------------|
+| Revenue ($M) | {{rev_m1}} | {{rev_c}} | {{rev_p1}} | {{rev_p2}} |
+| YoY Growth | {{g_m1}}% | {{g_c}}% | {{g_p1}}% | {{g_p2}}% |
+| EPS ($) | {{eps_m1}} | {{eps_c}} | {{eps_p1}} | {{eps_p2}} |
+| FCF/Share ($) | {{fcf_m1}} | {{fcf_c}} | {{fcf_p1}} | {{fcf_p2}} |
+
+---
+
+## 2. Investment Thesis
+
+Our investment thesis rests on {{num_pillars}} key pillars:
+
+{{#each thesis_pillars}}
+### Pillar {{number}}: {{title}}
+
+{{description}}
+
+**Key Drivers**:
+{{#each drivers}}
+- {{this}}
+{{/each}}
+
+**Quantification**:
+{{quantification}}
+
+**Risk Factors**:
+{{#each risks}}
+- {{this}}
+{{/each}}
+
+---
+{{/each}}
+
+### Bull Case Scenario
+
+**Assumptions**:
+{{#each bull_assumptions}}
+- {{this}}
+{{/each}}
+
+**Outcome**: {{bull_outcome}}  
+**Price Target**: ${{bull_target}} ({{bull_upside}}% upside)  
+**Probability**: {{bull_prob}}%
+
+### Base Case Scenario
+
+**Assumptions**:
+{{#each base_assumptions}}
+- {{this}}
+{{/each}}
+
+**Outcome**: {{base_outcome}}  
+**Price Target**: ${{base_target}} ({{base_upside}}% upside)  
+**Probability**: {{base_prob}}%
+
+### Bear Case Scenario
+
+**Assumptions**:
+{{#each bear_assumptions}}
+- {{this}}
+{{/each}}
+
+**Outcome**: {{bear_outcome}}  
+**Price Target**: ${{bear_target}} ({{bear_downside}}% downside)  
+**Probability**: {{bear_prob}}%
+
+---
+
+## 3. Business Overview
+
+### Company Description
+
+{{business_description}}
+
+### Business Model
+
+{{business_model}}
+
+### Competitive Advantages (Moats)
+
+{{#each moats}}
+#### {{number}}. {{title}}
+
+{{description}}
+
+**Sustainability**: {{sustainability}}  
+**Evidence**: {{evidence}}
+{{/each}}
+
+### Segment Analysis
+
+{{#each segments}}
+#### {{name}} Segment
+
+**Size**: ${{size}}M ({{pct}}% of total revenue)  
+**Growth**: {{growth}}% YoY  
+
+{{description}}
+
+**Key Metrics**:
+{{#each metrics}}
+- {{metric}}: {{value}}
+{{/each}}
+
+**Outlook**: {{outlook}}
+
+---
+{{/each}}
+
+---
+
+## 4. Financial Analysis
+
+### Historical Performance
+
+#### Revenue Trends
+
+{{revenue_narrative}}
+
+[Chart: Revenue and Growth Rate (8 quarters)]
+
+#### Profitability Trends
+
+{{profitability_narrative}}
+
+[Chart: Margin Progression]
+
+#### Cash Generation
+
+{{cash_generation_narrative}}
+
+[Chart: FCF and Conversion Rate]
+
+### Financial Model
+
+#### Income Statement Projection
+
+| Line Item | FY{{y_m1}} | FY{{y_c}} | FY{{y_p1}}E | FY{{y_p2}}E | FY{{y_p3}}E |
+|-----------|-----------|----------|------------|------------|------------|
+| Revenue | {{rev_m1}} | {{rev_c}} | {{rev_p1}} | {{rev_p2}} | {{rev_p3}} |
+| YoY Growth % | {{g_m1}} | {{g_c}} | {{g_p1}} | {{g_p2}} | {{g_p3}} |
+| COGS | {{cogs_m1}} | {{cogs_c}} | {{cogs_p1}} | {{cogs_p2}} | {{cogs_p3}} |
+| Gross Profit | {{gp_m1}} | {{gp_c}} | {{gp_p1}} | {{gp_p2}} | {{gp_p3}} |
+| Gross Margin % | {{gm_m1}} | {{gm_c}} | {{gm_p1}} | {{gm_p2}} | {{gm_p3}} |
+| Operating Expenses | {{opex_m1}} | {{opex_c}} | {{opex_p1}} | {{opex_p2}} | {{opex_p3}} |
+| Operating Income | {{oi_m1}} | {{oi_c}} | {{oi_p1}} | {{oi_p2}} | {{oi_p3}} |
+| Operating Margin % | {{om_m1}} | {{om_c}} | {{om_p1}} | {{om_p2}} | {{om_p3}} |
+| Net Income | {{ni_m1}} | {{ni_c}} | {{ni_p1}} | {{ni_p2}} | {{ni_p3}} |
+| EPS ($) | {{eps_m1}} | {{eps_c}} | {{eps_p1}} | {{eps_p2}} | {{eps_p3}} |
+
+#### Key Assumptions
+
+{{#each assumptions}}
+- **{{name}}**: {{value}} (Rationale: {{rationale}})
+{{/each}}
+
+#### Sensitivity Analysis
+
+[Table: Revenue and Margin Sensitivity]
+
+---
+
+## 5. Valuation
+
+### DCF Analysis
+
+**Base Case Fair Value**: ${{dcf_base}}
+
+#### Key Inputs
+
+- **WACC**: {{wacc}}%
+- **Terminal Growth Rate**: {{terminal_growth}}%
+- **Projection Period**: {{projection_years}} years
+
+#### DCF Calculation
+
+| Year | Revenue | EBIT | Tax | NOPAT | Capex | ΔWC | FCF | PV |
+|------|---------|------|-----|-------|-------|-----|-----|-----|
+{{#each dcf_years}}
+| {{year}} | {{rev}} | {{ebit}} | {{tax}} | {{nopat}} | {{capex}} | {{wc}} | {{fcf}} | {{pv}} |
+{{/each}}
+| Terminal | - | - | - | - | - | - | {{terminal_fcf}} | {{terminal_pv}} |
+
+**Enterprise Value**: ${{enterprise_value}}M  
+**Net Debt**: ${{net_debt}}M  
+**Equity Value**: ${{equity_value}}M  
+**Shares Outstanding**: {{shares}}M  
+**Fair Value Per Share**: ${{fair_value}}
+
+#### Sensitivity Analysis
+
+[Table: Fair Value Sensitivity (WACC vs Terminal Growth)]
+
+---
+
+### Relative Valuation
+
+#### Trading Multiples
+
+| Company | P/E (FWD) | EV/Sales | EV/EBITDA | PEG |
+|---------|----------|----------|-----------|-----|
+| {{ticker}} | {{pe}}x | {{evs}}x | {{eve}}x | {{peg}}x |
+{{#each peers}}
+| {{ticker}} | {{pe}}x | {{evs}}x | {{eve}}x | {{peg}}x |
+{{/each}}
+| **Peer Average** | **{{pe_avg}}x** | **{{evs_avg}}x** | **{{eve_avg}}x** | **{{peg_avg}}x** |
+
+**Valuation Assessment**: {{valuation_view}}
+
+#### Historical Valuation Ranges
+
+[Chart: P/E Multiple Over Time]
+
+**Current vs History**:
+- Current P/E: {{pe_current}}x
+- 3-Year Average: {{pe_3y}}x
+- 5-Year Range: {{pe_min}}x - {{pe_max}}x
+- Percentile: {{pe_percentile}}th
+
+---
+
+### Sum-of-the-Parts (if applicable)
+
+{{#if sotp_applicable}}
+| Segment | Valuation Method | Value ($M) |
+|---------|-----------------|-----------|
+{{#each sotp_segments}}
+| {{name}} | {{method}} | {{value}} |
+{{/each}}
+| **Total Enterprise Value** | - | **{{ev_total}}** |
+| Less: Net Debt | - | ({{net_debt}}) |
+| **Equity Value** | - | **{{eq_value}}** |
+| **Per Share** | - | **${{per_share}}** |
+{{/if}}
+
+---
+
+## 6. Risks
+
+### Key Risks to Investment Thesis
+
+{{#each risks}}
+#### {{number}}. {{title}}
+
+**Description**: {{description}}
+
+**Probability**: {{probability}}  
+**Impact**: {{impact}}  
+**Mitigation**: {{mitigation}}
+
+**Quantification**: {{quantification}}
+
+---
+{{/each}}
+
+### Risk Matrix
+
+[Chart: Probability vs Impact Matrix]
+
+---
+
+## 7. Conclusion
+
+{{conclusion}}
+
+### Recommendation Summary
+
+- **Rating**: {{recommendation}}
+- **Price Target**: ${{price_target}}
+- **Upside/Downside**: {{upside_downside}}%
+- **Risk/Reward**: {{risk_reward}}
+- **Time Horizon**: {{time_horizon}}
+
+### Catalysts
+
+{{#each catalysts}}
+- **{{title}}** ({{timing}}): {{description}}
+{{/each}}
+
+### Sell Disciplines
+
+We will reassess our thesis if:
+
+{{#each sell_disciplines}}
+- {{this}}
+{{/each}}
+
+---
+
+## 8. Appendices
+
+### Appendix A: Company Financials (10 Years)
+
+[Full financial statements]
+
+### Appendix B: Comparable Company Analysis
+
+[Detailed peer comparison]
+
+### Appendix C: Management Team
+
+{{#each management}}
+**{{name}}** - {{title}}  
+{{bio}}
+{{/each}}
+
+### Appendix D: Sources
+
+{{#each sources}}
+- {{this}}
+{{/each}}
+
+---
+
+**Disclaimer**: {{disclaimer_text}}
+```
+
+---
+
+### IC Minutes Template
+
+```markdown
+# Investment Committee Meeting Minutes
+
+**Date**: {{meeting_date}}  
+**Time**: {{start_time}} - {{end_time}}  
+**Location**: {{location}}  
+
+---
+
+## Attendees
+
+**Present**:
+{{#each attendees_present}}
+- {{name}} ({{title}})
+{{/each}}
+
+**Absent**:
+{{#each attendees_absent}}
+- {{name}} ({{title}})
+{{/each}}
+
+---
+
+## Agenda
+
+1. Portfolio Review
+2. Macro Update
+3. Investment Proposals
+{{#each proposals}}
+   - {{ticker}}: {{proposal_type}}
+{{/each}}
+4. Position Reviews
+5. Risk Update
+6. Other Business
+
+---
+
+## 1. Portfolio Review
+
+**Presented by**: {{portfolio_presenter}}
+
+{{portfolio_summary}}
+
+### Performance Summary ({{period}})
+
+| Portfolio | Return | Benchmark | Active Return | Tracking Error |
+|-----------|--------|-----------|---------------|----------------|
+{{#each portfolios}}
+| {{name}} | {{return}}% | {{benchmark}}% | {{active}}% | {{te}}% |
+{{/each}}
+
+### Key Points Discussed
+
+{{#each portfolio_discussion_points}}
+- {{this}}
+{{/each}}
+
+---
+
+## 2. Macro Update
+
+**Presented by**: {{macro_presenter}}
+
+{{macro_summary}}
+
+### Economic Outlook
+
+{{economic_outlook}}
+
+### Market Implications
+
+{{market_implications}}
+
+### Key Points Discussed
+
+{{#each macro_discussion_points}}
+- {{this}}
+{{/each}}
+
+---
+
+## 3. Investment Proposals
+
+{{#each proposals}}
+### Proposal {{proposal_number}}: {{ticker}} - {{proposal_type}}
+
+**Presenter**: {{presenter}}  
+**Proposed Action**: {{action}}  
+**Proposed Weight**: {{weight}}%  
+
+#### Executive Summary
+
+{{executive_summary}}
+
+#### Key Discussion Points
+
+{{#each discussion_points}}
+**{{speaker}}**: {{comment}}
+
+{{#if agent_invoked}}
+[{{agent_name}} Agent Invoked]
+{{agent_output_summary}}
+{{/if}}
+{{/each}}
+
+#### Vote
+
+**Motion**: {{motion_text}}
+
+| Member | Vote |
+|--------|------|
+{{#each votes}}
+| {{member}} | {{vote}} |
+{{/each}}
+
+**Result**: {{vote_result}} ({{yes_votes}}-{{no_votes}}-{{abstain_votes}})
+
+#### Decision
+
+{{decision_text}}
+
+#### Rationale
+
+{{decision_rationale}}
+
+#### Action Items
+
+{{#each action_items}}
+- [ ] {{task}} (Owner: {{owner}}, Due: {{due_date}})
+{{/each}}
+
+---
+{{/each}}
+
+---
+
+## 4. Position Reviews
+
+{{#each position_reviews}}
+### {{ticker}}
+
+**Presenter**: {{presenter}}  
+**Current Weight**: {{current_weight}}%  
+**Return Since Entry**: {{return}}%  
+
+#### Status Update
+
+{{status_update}}
+
+#### Thesis Check
+
+{{thesis_check}}
+
+#### Discussion
+
+{{#each discussion_points}}
+- {{this}}
+{{/each}}
+
+#### Decision
+
+{{decision}}
+
+---
+{{/each}}
+
+---
+
+## 5. Risk Update
+
+**Presented by**: {{risk_presenter}}
+
+{{risk_summary}}
+
+### Current Risk Metrics
+
+| Metric | Current | Limit | Utilization |
+|--------|---------|-------|-------------|
+| Tracking Error | {{te}}% | {{te_limit}}% | {{te_util}}% |
+| VaR (95%, 1-day) | {{var}}% | {{var_limit}}% | {{var_util}}% |
+| Max Position | {{max_pos}}% | {{max_pos_limit}}% | {{max_pos_util}}% |
+
+### Key Points Discussed
+
+{{#each risk_discussion_points}}
+- {{this}}
+{{/each}}
+
+---
+
+## 6. Other Business
+
+{{other_business}}
+
+---
+
+## Action Items Summary
+
+{{#each all_action_items}}
+- [ ] {{task}} (Owner: {{owner}}, Due: {{due_date}})
+{{/each}}
+
+---
+
+## Next Meeting
+
+**Date**: {{next_meeting_date}}  
+**Tentative Agenda**: {{next_agenda}}
+
+---
+
+**Minutes Prepared By**: {{minutes_preparer}}  
+**Approved By**: {{approver}}  
+**Date**: {{approval_date}}
+```
+
+---
+
+### Trade Order Ticket Template
+
+```markdown
+# Trade Order Ticket
+
+**Order ID**: {{order_id}}  
+**Date**: {{date}}  
+**Time**: {{time}}  
+
+---
+
+## Order Details
+
+**Security**: {{company_name}} ({{ticker}})  
+**Action**: {{action}}  # BUY / SELL  
+**Order Type**: {{order_type}}  # MARKET / LIMIT / VWAP / TWAP  
+**Quantity**: {{quantity}} shares  
+**Value**: ${{value}}  
+
+---
+
+## Portfolio Details
+
+**Portfolio**: {{portfolio_name}}  
+**Current Position**: {{current_shares}} shares (${{current_value}})  
+**Current Weight**: {{current_weight}}%  
+**Target Weight**: {{target_weight}}%  
+**New Position**: {{new_shares}} shares (${{new_value}})  
+
+---
+
+## Pricing
+
+**Reference Price**: ${{reference_price}} ({{price_time}})  
+**Limit Price**: {{#if limit_price}}${{limit_price}}{{else}}N/A{{/if}}  
+**Price Range**: ${{price_low}} - ${{price_high}}  
+
+---
+
+## Execution Instructions
+
+**Execution Strategy**: {{execution_strategy}}  
+**Time Horizon**: {{time_horizon}}  
+**Urgency**: {{urgency}}  
+**Special Instructions**: {{special_instructions}}
+
+{{#if vwap_twap}}
+**Algorithm Parameters**:
+- Start Time: {{algo_start}}
+- End Time: {{algo_end}}
+- Participation Rate: {{participation_rate}}%
+- Max % of Volume: {{max_volume_pct}}%
+{{/if}}
+
+---
+
+## Risk & Compliance
+
+**Pre-Trade Compliance**: {{compliance_status}}  
+**Restricted List Check**: {{restricted_check}}  
+**Compliance Notes**: {{compliance_notes}}
+
+**Risk Approval**: {{risk_approval_status}}  
+**Risk Notes**: {{risk_notes}}
+
+---
+
+## Approvals
+
+| Role | Name | Status | Timestamp |
+|------|------|--------|-----------|
+| Portfolio Manager | {{pm_name}} | {{pm_status}} | {{pm_time}} |
+| Risk Manager | {{risk_name}} | {{risk_status}} | {{risk_time}} |
+| Compliance Officer | {{comp_name}} | {{comp_status}} | {{comp_time}} |
+| Head of Trading | {{trading_name}} | {{trading_status}} | {{trading_time}} |
+
+---
+
+## Routing
+
+**Assigned Trader**: {{trader_name}}  
+**Broker**: {{broker}}  
+**Trading Desk**: {{trading_desk}}  
+
+---
+
+## Notes
+
+{{notes}}
+
+---
+
+**Generated By**: Trade Order Generator Agent  
+**IC Decision Reference**: {{ic_decision_id}}
+```
+
+---
+
+## 5.3 Artifact Storage Structure
+
+```
+s3://company-artifacts/
+
+artifacts/
+├── research_reports/
+│   ├── 2025/
+│   │   ├── 01/
+│   │   │   ├── {artifact_id}_NVDA_research_report.pdf
+│   │   │   ├── {artifact_id}_AAPL_research_report.pdf
+│   │   │   └── ...
+│   │   ├── 02/
+│   │   └── ...
+│   └── 2024/
+│       └── ...
+│
+├── initial_briefs/
+│   ├── 2025/
+│   │   ├── 01/
+│   │   └── 02/
+│   └── ...
+│
+├── financial_models/
+│   ├── {ticker}/
+│   │   ├── {model_id}_base_case.xlsx
+│   │   ├── {model_id}_bull_case.xlsx
+│   │   ├── {model_id}_bear_case.xlsx
+│   │   └── {model_id}_scenarios.json
+│   └── ...
+│
+├── ic_minutes/
+│   ├── 2025/
+│   │   ├── ic_2025_01_12_minutes.pdf
+│   │   ├── ic_2025_02_09_minutes.pdf
+│   │   └── ...
+│   └── ...
+│
+├── contrarian_analyses/
+│   ├── 2025/
+│   │   ├── 02/
+│   │   │   ├── {artifact_id}_NVDA_bear_case.md
+│   │   │   └── {artifact_id}_NVDA_bear_case.mp3
+│   │   └── ...
+│   └── ...
+│
+├── trade_orders/
+│   ├── 2025/
+│   │   ├── 02/
+│   │   │   ├── {order_id}_NVDA_buy_order.pdf
+│   │   │   └── ...
+│   │   └── ...
+│   └── ...
+│
+├── risk_approvals/
+│   ├── 2025/
+│   │   ├── 02/
+│   │   │   ├── {approval_id}_pre_trade_risk.pdf
+│   │   │   └── ...
+│   │   └── ...
+│   └── ...
+│
+├── position_updates/
+│   ├── daily/
+│   │   ├── 2025-02-10/
+│   │   │   ├── NVDA_daily_update.md
+│   │   │   └── ...
+│   │   └── ...
+│   ├── weekly/
+│   └── monthly/
+│
+└── alerts/
+    ├── 2025/
+    │   ├── 02/
+    │   │   ├── {alert_id}_NVDA_price_movement.json
+    │   │   └── ...
+    │   └── ...
+    └── ...
+
+templates/
+├── research_report_template.md
+├── ic_minutes_template.md
+├── trade_order_template.md
+├── risk_approval_template.md
+└── position_update_template.md
+```
+
+---
+
+# 6. REACT APPLICATION SPECIFICATIONS
+
+## 6.1 Application Structure
+
+### Main Application Layout
+
+```typescript
+// src/App.tsx
+
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { store } from './app/store';
+import { queryClient } from './lib/queryClient';
+
+// Layouts
+import MainLayout from './components/layout/MainLayout';
+
+// Pages
+import Dashboard from './pages/Dashboard';
+import ICWorkflow from './pages/ICWorkflow';
+import Research from './pages/Research';
+import Meeting from './pages/Meeting';
+import Monitoring from './pages/Monitoring';
+import Portfolio from './pages/Portfolio';
+
+function App() {
+  return (
+    <Provider store={store}>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<MainLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="workflow" element={<ICWorkflow />} />
+              <Route path="research" element={<Research />} />
+              <Route path="meeting/:meetingId" element={<Meeting />} />
+              <Route path="monitoring" element={<Monitoring />} />
+              <Route path="portfolio" element={<Portfolio />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </Provider>
+  );
+}
+
+export default App;
+```
+
+---
+
+### Main Layout Component
+
+```typescript
+// src/components/layout/MainLayout.tsx
+
+import React from 'react';
+import { Outlet } from 'react-router-dom';
+import Sidebar from './Sidebar';
+import Header from './Header';
+import { useWebSocket } from '@/hooks/useWebSocket';
+
+export default function MainLayout() {
+  // Establish WebSocket connection
+  useWebSocket();
+  
+  return (
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar */}
+      <Sidebar />
+      
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header />
+        <main className="flex-1 overflow-y-auto p-6">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+## 6.2 Key Features & Components
+
+### IC Workflow Timeline
+
+```typescript
+// src/features/ic-workflow/components/ICTimeline.tsx
+
+import React from 'react';
+import { Card } from '@/components/ui/card';
+import { CheckCircle, Circle, Clock } from 'lucide-react';
+
+interface WorkflowStage {
+  id: string;
+  name: string;
+  status: 'completed' | 'in_progress' | 'pending';
+  startDate?: string;
+  completedDate?: string;
+  artifacts: Artifact[];
+}
+
+export default function ICTimeline() {
+  const stages: WorkflowStage[] = [
+    {
+      id: '1',
+      name: 'Research & Analysis',
+      status: 'completed',
+      startDate: '2025-01-15',
+      completedDate: '2025-02-05',
+      artifacts: [...]
+    },
+    {
+      id: '2',
+      name: 'IC Package Preparation',
+      status: 'completed',
+      startDate: '2025-02-05',
+      completedDate: '2025-02-07',
+      artifacts: [...]
+    },
+    {
+      id: '3',
+      name: 'IC Meeting',
+      status: 'in_progress',
+      startDate: '2025-02-09',
+      artifacts: [...]
+    },
+    {
+      id: '4',
+      name: 'Execution',
+      status: 'pending',
+      artifacts: []
+    },
+    {
+      id: '5',
+      name: 'Monitoring',
+      status: 'pending',
+      artifacts: []
+    },
+  ];
+  
+  return (
+    <div className="space-y-4">
+      {stages.map((stage, index) => (
+        <Card key={stage.id} className="p-6">
+          <div className="flex items-start gap-4">
+            {/* Status Icon */}
+            <div className="flex-shrink-0 mt-1">
+              {stage.status === 'completed' && (
+                <CheckCircle className="w-6 h-6 text-green-500" />
+              )}
+              {stage.status === 'in_progress' && (
+                <Clock className="w-6 h-6 text-blue-500 animate-pulse" />
+              )}
+              {stage.status === 'pending' && (
+                <Circle className="w-6 h-6 text-gray-300" />
+              )}
+            </div>
+            
+            {/* Stage Content */}
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-semibold">{stage.name}</h3>
+                <span className={`px-3 py-1 rounded-full text-sm ${
+                  stage.status === 'completed' 
+                    ? 'bg-green-100 text-green-700'
+                    : stage.status === 'in_progress'
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'bg-gray-100 text-gray-700'
+                }`}>
+                  {stage.status.replace('_', ' ')}
+                </span>
+              </div>
+              
+              {/* Dates */}
+              {stage.startDate && (
+                <p className="text-sm text-gray-600 mb-3">
+                  Started: {stage.startDate}
+                  {stage.completedDate && ` • Completed: ${stage.completedDate}`}
+                </p>
+              )}
+              
+              {/* Artifacts */}
+              {stage.artifacts.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Artifacts ({stage.artifacts.length})
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {stage.artifacts.map(artifact => (
+                      <button
+                        key={artifact.id}
+                        className="p-3 border rounded-lg text-left hover:bg-gray-50 transition-colors"
+                        onClick={() => openArtifact(artifact)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <FileIcon type={artifact.type} />
+                          <div>
+                            <p className="text-sm font-medium">{artifact.name}</p>
+                            <p className="text-xs text-gray-500">{artifact.createdBy}</p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Connector Line */}
+          {index < stages.length - 1 && (
+            <div className="ml-3 mt-4 mb-4 h-8 w-0.5 bg-gray-300" />
+          )}
+        </Card>
+      ))}
+    </div>
+  );
+}
+```
+
+---
+
+### Agent Panel Component
+
+```typescript
+// src/features/agents/components/AgentPanel.tsx
+
+import React, { useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import AgentModal from './AgentModal';
+import { Bot, Zap, Clock, CheckCircle } from 'lucide-react';
+
+interface Agent {
+  id: string;
+  name: string;
+  type: 'pre_work' | 'in_session' | 'post_session' | 'sleeper';
+  status: 'idle' | 'running' | 'completed';
+  lastRun?: string;
+  description: string;
+}
+
+export default function AgentPanel() {
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  
+  const agents: Agent[] = [
+    {
+      id: 'pre_research_synthesizer_001',
+      name: 'Research Synthesizer',
+      type: 'pre_work',
+      status: 'idle',
+      description: 'Synthesize research from multiple sources',
+    },
+    {
+      id: 'pre_financial_modeler_001',
+      name: 'Financial Modeler',
+      type: 'pre_work',
+      status: 'idle',
+      description: 'Build DCF and valuation models',
+    },
+    // ... more agents
+  ];
+  
+  const handleAgentClick = (agent: Agent) => {
+    setSelectedAgent(agent);
+    setModalOpen(true);
+  };
+  
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">AI Agents</h2>
+        <Button variant="outline" size="sm">
+          View All Executions
+        </Button>
+      </div>
+      
+      {/* Agent Type Tabs */}
+      <Tabs defaultValue="pre_work">
+        <TabsList>
+          <TabsTrigger value="pre_work">Pre-Work</TabsTrigger>
+          <TabsTrigger value="in_session">In-Session</TabsTrigger>
+          <TabsTrigger value="post_session">Post-Session</TabsTrigger>
+          <TabsTrigger value="sleeper">Sleeper</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="pre_work">
+          <div className="grid grid-cols-3 gap-4 mt-4">
+            {agents.filter(a => a.type === 'pre_work').map(agent => (
+              <AgentCard
+                key={agent.id}
+                agent={agent}
+                onClick={() => handleAgentClick(agent)}
+              />
+            ))}
+          </div>
+        </TabsContent>
+        
+        {/* Similar for other tabs */}
+      </Tabs>
+      
+      {/* Agent Modal */}
+      {selectedAgent && (
+        <AgentModal
+          agent={selectedAgent}
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function AgentCard({ agent, onClick }: { agent: Agent, onClick: () => void }) {
+  return (
+    <Card 
+      className="p-4 hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={onClick}
+    >
+      <div className="flex items-start gap-3">
+        <div className={`p-2 rounded-lg ${
+          agent.status === 'running' 
+            ? 'bg-blue-100'
+            : agent.status === 'completed'
+            ? 'bg-green-100'
+            : 'bg-gray-100'
+        }`}>
+          <Bot className={`w-6 h-6 ${
+            agent.status === 'running'
+              ? 'text-blue-600'
+              : agent.status === 'completed'
+              ? 'text-green-600'
+              : 'text-gray-600'
+          }`} />
+        </div>
+        
+        <div className="flex-1">
+          <h3 className="font-semibold mb-1">{agent.name}</h3>
+          <p className="text-sm text-gray-600">{agent.description}</p>
+          
+          <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
+            {agent.status === 'running' && (
+              <>
+                <Zap className="w-3 h-3 animate-pulse" />
+                <span>Running...</span>
+              </>
+            )}
+            {agent.status === 'completed' && (
+              <>
+                <CheckCircle className="w-3 h-3" />
+                <span>Last run: {agent.lastRun}</span>
+              </>
+            )}
+            {agent.status === 'idle' && (
+              <>
+                <Clock className="w-3 h-3" />
+                <span>Ready</span>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+```
+
+---
+
+### Agent Modal Component
+
+```typescript
+// src/features/agents/components/AgentModal.tsx
+
+import React, { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { useAgentExecution } from '@/hooks/useAgents';
+import AgentOutput from './AgentOutput';
+
+interface AgentModalProps {
+  agent: Agent;
+  open: boolean;
+  onClose: () => void;
+}
+
+export default function AgentModal({ agent, open, onClose }: AgentModalProps) {
+  const [prompt, setPrompt] = useState('');
+  const [context, setContext] = useState({});
+  
+  const { 
+    execute, 
+    execution, 
+    isLoading 
+  } = useAgentExecution(agent.id);
+  
+  const handleExecute = async () => {
+    await execute({
+      prompt,
+      context,
+    });
+  };
+  
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-3">
+            <Bot className="w-6 h-6" />
+            {agent.name}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          {/* Agent Description */}
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <p className="text-sm text-gray-700">{agent.description}</p>
+          </div>
+          
+          {/* Prompt Input */}
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Prompt
+            </label>
+            <Textarea
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Enter your prompt for the agent..."
+              rows={4}
+              className="w-full"
+            />
+          </div>
+          
+          {/* Additional Context (if needed) */}
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Context (Optional)
+            </label>
+            <Textarea
+              value={JSON.stringify(context, null, 2)}
+              onChange={(e) => {
+                try {
+                  setContext(JSON.parse(e.target.value));
+                } catch {}
+              }}
+              placeholder='{"ticker": "NVDA", "depth": "full"}'
+              rows={3}
+              className="w-full font-mono text-sm"
+            />
+          </div>
+          
+          {/* Execute Button */}
+          <Button
+            onClick={handleExecute}
+            disabled={isLoading || !prompt}
+            className="w-full"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Executing...
+              </>
+            ) : (
+              'Execute Agent'
+            )}
+          </Button>
+          
+          {/* Output Display */}
+          {execution && (
+            <AgentOutput execution={execution} agent={agent} />
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+---
+
+### Agent Output Component
+
+```typescript
+// src/features/agents/components/AgentOutput.tsx
+
+import React from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { FileText, Download, Volume2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+
+interface AgentOutputProps {
+  execution: AgentExecution;
+  agent: Agent;
+}
+
+export default function AgentOutput({ execution, agent }: AgentOutputProps) {
+  const { output } = execution;
+  
+  return (
+    <div className="space-y-4 mt-6 pt-6 border-t">
+      {/* Execution Metadata */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold">Output</h3>
+          <p className="text-sm text-gray-600">
+            Completed in {output.execution_time_ms}ms • 
+            {output.tokens_used} tokens • 
+            ${output.cost_usd.toFixed(2)}
+          </p>
+        </div>
+        
+        <div className="flex gap-2">
+          {output.audio_url && (
+            <Button variant="outline" size="sm">
+              <Volume2 className="w-4 h-4 mr-2" />
+              Play Audio
+            </Button>
+          )}
+        </div>
+      </div>
+      
+      {/* Content */}
+      <Card className="p-6">
+        <ReactMarkdown className="prose max-w-none">
+          {output.content.report || JSON.stringify(output.content, null, 2)}
+        </ReactMarkdown>
+      </Card>
+      
+      {/* Artifacts */}
+      {output.artifacts.length > 0 && (
+        <div>
+          <h4 className="font-semibold mb-3">Generated Artifacts</h4>
+          <div className="grid grid-cols-2 gap-3">
+            {output.artifacts.map(artifactId => (
+              <ArtifactCard key={artifactId} artifactId={artifactId} />
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {/* Follow-up Questions */}
+      {output.follow_up_questions && output.follow_up_questions.length > 0 && (
+        <div>
+          <h4 className="font-semibold mb-3">Suggested Follow-ups</h4>
+          <div className="space-y-2">
+            {output.follow_up_questions.map((question, index) => (
+              <button
+                key={index}
+                className="w-full p-3 text-left border rounded-lg hover:bg-gray-50 transition-colors"
+                onClick={() => {/* Use question as new prompt */}}
+              >
+                {question}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ArtifactCard({ artifactId }: { artifactId: string }) {
+  const { data: artifact } = useArtifact(artifactId);
+  
+  if (!artifact) return null;
+  
+  return (
+    <div className="p-4 border rounded-lg hover:shadow-md transition-shadow">
+      <div className="flex items-start gap-3">
+        <FileText className="w-5 h-5 text-blue-600 flex-shrink-0 mt-1" />
+        <div className="flex-1 min-w-0">
+          <h5 className="font-medium truncate">{artifact.name}</h5>
+          <p className="text-sm text-gray-600">{artifact.type}</p>
+        </div>
+        <Button variant="ghost" size="sm">
+          <Download className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+### IC Meeting Interface
+
+```typescript
+// src/pages/Meeting.tsx
+
+import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Bot, Mic, MicOff } from 'lucide-react';
+import AgentPanel from '@/features/agents/components/AgentPanel';
+import { useWebSocket } from '@/hooks/useWebSocket';
+
+export default function Meeting() {
+  const { meetingId } = useParams();
+  const [isRecording, setIsRecording] = useState(false);
+  const [showAgents, setShowAgents] = useState(false);
+  
+  const { sendMessage, lastMessage } = useWebSocket();
+  
+  const invokeAgent = (agentType: string, question: string) => {
+    sendMessage({
+      type: 'meeting.invoke_agent',
+      data: {
+        meetingId,
+        agentType,
+        question,
+      },
+    });
+  };
+  
+  return (
+    <div className="h-full flex gap-6">
+      {/* Main Meeting Area */}
+      <div className="flex-1 space-y-6">
+        {/* Meeting Header */}
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Investment Committee Meeting</h1>
+              <p className="text-gray-600">February 9, 2025 • 9:00 AM - 12:00 PM</p>
+            </div>
+            
+            <div className="flex gap-3">
+              <Button
+                variant={isRecording ? 'destructive' : 'default'}
+                onClick={() => setIsRecording(!isRecording)}
+              >
+                {isRecording ? (
+                  <>
+                    <MicOff className="w-4 h-4 mr-2" />
+                    Stop Recording
+                  </>
+                ) : (
+                  <>
+                    <Mic className="w-4 h-4 mr-2" />
+                    Start Recording
+                  </>
+                )}
+              </Button>
+              
+              <Button
+                variant="outline"
+                onClick={() => setShowAgents(!showAgents)}
+              >
+                <Bot className="w-4 h-4 mr-2" />
+                Agents
+              </Button>
+            </div>
+          </div>
+        </Card>
+        
+        {/* Agenda */}
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Agenda</h2>
+          <ol className="space-y-3">
+            <li className="flex items-start gap-3">
+              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-sm font-medium">
+                ✓
+              </span>
+              <div>
+                <p className="font-medium">Portfolio Review</p>
+                <p className="text-sm text-gray-600">Completed</p>
+              </div>
+            </li>
+            
+            <li className="flex items-start gap-3">
+              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-medium">
+                2
+              </span>
+              <div>
+                <p className="font-medium">NVIDIA Buy Proposal</p>
+                <p className="text-sm text-gray-600">In Progress</p>
+              </div>
+            </li>
+            
+            <li className="flex items-start gap-3">
+              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center text-sm font-medium">
+                3
+              </span>
+              <div>
+                <p className="font-medium">UNH Add Proposal</p>
+                <p className="text-sm text-gray-600">Pending</p>
+              </div>
+            </li>
+          </ol>
+        </Card>
+        
+        {/* Quick Actions for In-Session Agents */}
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Quick Agent Actions</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              variant="outline"
+              className="justify-start"
+              onClick={() => {
+                const question = prompt("What question for the Contrarian Agent?");
+                if (question) invokeAgent('contrarian', question);
+              }}
+            >
+              <Bot className="w-4 h-4 mr-2" />
+              Invoke Contrarian Agent
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="justify-start"
+              onClick={() => {
+                const question = prompt("What data to retrieve?");
+                if (question) invokeAgent('data_retriever', question);
+              }}
+            >
+              <Bot className="w-4 h-4 mr-2" />
+              Data Retrieval
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="justify-start"
+              onClick={() => {
+                const question = prompt("What scenario to simulate?");
+                if (question) invokeAgent('scenario_simulator', question);
+              }}
+            >
+              <Bot className="w-4 h-4 mr-2" />
+              Scenario Simulator
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="justify-start"
+            >
+              <Bot className="w-4 h-4 mr-2" />
+              Generate Audio Summary
+            </Button>
+          </div>
+        </Card>
+        
+        {/* Live Agent Responses */}
+        {lastMessage && lastMessage.type === 'meeting.agent_response' && (
+          <Card className="p-6 border-blue-500 border-2">
+            <div className="flex items-start gap-3 mb-4">
+              <Bot className="w-6 h-6 text-blue-600" />
+              <div>
+                <h3 className="font-semibold">
+                  {lastMessage.data.agentName} Response
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Completed in {lastMessage.data.executionTime}ms
+                </p>
+              </div>
+            </div>
+            
+            <div className="prose max-w-none">
+              <ReactMarkdown>
+                {lastMessage.data.content}
+              </ReactMarkdown>
+            </div>
+            
+            {lastMessage.data.audioUrl && (
+              <div className="mt-4">
+                <audio controls src={lastMessage.data.audioUrl} className="w-full" />
+              </div>
+            )}
+          </Card>
+        )}
+      </div>
+      
+      {/* Agent Panel (Sidebar) */}
+      {showAgents && (
+        <div className="w-96">
+          <AgentPanel />
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+### Monitoring Dashboard
+
+```typescript
+// src/pages/Monitoring.tsx
+
+import React from 'react';
+import { Card } from '@/components/ui/card';
+import { useAlerts } from '@/hooks/useMonitoring';
+import { AlertTriangle, CheckCircle, Info, XCircle } from 'lucide-react';
+
+export default function Monitoring() {
+  const { data: alerts, isLoading } = useAlerts();
+  
+  if (isLoading) return <div>Loading...</div>;
+  
+  const unresolvedAlerts = alerts?.filter(a => !a.resolved_at) || [];
+  const criticalAlerts = unresolvedAlerts.filter(a => a.severity === 'critical');
+  const highAlerts = unresolvedAlerts.filter(a => a.severity === 'high');
+  
+  return (
+    <div className="space-y-6">
+      {/* Alert Summary */}
+      <div className="grid grid-cols-4 gap-4">
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Critical Alerts</p>
+              <p className="text-3xl font-bold text-red-600">
+                {criticalAlerts.length}
+              </p>
+            </div>
+            <AlertTriangle className="w-10 h-10 text-red-600" />
+          </div>
+        </Card>
+        
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">High Priority</p>
+              <p className="text-3xl font-bold text-orange-600">
+                {highAlerts.length}
+              </p>
+            </div>
+            <AlertTriangle className="w-10 h-10 text-orange-600" />
+          </div>
+        </Card>
+        
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Medium Priority</p>
+              <p className="text-3xl font-bold text-yellow-600">
+                {unresolvedAlerts.filter(a => a.severity === 'medium').length}
+              </p>
+            </div>
+            <Info className="w-10 h-10 text-yellow-600" />
+          </div>
+        </Card>
+        
+        <Card className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">All Resolved</p>
+              <p className="text-3xl font-bold text-green-600">
+                {alerts?.filter(a => a.resolved_at).length || 0}
+              </p>
+            </div>
+            <CheckCircle className="w-10 h-10 text-green-600" />
+          </div>
+        </Card>
+      </div>
+      
+      {/* Alert List */}
+      <Card className="p-6">
+        <h2 className="text-xl font-semibold mb-4">Active Alerts</h2>
+        <div className="space-y-3">
+          {unresolvedAlerts.map(alert => (
+            <AlertCard key={alert.alert_id} alert={alert} />
+          ))}
+          
+          {unresolvedAlerts.length === 0 && (
+            <div className="text-center py-12">
+              <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
+              <p className="text-gray-600">No active alerts</p>
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function AlertCard({ alert }: { alert: Alert }) {
+  const severityColors = {
+    critical: 'bg-red-100 text-red-700 border-red-500',
+    high: 'bg-orange-100 text-orange-700 border-orange-500',
+    medium: 'bg-yellow-100 text-yellow-700 border-yellow-500',
+    low: 'bg-blue-100 text-blue-700 border-blue-500',
+  };
+  
+  return (
+    <div className={`p-4 border-l-4 rounded-lg ${severityColors[alert.severity]}`}>
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-semibold">{alert.security_id || 'Portfolio'}</span>
+            <span className="text-sm px-2 py-0.5 bg-white rounded">
+              {alert.alert_type}
+            </span>
+          </div>
+          
+          <p className="text-sm mb-2">{alert.alert_message}</p>
+          
+          <p className="text-xs text-gray-600">
+            {alert.agent_name} • {new Date(alert.created_at).toLocaleString()}
+          </p>
+        </div>
+        
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline">
+            Acknowledge
+          </Button>
+          <Button size="sm">
+            Resolve
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+## 6.3 State Management
+
+### Redux Store Setup
+
+```typescript
+// src/app/store.ts
+
+import { configureStore } from '@reduxjs/toolkit';
+import workflowReducer from '@/features/ic-workflow/slices/workflowSlice';
+import agentsReducer from '@/features/agents/slices/agentsSlice';
+import artifactsReducer from '@/features/artifacts/slices/artifactsSlice';
+import monitoringReducer from '@/features/monitoring/slices/monitoringSlice';
+
+export const store = configureStore({
+  reducer: {
+    workflow: workflowReducer,
+    agents: agentsReducer,
+    artifacts: artifactsReducer,
+    monitoring: monitoringReducer,
+  },
+});
+
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
+```
+
+---
+
+### WebSocket Hook
+
+```typescript
+// src/hooks/useWebSocket.ts
+
+import { useEffect, useCallback } from 'react';
+import { useDispatch } from 'react-redux';
+import io, { Socket } from 'socket.io-client';
+
+let socket: Socket | null = null;
+
+export function useWebSocket() {
+  const dispatch = useDispatch();
+  
+  useEffect(() => {
+    // Connect to WebSocket server
+    socket = io(process.env.REACT_APP_WS_URL || 'ws://localhost:8000', {
+      auth: {
+        token: localStorage.getItem('auth_token'),
+      },
+    });
+    
+    // Handle connection
+    socket.on('connect', () => {
+      console.log('WebSocket connected');
+    });
+    
+    // Handle agent progress
+    socket.on('agent.progress', (data) => {
+      dispatch({ type: 'agents/updateProgress', payload: data });
+    });
+    
+    // Handle agent completion
+    socket.on('agent.completed', (data) => {
+      dispatch({ type: 'agents/executionCompleted', payload: data });
+    });
+    
+    // Handle new alerts
+    socket.on('alert.new', (data) => {
+      dispatch({ type: 'monitoring/addAlert', payload: data });
+    });
+    
+    // Handle artifacts
+    socket.on('artifact.created', (data) => {
+      dispatch({ type: 'artifacts/addArtifact', payload: data });
+    });
+    
+    // Handle meeting agent responses
+    socket.on('meeting.agent_response', (data) => {
+      // Handle in-session agent responses
+      console.log('Agent response:', data);
+    });
+    
+    // Cleanup
+    return () => {
+      socket?.disconnect();
+    };
+  }, [dispatch]);
+  
+  const sendMessage = useCallback((message: any) => {
+    socket?.emit(message.type, message.data);
+  }, []);
+  
+  return { sendMessage };
+}
+```
+
+---
+
+# 7. DATA FLOW & INTEGRATION
+
+## 7.1 Data Flow Diagram
+
+```
+User Action (Frontend)
+  ↓
+API Gateway (Rust/FastAPI)
+  ↓
+Temporal Workflow Engine
+  ↓
+Agent Execution
+  ├→ MCP Tools
+  │   ├→ External APIs (SEC, Bloomberg, etc.)
+  │   ├→ Internal Services (Portfolio, Risk, etc.)
+  │   └→ Computation (DCF, Factor models, etc.)
+  ↓
+Agent Output
+  ├→ Store in PostgreSQL (metadata)
+  ├→ Store in S3 (documents)
+  └→ Send via WebSocket (real-time)
+  ↓
+Frontend Update
+```
+
+---
+
+## 7.2 API Integration
+
+### Agent Execution Flow
+
+```python
+# Backend: api/routes/agents.py
+
+from fastapi import APIRouter, HTTPException, BackgroundTasks
+from agents.registry import AgentRegistry
+from models.agent import AgentExecutionRequest, AgentExecutionResponse
+
+router = APIRouter(prefix="/agents", tags=["agents"])
+
+@router.post("/execute")
+async def execute_agent(
+    request: AgentExecutionRequest,
+    background_tasks: BackgroundTasks,
+):
+    """Execute an agent"""
+    
+    # Get agent from registry
+    agent = AgentRegistry.get(request.agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    
+    # Create execution record
+    execution_id = create_execution_record(agent, request)
+    
+    # Execute agent in background
+    background_tasks.add_task(
+        execute_agent_async,
+        agent,
+        execution_id,
+        request.input_context
+    )
+    
+    return {
+        "execution_id": execution_id,
+        "status": "started",
+    }
+
+async def execute_agent_async(agent, execution_id, input_context):
+    """Execute agent asynchronously"""
+    
+    try:
+        # Execute agent
+        output = await agent.execute(input_context)
+        
+        # Store output
+        await store_execution_output(execution_id, output)
+        
+        # Notify via WebSocket
+        await notify_execution_complete(execution_id, output)
+        
+    except Exception as e:
+        # Handle errors
+        await handle_execution_error(execution_id, e)
+```
+
+---
+
+### Frontend API Client
+
+```typescript
+// src/lib/api.ts
+
+import axios from 'axios';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/v1';
+
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Add auth token to requests
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export const agentsAPI = {
+  execute: (agentId: string, inputContext: any) =>
+    apiClient.post('/agents/execute', { agent_id: agentId, input_context: inputContext }),
+  
+  getExecution: (executionId: string) =>
+    apiClient.get(`/agents/executions/${executionId}`),
+  
+  listExecutions: (agentId: string) =>
+    apiClient.get(`/agents/${agentId}/executions`),
+};
+
+export const artifactsAPI = {
+  list: (params?: any) =>
+    apiClient.get('/artifacts', { params }),
+  
+  get: (artifactId: string) =>
+    apiClient.get(`/artifacts/${artifactId}`),
+  
+  download: (artifactId: string) =>
+    apiClient.get(`/artifacts/${artifactId}/download`, { responseType: 'blob' }),
+};
+
+export const monitoringAPI = {
+  getAlerts: () =>
+    apiClient.get('/monitoring/alerts'),
+  
+  acknowledgeAlert: (alertId: string) =>
+    apiClient.patch(`/monitoring/alerts/${alertId}/ack`),
+  
+  resolveAlert: (alertId: string, notes: string) =>
+    apiClient.patch(`/monitoring/alerts/${alertId}/resolve`, { notes }),
+};
+
+export default apiClient;
+```
+
+---
+
+## 7.3 Real-Time Updates
+
+### WebSocket Server (Backend)
+
+```python
+# Backend: api/websocket.py
+
+from fastapi import WebSocket, WebSocketDisconnect
+from typing import Dict, Set
+import json
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[str, Set[WebSocket]] = {}
+    
+    async def connect(self, websocket: WebSocket, user_id: str):
+        await websocket.accept()
+        if user_id not in self.active_connections:
+            self.active_connections[user_id] = set()
+        self.active_connections[user_id].add(websocket)
+    
+    def disconnect(self, websocket: WebSocket, user_id: str):
+        self.active_connections[user_id].discard(websocket)
+    
+    async def send_to_user(self, user_id: str, message: dict):
+        if user_id in self.active_connections:
+            for connection in self.active_connections[user_id]:
+                await connection.send_json(message)
+
+manager = ConnectionManager()
+
+@app.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: str):
+    await manager.connect(websocket, user_id)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            message = json.loads(data)
+            
+            # Handle different message types
+            if message['type'] == 'meeting.invoke_agent':
+                await handle_meeting_agent_invocation(message['data'], user_id)
+            
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, user_id)
+
+async def notify_user(user_id: str, event_type: str, data: dict):
+    """Notify user via WebSocket"""
+    await manager.send_to_user(user_id, {
+        'type': event_type,
+        'data': data,
+        'timestamp': datetime.utcnow().isoformat(),
+    })
+```
+
+---
+
+# 8. SECURITY & COMPLIANCE
+
+## 8.1 Authentication & Authorization
+
+### JWT-Based Authentication
+
+```python
+# Backend: api/auth.py
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
+
+SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
+security = HTTPBearer()
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    token = credentials.credentials
+    
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return user_id
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+# Use in routes
+@router.get("/protected")
+async def protected_route(user_id: str = Depends(get_current_user)):
+    return {"user_id": user_id}
+```
+
+---
+
+### Role-Based Access Control (RBAC)
+
+```python
+# Backend: models/user.py
+
+from enum import Enum
+
+class Role(Enum):
+    ANALYST = "analyst"
+    PORTFOLIO_MANAGER = "portfolio_manager"
+    CIO = "cio"
+    RISK_MANAGER = "risk_manager"
+    COMPLIANCE_OFFICER = "compliance_officer"
+    ADMIN = "admin"
+
+PERMISSIONS = {
+    Role.ANALYST: [
+        "research.create",
+        "research.read",
+        "agents.execute_pre_work",
+        "artifacts.create",
+    ],
+    Role.PORTFOLIO_MANAGER: [
+        "research.read",
+        "ic.participate",
+        "agents.execute_in_session",
+        "trades.approve",
+    ],
+    Role.CIO: [
+        "*",  # Full access
+    ],
+    Role.RISK_MANAGER: [
+        "research.read",
+        "ic.participate",
+        "risk.approve",
+        "risk.monitor",
+    ],
+    Role.COMPLIANCE_OFFICER: [
+        "compliance.check",
+        "compliance.approve",
+        "trades.review",
+    ],
+}
+
+def check_permission(user_role: Role, required_permission: str) -> bool:
+    """Check if user has required permission"""
+    user_permissions = PERMISSIONS.get(user_role, [])
+    return "*" in user_permissions or required_permission in user_permissions
+```
+
+---
+
+## 8.2 Data Security
+
+### Encryption at Rest
+
+```python
+# All sensitive data in PostgreSQL encrypted using:
+# - Column-level encryption for PII
+# - Transparent Data Encryption (TDE) for database
+
+# S3 encryption
+# - Server-side encryption (SSE-S3) for all artifacts
+# - Encryption in transit (TLS 1.2+)
+```
+
+---
+
+### Audit Logging
+
+```python
+# Backend: services/audit_service.py
+
+from models.audit import AuditLog
+
+async def log_action(
+    user_id: str,
+    action: str,
+    resource_type: str,
+    resource_id: str,
+    details: dict
+):
+    """Log user action for audit trail"""
+    
+    audit_log = AuditLog(
+        user_id=user_id,
+        action=action,
+        resource_type=resource_type,
+        resource_id=resource_id,
+        details=details,
+        ip_address=request.client.host,
+        user_agent=request.headers.get("user-agent"),
+        timestamp=datetime.utcnow(),
+    )
+    
+    await db.audit_logs.insert_one(audit_log.dict())
+
+# Usage in routes
+@router.post("/agents/execute")
+async def execute_agent(
+    request: AgentExecutionRequest,
+    user_id: str = Depends(get_current_user)
+):
+    # Execute agent...
+    
+    # Log action
+    await log_action(
+        user_id=user_id,
+        action="agent.execute",
+        resource_type="agent",
+        resource_id=request.agent_id,
+        details={"input_context": request.input_context}
+    )
+```
+
+---
+
+## 8.3 Compliance Features
+
+### Trade Compliance Checks
+
+```python
+# Backend: services/compliance_service.py
+
+async def check_trade_compliance(order: TradeOrder) -> ComplianceResult:
+    """Run comprehensive compliance checks"""
+    
+    checks = []
+    
+    # 1. Restricted list check
+    if await is_on_restricted_list(order.security_id):
+        checks.append(ComplianceCheck(
+            name="restricted_list",
+            status="failed",
+            message=f"{order.security_id} is on restricted list"
+        ))
+    
+    # 2. Position limit check
+    if await exceeds_position_limit(order):
+        checks.append(ComplianceCheck(
+            name="position_limit",
+            status="failed",
+            message="Order would exceed position limit"
+        ))
+    
+    # 3. Sector concentration check
+    if await exceeds_sector_limit(order):
+        checks.append(ComplianceCheck(
+            name="sector_concentration",
+            status="warning",
+            message="Order increases sector concentration"
+        ))
+    
+    # 4. Insider trading check
+    if await has_insider_concern(order):
+        checks.append(ComplianceCheck(
+            name="insider_trading",
+            status="failed",
+            message="Potential insider trading concern"
+        ))
+    
+    # Determine overall result
+    if any(c.status == "failed" for c in checks):
+        overall_status = "rejected"
+    elif any(c.status == "warning" for c in checks):
+        overall_status = "needs_review"
+    else:
+        overall_status = "approved"
+    
+    return ComplianceResult(
+        status=overall_status,
+        checks=checks,
+        checked_at=datetime.utcnow()
+    )
+```
+
+---
+
+# 9. IMPLEMENTATION ROADMAP
+
+## 9.1 Phase 1: Foundation (Weeks 1-4)
+
+### Week 1: Infrastructure Setup
+- [ ] Set up AWS EKS cluster
+- [ ] Configure PostgreSQL (RDS)
+- [ ] Configure Redis (ElastiCache)
+- [ ] Set up S3 buckets
+- [ ] Deploy Temporal server
+- [ ] Set up CI/CD pipelines
+
+### Week 2: Backend Core
+- [ ] Implement BaseAgent class
+- [ ] Implement AgentRegistry
+- [ ] Create FastAPI application structure
+- [ ] Set up WebSocket server
+- [ ] Implement authentication/authorization
+- [ ] Create database schema
+
+### Week 3: MCP Tools Foundation
+- [ ] Implement base MCP tool framework
+- [ ] Build SEC EDGAR MCP
+- [ ] Build financial data MCP
+- [ ] Build portfolio MCP
+- [ ] Create tool registry
+
+### Week 4: Frontend Foundation
+- [ ] Initialize React application
+- [ ] Set up routing
+- [ ] Implement authentication UI
+- [ ] Create base layout components
+- [ ] Set up state management (Redux)
+- [ ] Implement WebSocket client
+
+---
+
+## 9.2 Phase 2: Pre-Work Agents (Weeks 5-8)
+
+### Week 5: Research Synthesizer
+- [ ] Implement Research Synthesizer agent
+- [ ] Build earnings transcript MCP
+- [ ] Build news aggregator MCP
+- [ ] Create Initial Idea Brief template
+- [ ] Test and refine
+
+### Week 6: Financial Modeler
+- [ ] Implement Financial Modeler agent
+- [ ] Build financial modeling MCP
+- [ ] Build scenario builder MCP
+- [ ] Create DCF model template
+- [ ] Test and refine
+
+### Week 7: Quant Analyst
+- [ ] Implement Quant Analyst agent
+- [ ] Build factor model MCP
+- [ ] Build risk analytics MCP
+- [ ] Create quant analysis template
+- [ ] Test and refine
+
+### Week 8: Document Generator
+- [ ] Implement Document Generator agent
+- [ ] Build document formatter MCP
+- [ ] Build chart generator MCP
+- [ ] Create research report template
+- [ ] Build IC package compiler
+- [ ] Test end-to-end pre-work workflow
+
+---
+
+## 9.3 Phase 3: In-Session Agents (Weeks 9-11)
+
+### Week 9: Contrarian Analyst
+- [ ] Implement Contrarian Analyst agent
+- [ ] Build argument generator MCP
+- [ ] Build precedent finder MCP
+- [ ] Create contrarian analysis template
+- [ ] Test real-time performance (<45 sec)
+
+### Week 10: Data Retrieval & Scenario Simulator
+- [ ] Implement Data Retrieval agent
+- [ ] Build historical data MCP
+- [ ] Implement Scenario Simulator agent
+- [ ] Build Monte Carlo MCP
+- [ ] Test real-time performance (<30 sec)
+
+### Week 11: Voice Synthesizer & Meeting Interface
+- [ ] Implement Voice Synthesizer agent
+- [ ] Build text-to-speech MCP
+- [ ] Create meeting interface UI
+- [ ] Implement in-session agent invocation
+- [ ] Test live meeting simulation
+
+---
+
+## 9.4 Phase 4: Post-Session Agents (Weeks 12-14)
+
+### Week 12: Minutes Scribe
+- [ ] Implement Minutes Scribe agent
+- [ ] Build transcription MCP
+- [ ] Build meeting parser MCP
+- [ ] Create IC minutes template
+- [ ] Test with recorded meetings
+
+### Week 13: Trade Order & Risk Reporter
+- [ ] Implement Trade Order Generator agent
+- [ ] Build execution strategy MCP
+- [ ] Implement Risk Reporter agent
+- [ ] Build stress tester MCP
+- [ ] Create trade order template
+- [ ] Create risk approval template
+
+### Week 14: Attribution Analyst
+- [ ] Implement Attribution Analyst agent
+- [ ] Build attribution engine MCP
+- [ ] Build returns calculator MCP
+- [ ] Create position update template
+- [ ] Test post-session workflow
+
+---
+
+## 9.5 Phase 5: Sleeper Agents (Weeks 15-17)
+
+### Week 15: Thesis Monitor
+- [ ] Implement Thesis Monitor agent
+- [ ] Build KPI tracker MCP
+- [ ] Build thesis comparison MCP
+- [ ] Create daily check template
+- [ ] Set up cron scheduling
+
+### Week 16: Market Event Monitor
+- [ ] Implement Market Event Monitor agent
+- [ ] Build real-time news MCP
+- [ ] Build price monitor MCP
+- [ ] Build event classifier MCP
+- [ ] Set up continuous monitoring
+
+### Week 17: Compliance & Risk Monitors
+- [ ] Implement Compliance Monitor agent
+- [ ] Build compliance rules MCP
+- [ ] Build limit checker MCP
+- [ ] Implement Risk Regime Monitor agent
+- [ ] Build VaR calculator MCP
+- [ ] Build correlation monitor MCP
+- [ ] Test continuous monitoring
+
+---
+
+## 9.6 Phase 6: UI Refinement & Integration (Weeks 18-20)
+
+### Week 18: Dashboard & Workflow Views
+- [ ] Build IC workflow timeline
+- [ ] Build agent panel
+- [ ] Build artifact viewer
+- [ ] Implement artifact modals
+- [ ] Polish UI/UX
+
+### Week 19: Monitoring Dashboard
+- [ ] Build monitoring dashboard
+- [ ] Build alerts panel
+- [ ] Build position update views
+- [ ] Implement real-time updates
+- [ ] Build risk dashboard
+
+### Week 20: Testing & Bug Fixes
+- [ ] End-to-end testing
+- [ ] Performance optimization
+- [ ] Bug fixes
+- [ ] Load testing
+- [ ] Security audit
+
+---
+
+## 9.7 Phase 7: Training & Launch (Weeks 21-24)
+
+### Week 21: Documentation
+- [ ] Complete user documentation
+- [ ] Create training materials
+- [ ] Record demo videos
+- [ ] Write API documentation
+
+### Week 22: User Training
+- [ ] Train analysts
+- [ ] Train portfolio managers
+- [ ] Train risk/compliance teams
+- [ ] Train trading desk
+
+### Week 23: Beta Testing
+- [ ] Limited beta with 2-3 users
+- [ ] Gather feedback
+- [ ] Make refinements
+- [ ] Performance tuning
+
+### Week 24: Production Launch
+- [ ] Deploy to production
+- [ ] Monitor closely
+- [ ] Provide on-call support
+- [ ] Collect user feedback
+
+---
+
+## 9.8 Success Metrics
+
+### Phase 1-2 (Weeks 1-8)
+- [ ] All pre-work agents operational
+- [ ] Research report generation time: <10 minutes
+- [ ] Agent accuracy: >95% (human validated)
+
+### Phase 3 (Weeks 9-11)
+- [ ] In-session agents respond in <45 seconds
+- [ ] Real-time meeting interface functional
+- [ ] Audio synthesis quality: professional grade
+
+### Phase 4 (Weeks 12-14)
+- [ ] IC minutes generated in <45 minutes
+- [ ] Trade orders automated 100%
+- [ ] Risk approval automated 90%
+
+### Phase 5 (Weeks 15-17)
+- [ ] Thesis monitoring covers 100% of positions
+- [ ] Alert false positive rate <10%
+- [ ] Event detection latency <5 minutes
+
+### Phase 6-7 (Weeks 18-24)
+- [ ] User satisfaction score >4.0/5.0
+- [ ] Time savings measured: >50%
+- [ ] Zero critical bugs in production
+
+---
+
+# 10. SAMPLE ARTIFACTS
+
+## 10.1 Sample Initial Idea Brief
+
+[See template above - populated with NVIDIA example]
+
+---
+
+## 10.2 Sample Contrarian Analysis
+
+```markdown
+# Contrarian Analysis: NVIDIA (NVDA)
+
+**Generated By**: Contrarian Agent  
+**Triggered By**: "What if we're at peak margins?"  
+**Date**: February 10, 2025
+
+---
+
+## Executive Bear Case Summary
+
+NVIDIA's 75% gross margins are historically unprecedented and vulnerable to 
+competitive pressure from customer-developed ASICs (Google TPU, Amazon Trainium, 
+Microsoft Maia). If hyperscalers shift just 25% of spend to in-house chips over 
+3 years, NVIDIA's datacenter revenue growth could slow to 10-15% (from 45%+) 
+while margins compress to 60%. At these levels, fair value is $600-700, 
+representing 25-30% downside risk.
+
+---
+
+## Key Risks (Ranked by Materiality)
+
+### 1. Customer-Built ASIC Displacement ⚠️ HIGH IMPACT
+
+**Description**: Hyperscalers (Microsoft, Google, Amazon, Meta) are investing 
+$50B+ in custom chip development...
+
+[Full analysis as shown earlier]
+
+---
+
+## Audio Summary (40 seconds)
+
+[Audio file available]
+
+"The bear case for NVIDIA centers on three risks. First, gross margins at 75% 
+are historically high and vulnerable to customer ASIC competition. Second, 55% 
+revenue concentration in four customers creates execution risk. Third, current 
+valuation at 32x P/E leaves limited margin for error. In a downside scenario 
+where margins compress to 50% and customers shift 20% of spend to custom chips, 
+the stock could decline 40-50% from current levels. While this is a tail risk, 
+the probability has increased with customer announcements of in-house chip 
+development."
+```
+
+---
+
+## 10.3 Sample IC Minutes
+
+[See template above - populated with February 10, 2025 meeting]
+
+---
+
+## 10.4 Sample Trade Order Ticket
+
+```markdown
+# Trade Order Ticket
+
+**Order ID**: ORD-2025-02-10-001  
+**Date**: February 10, 2025  
+**Time**: 2:30 PM EST  
+
+---
+
+## Order Details
+
+**Security**: NVIDIA Corporation (NVDA)  
+**Action**: BUY  
+**Order Type**: VWAP  
+**Quantity**: 137,086 shares  
+**Value**: $120,000,000  
+
+---
+
+## Portfolio Details
+
+**Portfolio**: Large Cap Growth  
+**Current Position**: 0 shares ($0)  
+**Current Weight**: 0.00%  
+**Target Weight**: 3.00%  
+**New Position**: 137,086 shares ($120M)  
+
+---
+
+## Pricing
+
+**Reference Price**: $875.32 (2:15 PM EST)  
+**Limit Price**: N/A (VWAP algo)  
+**Price Range**: $860 - $890  
+
+---
+
+## Execution Instructions
+
+**Execution Strategy**: Volume-Weighted Average Price (VWAP)  
+**Time Horizon**: 3 trading days (Feb 12-14)  
+**Urgency**: Normal  
+**Special Instructions**: Minimize market impact. Target 15-20% ADV participation.
+
+**Algorithm Parameters**:
+- Start Time: 9:35 AM (5 min after open)
+- End Time: 3:55 PM (5 min before close)
+- Participation Rate: 18% of market volume
+- Max % of Volume: 25% (any 5-min period)
+- Smart routing: Lit and dark pools
+
+---
+
+## Risk & Compliance
+
+**Pre-Trade Compliance**: ✓ PASSED  
+**Restricted List Check**: ✓ CLEAR  
+**Compliance Notes**: No issues identified
+
+**Risk Approval**: ✓ APPROVED  
+**Risk Notes**: 
+- Pro forma TE: 1.93% (within 2.50% limit)
+- Pro forma VaR: 1.50% (within 2.00% limit)
+- Tech sector exposure: 32.0% (within 35% limit)
+
+---
+
+## Approvals
+
+| Role | Name | Status | Timestamp |
+|------|------|--------|-----------|
+| Portfolio Manager | Rebecca Zhang | ✓ Approved | 2:25 PM |
+| Risk Manager | Alex Reyes | ✓ Approved | 2:28 PM |
+| Compliance Officer | Patricia Moore | ✓ Approved | 2:29 PM |
+| Head of Trading | Michelle O'Brien | ✓ Approved | 2:30 PM |
+
+---
+
+## Routing
+
+**Assigned Trader**: Marcus Thompson  
+**Broker**: Goldman Sachs  
+**Trading Desk**: North America Equities  
+**Algorithm**: GS VWAP Plus  
+
+---
+
+## Notes
+
+Large new position. Spread execution over 3 days to minimize impact. 
+Monitor for any NVDA-specific news that could affect execution.
+
+---
+
+**Generated By**: Trade Order Generator Agent  
+**IC Decision Reference**: DEC-2025-02-10-001
+```
+
+---
+
+## 10.5 Sample Position Update
+
+```markdown
+# Weekly Position Update: NVIDIA (NVDA)
+
+**Week Ending**: February 16, 2025  
+**Analyst**: Sarah Chen  
+**Generated By**: Attribution Analyst Agent  
+
+---
+
+## Position Summary
+
+**Current Position**: 137,086 shares  
+**Current Value**: $124.2M (3.11% of portfolio)  
+**Average Cost**: $875.32  
+**Current Price**: $905.80 (Feb 16, 4:00 PM)  
+**Unrealized Gain**: $4.2M (+3.5%)  
+
+**Week Performance**:
+- Position Return: +3.5%
+- Benchmark (Russell 1000 Growth): +1.2%
+- Active Return: +2.3%
+
+---
+
+## Thesis Health: ✓ HEALTHY
+
+All key thesis points remain intact:
+
+1. **AI Infrastructure Buildout**: ✓ ON TRACK
+   - Hyperscaler capex announcements remain strong
+   - Microsoft, Google, Amazon all reaffirmed AI spending
+   
+2. **Datacenter Growth**: ✓ EXCEEDING
+   - Management raised FY2026 datacenter guidance +15%
+   - TAM estimate increased from $250B to $350B
+   
+3. **Competitive Position**: ✓ STRONG
+   - 95% market share in AI training maintained
+   - CUDA ecosystem continues to widen moat
+   
+4. **Customer Concentration**: ⚠ MONITORING
+   - Top 4 customers still 55% of revenue
+   - No material changes this week
+
+---
+
+## Key Events This Week
+
+**Feb 12**: Execution Day 1
+- Bought 45,000 shares @ $876.20 avg
+- VWAP performance: +2 bps vs arrival
+- No market impact detected
+
+**Feb 13**: Execution Day 2
+- Bought 46,086 shares @ $874.15 avg
+- VWAP performance: +5 bps vs arrival
+
+**Feb 14**: Execution Day 3
+- Bought 46,000 shares @ $875.60 avg
+- VWAP performance: +3 bps vs arrival
+- Execution complete
+
+**Feb 15**: Management Interview
+- CEO Jensen Huang on CNBC
+- Bullish on AI infrastructure cycle (multi-year)
+- Reaffirmed strong demand visibility
+
+**Feb 16**: Stock Rally
+- +4.8% on strong sector sentiment
+- Semiconductor sector up 3.2% (led by NVDA)
+
+---
+
+## News & Developments
+
+**Positive**:
+- Meta announced $40B AI capex for 2025 (up from $35B prior)
+- OpenAI secured additional $10B funding round
+- China approves 30% more AI server farms (potential export opportunity)
+
+**Neutral**:
+- Amazon's Trainium2 chip benchmarks released (as expected, inference-focused)
+- Industry conference attendance strong (GTC 2025 registration sold out)
+
+**Negative**:
+- None material
+
+---
+
+## Sell Discipline Check
+
+| Trigger | Threshold | Current | Status |
+|---------|-----------|---------|--------|
+| Target Price | $1,050 | $905.80 | ✓ Below |
+| Max Weight | 5.0% | 3.11% | ✓ Within |
+| Trailing Stop | -15% from high | -3.5% | ✓ Within |
+| Thesis Break | Any pillar invalid | All valid | ✓ Pass |
+
+**All sell disciplines: ✓ PASS**
+
+---
+
+## Upcoming Catalysts
+
+1. **Q4 Earnings** (Feb 28): Expecting strong beat & raise
+2. **GTC Conference** (March 18-21): Product announcements
+3. **Datacenter Segment Data** (March): Segment growth trends
+
+---
+
+## Analyst Commentary
+
+Excellent first week as a position. Execution went very smoothly with minimal 
+market impact. Stock benefited from strong sector sentiment and positive Meta 
+capex news. Thesis remains intact with all key points validated. Customer 
+concentration remains the key risk to monitor, but no signs of concern yet. 
+Maintain HOLD rating with $1,050 price target.
+
+**Recommendation**: HOLD
+
+---
+
+## Attachments
+
+- Execution Summary (TCA Report)
+- Weekly Price Chart
+- Sector Performance Comparison
+
+---
+
+**Next Update**: February 23, 2025
+```
+
+---
+
+## 10.6 Sample Alert
+
+```json
+{
+  "alert_id": "ALT-2025-02-18-042",
+  "alert_type": "price_movement",
+  "severity": "high",
+  "agent_name": "sleeper_market_monitor_001",
+  "security_id": "NVDA",
+  "portfolio_id": "large_cap_growth",
+  "alert_message": "NVIDIA (NVDA) down 6.2% in 25 minutes on Microsoft CFO commentary",
+  "alert_data": {
+    "price_data": {
+      "price_start": 895.20,
+      "price_current": 839.40,
+      "change": -55.80,
+      "change_pct": -6.23,
+      "volume": 85000000,
+      "volume_vs_avg": 3.2
+    },
+    "cause": {
+      "type": "management_commentary",
+      "source": "Microsoft CFO on CNBC",
+      "summary": "Moderating AI capex growth in H2 2025, evaluating in-house chip alternatives",
+      "sentiment": "negative"
+    },
+    "portfolio_impact": {
+      "position_value_before": 124200000,
+      "position_value_after": 116700000,
+      "mark_to_market_loss": -7500000,
+      "portfolio_impact_pct": -0.19
+    },
+    "thesis_assessment": {
+      "status": "challenged",
+      "concern": "customer_concentration_risk",
+      "severity": "medium",
+      "recommendation": "assess_if_timing_shift_or_demand_destruction"
+    }
+  },
+  "created_at": "2025-02-18T15:45:23Z",
+  "acknowledged_at": null,
+  "resolved_at": null
+}
+```
+
+---
+
+This concludes the comprehensive technical specifications document. The document provides:
+
+1. **The Plot**: Detailed narrative with all human players and AI agents
+2. **System Architecture**: Complete technical stack and component design
+3. **Agent Specifications**: 16 agents with full implementation details
+4. **Artifact Templates**: Professional document templates for all workflows
+5. **React Application**: Complete frontend specifications
+6. **Data Flow**: Integration patterns and API specifications
+7. **Security**: Authentication, authorization, and compliance features
+8. **Implementation Roadmap**: 24-week detailed plan
+9. **Sample Artifacts**: Real examples of all artifact types
+
+The system is designed to be production-ready, scalable, and maintainable.
