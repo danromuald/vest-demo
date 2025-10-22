@@ -39,7 +39,9 @@ function validateDCFModel(response: unknown): DCFModel | null {
   const toNumber = (value: unknown): number | null => {
     if (typeof value === 'number') return value;
     if (typeof value === 'string') {
-      const num = Number(value);
+      // Handle percentage strings like "18.5%" or "18.5"
+      const cleaned = value.replace(/%/g, '').replace(/,/g, '').trim();
+      const num = Number(cleaned);
       return isNaN(num) ? null : num;
     }
     return null;

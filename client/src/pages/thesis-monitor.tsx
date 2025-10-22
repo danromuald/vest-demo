@@ -80,7 +80,27 @@ export default function ThesisMonitor() {
   };
 
   const toNumber = (val: any): number => {
-    return typeof val === 'number' ? val : parseFloat(val) || 0;
+    if (typeof val === 'number') return val;
+    if (typeof val === 'string') {
+      const cleaned = val.replace(/%/g, '').replace(/,/g, '').trim();
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? 0 : num;
+    }
+    return 0;
+  };
+
+  // Convert drift value to 0-100 scale if needed
+  const normalizeDrift = (drift: number): number => {
+    // If drift is between 0-1, convert to 0-100
+    if (drift >= 0 && drift <= 1) {
+      return drift * 100;
+    }
+    // If already in 0-100 range, return as-is
+    if (drift >= 0 && drift <= 100) {
+      return drift;
+    }
+    // Clamp out-of-range values
+    return Math.max(0, Math.min(100, drift));
   };
 
   const formatDate = (dateValue: string | Date | null | undefined): string => {
@@ -234,7 +254,7 @@ export default function ThesisMonitor() {
               <div className="space-y-2">
                 {thesisReports.map((report) => {
                   const healthData = report.response as ThesisHealthReport;
-                  const drift = toNumber(healthData?.thesisDrift);
+                  const drift = normalizeDrift(toNumber(healthData?.thesisDrift));
                   
                   return (
                     <div
@@ -284,7 +304,7 @@ export default function ThesisMonitor() {
           <div className="lg:col-span-2 space-y-4 overflow-y-auto">
             {(() => {
               const healthData = selectedReport.response as ThesisHealthReport;
-              const drift = toNumber(healthData?.thesisDrift);
+              const drift = normalizeDrift(toNumber(healthData?.thesisDrift));
 
               return (
                 <>

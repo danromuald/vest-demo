@@ -202,9 +202,13 @@ export default function ProposalDetailPage() {
                       <FileText className="h-4 w-4 text-chart-1" />
                       Investment Thesis
                     </h4>
-                    <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                      {proposal.thesis}
-                    </p>
+                    {proposal.thesis ? (
+                      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                        {proposal.thesis}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No thesis provided</p>
+                    )}
                   </div>
                 </TabsContent>
 
