@@ -19,6 +19,7 @@ import type { ResearchRequest } from "@shared/schema";
 
 const researchRequestFormSchema = z.object({
   ticker: z.string().min(1, "Ticker is required").max(10).regex(/^[A-Z]+$/, "Invalid ticker"),
+  companyName: z.string().min(1, "Company name is required"),
   requestedBy: z.string().min(1, "Requester is required"),
   assignedTo: z.string().optional(),
   status: z.enum(["PENDING", "IN_PROGRESS", "COMPLETED", "BLOCKED"]),
@@ -42,6 +43,7 @@ export default function Research() {
     resolver: zodResolver(researchRequestFormSchema),
     defaultValues: {
       ticker: "",
+      companyName: "",
       requestedBy: "user-1",
       status: "PENDING",
       priority: "MEDIUM",
@@ -158,6 +160,7 @@ export default function Research() {
     setSelectedRequest(request);
     editForm.reset({
       ticker: request.ticker,
+      companyName: request.companyName,
       requestedBy: request.requestedBy,
       assignedTo: request.assignedTo || undefined,
       status: request.status as any,
@@ -233,25 +236,45 @@ export default function Research() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleCreateSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="ticker"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Ticker Symbol</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="NVDA"
-                          className="font-mono uppercase"
-                          data-testid="input-ticker"
-                          onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="ticker"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ticker Symbol</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="NVDA"
+                            className="font-mono uppercase"
+                            data-testid="input-ticker"
+                            onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="companyName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Company Name</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="Nvidia Corporation"
+                            data-testid="input-company-name"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
