@@ -111,6 +111,51 @@ export class NotificationService {
       }
     }
   }
+
+  /**
+   * Create workflow advanced notification
+   */
+  async createWorkflowAdvancedNotification(
+    entityType: string,
+    entityId: string,
+    fromStage: string,
+    toStage: string
+  ): Promise<void> {
+    const notification: InsertNotification = {
+      type: "SYSTEM",
+      severity: "INFO",
+      title: "Workflow Advanced",
+      message: `${entityType} ${entityId} advanced from ${fromStage} to ${toStage}`,
+      relatedId: entityId,
+      actionUrl: `/workflow/${entityType.toLowerCase()}/${entityId}`,
+      isRead: false,
+    };
+
+    await storage.createNotification(notification);
+  }
+
+  /**
+   * Create workflow reverted notification
+   */
+  async createWorkflowRevertedNotification(
+    entityType: string,
+    entityId: string,
+    fromStage: string,
+    toStage: string,
+    reason: string
+  ): Promise<void> {
+    const notification: InsertNotification = {
+      type: "SYSTEM",
+      severity: "WARNING",
+      title: "Workflow Reverted",
+      message: `${entityType} ${entityId} reverted from ${fromStage} to ${toStage}. Reason: ${reason}`,
+      relatedId: entityId,
+      actionUrl: `/workflow/${entityType.toLowerCase()}/${entityId}`,
+      isRead: false,
+    };
+
+    await storage.createNotification(notification);
+  }
 }
 
 export const notificationService = new NotificationService();

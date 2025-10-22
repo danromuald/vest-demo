@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { agentService } from "./services/agents";
 import { pdfService } from "./services/pdf";
 import { notificationService } from "./services/notifications";
+import { workflowService } from "./services/workflow";
 import {
   insertPositionSchema,
   insertProposalSchema,
@@ -689,6 +690,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Workflow Service Routes
+  app.post("/api/workflow/:entityType/:entityId/advance", async (req, res) => {
+    try {
+      const { entityType, entityId } = req.params;
+      const userId = req.body.userId || "system"; // TODO: get from auth session
+      
+      const updated = await workflowService.advanceStage(entityType, entityId, userId);
+      res.json(updated);
+    } catch (error) {
+      res.status(400).json({ 
+        error: error instanceof Error ? error.message : "Failed to advance workflow" 
+      });
+    }
+  });
+
+  app.post("/api/workflow/:entityType/:entityId/revert", async (req, res) => {
+    try {
+      const { entityType, entityId } = req.params;
+      const userId = req.body.userId || "system"; // TODO: get from auth session
+      const reason = req.body.reason || "No reason provided";
+      
+      const updated = await workflowService.revertStage(entityType, entityId, userId, reason);
+      res.json(updated);
+    } catch (error) {
+      res.status(400).json({ 
+        error: error instanceof Error ? error.message : "Failed to revert workflow" 
+      });
+    }
+  });
+
+  app.get("/api/workflow/:entityType/:entityId/progress", async (req, res) => {
+    try {
+      const { entityType, entityId } = req.params;
+      const progress = await workflowService.getStageProgress(entityType, entityId);
+      res.json(progress);
+    } catch (error) {
+      res.status(400).json({ 
+        error: error instanceof Error ? error.message : "Failed to get workflow progress" 
+      });
+    }
+  });
+
   // Meeting Participants Routes
   app.get("/api/meetings/:meetingId/participants", async (req, res) => {
     try {
@@ -918,6 +961,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Track active IC meeting rooms
   const icMeetingRooms = new Map<string, Set<any>>();
+  
+  // Track active debate sessions
+  const debateRooms = new Map<string, Set<any>>();
 
   wss.on("connection", (ws, req) => {
     console.log("WebSocket client connected");
@@ -1007,6 +1053,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
               result,
             }));
             break;
+
+          case "join_debate":
+            // Join debate session room
+            const debateSessionId = message.sessionId;
+            if (!debateRooms.has(debateSessionId)) {
+              debateRooms.set(debateSessionId, new Set());
+            }
+            debateRooms.get(debateSessionId)!.add(ws);
+            
+            // Send current debate session state
+            const debateSession = await storage.getDebateSession(debateSessionId);
+            const debateMessages = await storage.getDebateMessages(debateSessionId);
+            
+            if (debateSession) {
+              ws.send(JSON.stringify({
+                type: "debate_state",
+                session: debateSession,
+                messages: debateMessages,
+              }));
+            }
+            
+            // Notify others that someone joined
+            const debateParticipants = debateRooms.get(debateSessionId);
+            if (debateParticipants) {
+              const joinMsg = JSON.stringify({
+                type: "participant_joined",
+                userName: message.userName || "Unknown",
+                timestamp: new Date().toISOString(),
+              });
+              debateParticipants.forEach(client => {
+                if (client !== ws && client.readyState === 1) {
+                  client.send(joinMsg);
+                }
+              });
+            }
+            break;
+
+          case "leave_debate":
+            // Leave debate session room
+            debateRooms.get(message.sessionId)?.delete(ws);
+            
+            // Notify others that someone left
+            const leavingParticipants = debateRooms.get(message.sessionId);
+            if (leavingParticipants) {
+              const leaveMsg = JSON.stringify({
+                type: "participant_left",
+                userName: message.userName || "Unknown",
+                timestamp: new Date().toISOString(),
+              });
+              leavingParticipants.forEach(client => {
+                if (client.readyState === 1) {
+                  client.send(leaveMsg);
+                }
+              });
+            }
+            break;
+
+          case "send_debate_message":
+            // Save and broadcast debate message
+            const newMessage = await storage.createDebateMessage({
+              sessionId: message.sessionId,
+              senderId: message.senderId,
+              senderName: message.senderName,
+              content: message.content,
+              messageType: message.messageType || "TEXT",
+              metadata: message.metadata || {},
+            });
+
+            // Update session message count
+            const currentSession = await storage.getDebateSession(message.sessionId);
+            if (currentSession) {
+              await storage.updateDebateSession(message.sessionId, {
+                messageCount: (currentSession.messageCount || 0) + 1,
+              });
+            }
+
+            // Broadcast to all participants in the debate room
+            const debateClients = debateRooms.get(message.sessionId);
+            if (debateClients) {
+              const broadcastMsg = JSON.stringify({
+                type: "new_debate_message",
+                message: newMessage,
+              });
+              debateClients.forEach(client => {
+                if (client.readyState === 1) {
+                  client.send(broadcastMsg);
+                }
+              });
+            }
+            break;
+
+          case "invoke_agent_in_debate":
+            // Invoke AI agent in debate and stream response
+            ws.send(JSON.stringify({
+              type: "agent_thinking",
+              agentType: message.agentType,
+            }));
+
+            // Generate agent response
+            let agentResult;
+            switch (message.agentType) {
+              case "contrarian":
+                agentResult = await agentService.generateContrarianAnalysis(message.ticker);
+                break;
+              case "research_synthesizer":
+                agentResult = await agentService.generateResearchBrief(message.ticker);
+                break;
+              case "financial_modeler":
+                agentResult = await agentService.generateDCFModel(message.ticker);
+                break;
+              default:
+                throw new Error(`Unknown agent type: ${message.agentType}`);
+            }
+
+            // Save agent message to debate
+            const agentMessage = await storage.createDebateMessage({
+              sessionId: message.sessionId,
+              senderId: message.agentType,
+              senderName: `${message.agentType} Agent`,
+              content: JSON.stringify(agentResult),
+              messageType: "ANALYSIS",
+              metadata: { agentType: message.agentType, ticker: message.ticker },
+            });
+
+            // Broadcast agent response to all participants
+            const agentDebateClients = debateRooms.get(message.sessionId);
+            if (agentDebateClients) {
+              const agentBroadcast = JSON.stringify({
+                type: "agent_debate_response",
+                message: agentMessage,
+                agentType: message.agentType,
+                result: agentResult,
+              });
+              agentDebateClients.forEach(client => {
+                if (client.readyState === 1) {
+                  client.send(agentBroadcast);
+                }
+              });
+            }
+            break;
         }
       } catch (error) {
         console.error("WebSocket message error:", error);
@@ -1025,6 +1211,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           icMeetingRooms.delete(meetingId);
         }
       });
+      
+      debateRooms.forEach((clients, sessionId) => {
+        clients.delete(ws);
+        if (clients.size === 0) {
+          debateRooms.delete(sessionId);
+        }
+      });
+      
       console.log("WebSocket client disconnected");
     });
 

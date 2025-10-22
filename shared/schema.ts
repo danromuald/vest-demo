@@ -299,6 +299,11 @@ export const workflowStages = pgTable("workflow_stages", {
   executionCompletedAt: timestamp("execution_completed_at"),
   monitoringStatus: text("monitoring_status").notNull().default('pending'),
   monitoringCompletedAt: timestamp("monitoring_completed_at"),
+  lastAdvancedBy: varchar("last_advanced_by"), // user id who advanced
+  lastAdvancedAt: timestamp("last_advanced_at"),
+  lastRevertedBy: varchar("last_reverted_by"), // user id who reverted
+  lastRevertedAt: timestamp("last_reverted_at"),
+  revertReason: text("revert_reason"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
