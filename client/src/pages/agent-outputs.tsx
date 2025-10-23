@@ -19,18 +19,27 @@ export default function AgentOutputs() {
     queryKey: ['/api/agent-responses'],
   });
 
+  // Get unique agent types from actual data
+  const uniqueAgentTypes = Array.from(new Set(agentOutputs.map(r => r.agentType)));
+  
+  // Helper to convert agent type to display name
+  const formatAgentName = (agentType: string) => {
+    return agentType.split('_').map(word => 
+      word.charAt(0) + word.slice(1).toLowerCase()
+    ).join(' ');
+  };
+  
   const agentTypes = [
     { id: "all", label: "All Agents" },
-    { id: "RESEARCH_SYNTHESIZER", label: "Research Synthesizer" },
-    { id: "DCF_MODELER", label: "DCF Modeler" },
-    { id: "CONTRARIAN", label: "Contrarian Analyst" },
-    { id: "SCENARIO_SIMULATOR", label: "Scenario Simulator" },
-    { id: "THESIS_MONITOR", label: "Thesis Monitor" },
+    ...uniqueAgentTypes.map(type => ({
+      id: type,
+      label: formatAgentName(type)
+    }))
   ];
 
   const filteredOutputs = agentOutputs.filter(output => {
     const matchesSearch = output.ticker?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         output.summary?.toLowerCase().includes(searchQuery.toLowerCase());
+                         output.prompt?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesAgent = selectedAgent === "all" || output.agentType === selectedAgent;
     return matchesSearch && matchesAgent;
   });
@@ -124,9 +133,6 @@ export default function AgentOutputs() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium text-sm">{output.ticker}</span>
-                          {output.version && (
-                            <Badge variant="outline" className="text-xs">v{output.version}</Badge>
-                          )}
                         </div>
                         <p className="text-xs text-muted-foreground line-clamp-2">{output.prompt?.substring(0, 100)}</p>
                       </div>

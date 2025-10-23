@@ -10,10 +10,13 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, GitBranch, Search, Users, TrendingUp, Bell, FileText, Bot, DollarSign, AlertTriangle, BarChart3, Activity, Newspaper, FileCheck, Shield, Send, Database, Mic, PieChart } from "lucide-react";
+import { 
+  LayoutDashboard, GitBranch, Search, FileText, Users, TrendingUp, 
+  Bell, FolderOpen, Bot 
+} from "lucide-react";
 import { Link, useLocation } from "wouter";
 
-const menuItems = [
+const workflowItems = [
   {
     title: "Dashboard",
     url: "/",
@@ -49,93 +52,18 @@ const menuItems = [
     url: "/monitoring",
     icon: Bell,
   },
+];
+
+const resourceItems = [
   {
     title: "Documents",
     url: "/documents",
-    icon: FileText,
-  },
-];
-
-const agentItems = [
-  {
-    title: "Research Brief",
-    url: "/research-brief",
-    icon: FileText,
+    icon: FolderOpen,
   },
   {
-    title: "Financial Model",
-    url: "/financial-model",
-    icon: DollarSign,
-  },
-  {
-    title: "Risk Analysis",
-    url: "/risk-analysis",
-    icon: AlertTriangle,
-  },
-  {
-    title: "Quant Analysis",
-    url: "/quant-analysis",
-    icon: BarChart3,
-  },
-  {
-    title: "Scenario Simulator",
-    url: "/scenario-simulator",
-    icon: Activity,
-  },
-  {
-    title: "Investment Memos",
-    url: "/investment-memos",
-    icon: FileCheck,
-  },
-  {
-    title: "Compliance Reports",
-    url: "/compliance-reports",
-    icon: Shield,
-  },
-  {
-    title: "Meeting Minutes",
-    url: "/meeting-minutes",
-    icon: FileText,
-  },
-  {
-    title: "Trade Orders",
-    url: "/trade-orders",
-    icon: Send,
-  },
-  {
-    title: "Risk Reports",
-    url: "/risk-reports",
-    icon: AlertTriangle,
-  },
-  {
-    title: "Data Retrieval",
-    url: "/data-retrieval",
-    icon: Database,
-  },
-  {
-    title: "Voice Summaries",
-    url: "/voice-summaries",
-    icon: Mic,
-  },
-  {
-    title: "Attribution Reports",
-    url: "/attribution-reports",
-    icon: PieChart,
-  },
-  {
-    title: "Market Events",
-    url: "/market-events",
-    icon: Newspaper,
-  },
-  {
-    title: "Thesis Monitor",
-    url: "/thesis-monitor",
-    icon: TrendingUp,
-  },
-  {
-    title: "Risk Regime",
-    url: "/risk-regime",
-    icon: Shield,
+    title: "Agent Outputs",
+    url: "/agent-outputs",
+    icon: Bot,
   },
 ];
 
@@ -157,15 +85,15 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>Workflow</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {workflowItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
                     isActive={location === item.url}
-                    data-testid={`link-${item.title.toLowerCase().replace(' ', '-')}`}
+                    data-testid={`link-${item.title.toLowerCase().replace(/ /g, '-')}`}
                   >
                     <Link href={item.url}>
                       <item.icon className="h-4 w-4" />
@@ -178,15 +106,15 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarGroup>
-          <SidebarGroupLabel>AI Agents</SidebarGroupLabel>
+          <SidebarGroupLabel>Resources</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {agentItems.map((item) => (
+              {resourceItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
                     isActive={location === item.url}
-                    data-testid={`link-${item.title.toLowerCase().replace(' ', '-')}`}
+                    data-testid={`link-${item.title.toLowerCase().replace(/ /g, '-')}`}
                   >
                     <Link href={item.url}>
                       <item.icon className="h-4 w-4" />
