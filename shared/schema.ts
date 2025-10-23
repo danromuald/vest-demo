@@ -637,3 +637,63 @@ export interface PreTradeRiskReport {
   riskRating: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   recommendation: string;
 }
+
+export interface DataRetrievalReport {
+  ticker: string;
+  queryType: 'PRECEDENTS' | 'COMPARABLES' | 'HISTORICAL';
+  results: {
+    transaction: string;
+    date: string;
+    valuation: string;
+    relevance: number;
+  }[];
+  summary: string;
+  insights: string[];
+}
+
+export interface VoiceSummary {
+  meetingId: string;
+  ticker: string;
+  audioUrl: string;
+  transcriptSummary: string;
+  keyPoints: string[];
+  duration: string;
+  generatedAt: string;
+}
+
+export interface AttributionReport {
+  portfolioId: string;
+  period: string;
+  totalReturn: number;
+  attribution: {
+    assetAllocation: number;
+    stockSelection: number;
+    interaction: number;
+    currency: number;
+  };
+  topContributors: {
+    ticker: string;
+    contribution: number;
+    reason: string;
+  }[];
+  topDetractors: {
+    ticker: string;
+    contribution: number;
+    reason: string;
+  }[];
+  summary: string;
+}
+
+export interface RiskRegimeReport {
+  currentRegime: 'LOW_VOLATILITY' | 'MODERATE_VOLATILITY' | 'HIGH_VOLATILITY' | 'CRISIS';
+  regimeConfidence: number;
+  indicators: {
+    vixLevel: number;
+    marketVolatility: number;
+    correlationBreakdown: boolean;
+    liquidityStress: boolean;
+  };
+  recommendations: string[];
+  portfolioAdjustments: string[];
+  monitoringAlerts: string[];
+}

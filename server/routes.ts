@@ -495,6 +495,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/agents/data-retrieval", async (req, res) => {
+    try {
+      const { ticker, queryType } = req.body;
+      if (!ticker || !queryType) {
+        res.status(400).json({ error: "Ticker and queryType are required" });
+        return;
+      }
+
+      const report = await agentService.generateDataRetrievalReport(ticker, queryType);
+      
+      // Store the agent response
+      await storage.createAgentResponse({
+        agentType: "DATA_RETRIEVAL",
+        ticker,
+        prompt: `Retrieve ${queryType} data for ${ticker}`,
+        response: report,
+        metadata: { queryType },
+      });
+
+      res.json(report);
+    } catch (error) {
+      console.error("Data retrieval error:", error);
+      res.status(500).json({ error: "Failed to generate data retrieval report" });
+    }
+  });
+
+  app.post("/api/agents/voice-synthesizer", async (req, res) => {
+    try {
+      const { meetingId, ticker } = req.body;
+      if (!meetingId || !ticker) {
+        res.status(400).json({ error: "Meeting ID and ticker are required" });
+        return;
+      }
+
+      const summary = await agentService.generateVoiceSummary(meetingId, ticker);
+      
+      // Store the agent response
+      await storage.createAgentResponse({
+        agentType: "VOICE_SYNTHESIZER",
+        ticker,
+        prompt: `Generate voice summary for meeting ${meetingId} (${ticker})`,
+        response: summary,
+        metadata: { meetingId },
+      });
+
+      res.json(summary);
+    } catch (error) {
+      console.error("Voice synthesizer error:", error);
+      res.status(500).json({ error: "Failed to generate voice summary" });
+    }
+  });
+
+  app.post("/api/agents/attribution-analyst", async (req, res) => {
+    try {
+      const { portfolioId, period } = req.body;
+      if (!portfolioId || !period) {
+        res.status(400).json({ error: "Portfolio ID and period are required" });
+        return;
+      }
+
+      const report = await agentService.generateAttributionReport(portfolioId, period);
+      
+      // Store the agent response
+      await storage.createAgentResponse({
+        agentType: "ATTRIBUTION_ANALYST",
+        ticker: "N/A",
+        prompt: `Generate attribution report for portfolio ${portfolioId} (${period})`,
+        response: report,
+        metadata: { portfolioId, period },
+      });
+
+      res.json(report);
+    } catch (error) {
+      console.error("Attribution analyst error:", error);
+      res.status(500).json({ error: "Failed to generate attribution report" });
+    }
+  });
+
+  app.post("/api/agents/risk-regime-monitor", async (req, res) => {
+    try {
+      const report = await agentService.generateRiskRegimeReport();
+      
+      // Store the agent response
+      await storage.createAgentResponse({
+        agentType: "RISK_REGIME_MONITOR",
+        ticker: "N/A",
+        prompt: `Generate current risk regime assessment`,
+        response: report,
+        metadata: {},
+      });
+
+      res.json(report);
+    } catch (error) {
+      console.error("Risk regime monitor error:", error);
+      res.status(500).json({ error: "Failed to generate risk regime report" });
+    }
+  });
+
   // Agent Responses (history)
   app.get("/api/agent-responses", async (req, res) => {
     try {

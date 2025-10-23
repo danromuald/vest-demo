@@ -47,7 +47,10 @@ Return ONLY valid JSON matching this exact structure:
       });
 
       const content = completion.choices[0]?.message?.content;
-      if (!content) throw new Error("No response from AI");
+      if (!content) {
+        console.error("OpenAI response structure:", JSON.stringify(completion, null, 2));
+        throw new Error("No response from AI");
+      }
 
       return JSON.parse(content) as ResearchBrief;
     } catch (error) {
@@ -603,6 +606,224 @@ Return ONLY valid JSON matching this exact structure:
       return JSON.parse(content);
     } catch (error) {
       console.error("Error generating pre-trade risk report:", error);
+      throw error;
+    }
+  }
+
+  async generateDataRetrievalReport(ticker: string, queryType: string): Promise<import('@shared/schema').DataRetrievalReport> {
+    try {
+      const prompt = `You are a data retrieval specialist. Find historical precedent transactions, comparable deals, or historical data for ${ticker} with query type: ${queryType}.
+
+Include:
+1. Relevant transactions/comparables with dates and valuations
+2. Relevance scores (0-100)
+3. Summary of findings
+4. Key insights
+
+Return ONLY valid JSON matching this exact structure:
+{
+  "ticker": "${ticker}",
+  "queryType": "${queryType}",
+  "results": [
+    {
+      "transaction": "Microsoft acquired LinkedIn",
+      "date": "2016-06-13",
+      "valuation": "$26.2B (6.2x revenue)",
+      "relevance": 85
+    },
+    {
+      "transaction": "Salesforce acquired Slack",
+      "date": "2020-12-01",
+      "valuation": "$27.7B (24x revenue)",
+      "relevance": 78
+    }
+  ],
+  "summary": "Analysis of comparable SaaS/enterprise software acquisitions showing premium valuations for market leaders",
+  "insights": [
+    "Enterprise SaaS commands 15-30x revenue multiples in strategic acquisitions",
+    "Network effect platforms trade at significant premium to traditional software",
+    "Recent deals show declining multiples from 2021 peak"
+  ]
+}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 3072,
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (!content) {
+        console.error("OpenAI response structure:", JSON.stringify(completion, null, 2));
+        throw new Error("No response from AI");
+      }
+
+      return JSON.parse(content);
+    } catch (error) {
+      console.error("Error generating data retrieval report:", error);
+      throw error;
+    }
+  }
+
+  async generateVoiceSummary(meetingId: string, ticker: string): Promise<import('@shared/schema').VoiceSummary> {
+    try {
+      const prompt = `You are a voice synthesis specialist. Generate a voice summary structure for IC meeting ${meetingId} regarding ${ticker}.
+
+Note: Actual audio generation is not available, so provide a transcript summary instead.
+
+Return ONLY valid JSON matching this exact structure:
+{
+  "meetingId": "${meetingId}",
+  "ticker": "${ticker}",
+  "audioUrl": "https://example.com/audio/${meetingId}.mp3",
+  "transcriptSummary": "The Investment Committee met to discuss ${ticker}. The proposal received strong support with 4 votes in favor and 1 abstention. Key discussion points included the company's strong competitive moat, expanding margins, and attractive valuation. Risk concerns centered on regulatory headwinds and execution risk on new product launches. The committee approved a 5% position with a 12-month target price of $250.",
+  "keyPoints": [
+    "Proposal approved with 4-1 vote (1 abstention)",
+    "Strong competitive advantages in cloud infrastructure",
+    "Target position size: 5% of portfolio",
+    "12-month price target: $250 (35% upside)",
+    "Key risks: regulatory uncertainty, execution"
+  ],
+  "duration": "15 minutes",
+  "generatedAt": "${new Date().toISOString()}"
+}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 2048,
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (!content) {
+        console.error("OpenAI response structure:", JSON.stringify(completion, null, 2));
+        throw new Error("No response from AI");
+      }
+
+      return JSON.parse(content);
+    } catch (error) {
+      console.error("Error generating voice summary:", error);
+      throw error;
+    }
+  }
+
+  async generateAttributionReport(portfolioId: string, period: string): Promise<import('@shared/schema').AttributionReport> {
+    try {
+      const prompt = `You are an attribution analyst. Generate a performance attribution report for portfolio ${portfolioId} for period ${period}.
+
+Include:
+1. Total return and attribution breakdown
+2. Top contributors and detractors
+3. Summary analysis
+
+Return ONLY valid JSON matching this exact structure:
+{
+  "portfolioId": "${portfolioId}",
+  "period": "${period}",
+  "totalReturn": 12.5,
+  "attribution": {
+    "assetAllocation": 2.3,
+    "stockSelection": 8.7,
+    "interaction": 0.8,
+    "currency": 0.7
+  },
+  "topContributors": [
+    {
+      "ticker": "NVDA",
+      "contribution": 3.2,
+      "reason": "Strong AI chip demand drove 45% price appreciation"
+    },
+    {
+      "ticker": "MSFT",
+      "contribution": 2.1,
+      "reason": "Azure growth and AI integration exceeded expectations"
+    }
+  ],
+  "topDetractors": [
+    {
+      "ticker": "META",
+      "contribution": -1.3,
+      "reason": "Increased capex guidance and regulatory concerns"
+    }
+  ],
+  "summary": "Portfolio outperformed benchmark by 4.2% driven primarily by superior stock selection in technology sector. Asset allocation and currency effects provided modest additional alpha."
+}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 2048,
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (!content) {
+        console.error("OpenAI response structure:", JSON.stringify(completion, null, 2));
+        throw new Error("No response from AI");
+      }
+
+      return JSON.parse(content);
+    } catch (error) {
+      console.error("Error generating attribution report:", error);
+      throw error;
+    }
+  }
+
+  async generateRiskRegimeReport(): Promise<import('@shared/schema').RiskRegimeReport> {
+    try {
+      const prompt = `You are a risk regime monitor. Analyze current market conditions and determine the risk regime.
+
+Include:
+1. Current regime assessment with confidence
+2. Market indicators (VIX, volatility, correlation, liquidity)
+3. Recommendations and portfolio adjustments
+4. Monitoring alerts
+
+Return ONLY valid JSON matching this exact structure:
+{
+  "currentRegime": "MODERATE_VOLATILITY",
+  "regimeConfidence": 75,
+  "indicators": {
+    "vixLevel": 18.5,
+    "marketVolatility": 15.2,
+    "correlationBreakdown": false,
+    "liquidityStress": false
+  },
+  "recommendations": [
+    "Maintain current hedging levels",
+    "Monitor credit spreads for signs of stress",
+    "Consider reducing beta exposure if VIX exceeds 25"
+  ],
+  "portfolioAdjustments": [
+    "No immediate adjustments required",
+    "Review position sizing in high-beta names",
+    "Ensure adequate dry powder for opportunities"
+  ],
+  "monitoringAlerts": [
+    "Watch for VIX spike above 20",
+    "Monitor correlation breakdown in technology sector",
+    "Track credit spread widening in financials"
+  ]
+}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 2048,
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (!content) {
+        console.error("OpenAI response structure:", JSON.stringify(completion, null, 2));
+        throw new Error("No response from AI");
+      }
+
+      return JSON.parse(content);
+    } catch (error) {
+      console.error("Error generating risk regime report:", error);
       throw error;
     }
   }
