@@ -38,7 +38,8 @@ import {
   Calendar,
   Clock,
   Loader2,
-  Trash2
+  Trash2,
+  AlertTriangle
 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -61,6 +62,8 @@ export default function ICMeeting() {
   const [selectedProposalIds, setSelectedProposalIds] = useState<string[]>([]);
   const [newMeetingDate, setNewMeetingDate] = useState("");
   const [newMeetingAttendees, setNewMeetingAttendees] = useState("");
+  const [voteComment, setVoteComment] = useState("");
+  const [voterName, setVoterName] = useState("Committee Member");
 
   // Fetch IC meetings
   const { data: meetings = [] } = useQuery<ICMeetingType[]>({
@@ -108,6 +111,12 @@ export default function ICMeeting() {
   const { data: agentResponses = [] } = useQuery<any[]>({
     queryKey: ['/api/agent-responses', selectedProposal?.ticker],
     enabled: !!selectedProposal?.ticker,
+  });
+
+  // Fetch votes for selected proposal
+  const { data: proposalVotes = [] } = useQuery<any[]>({
+    queryKey: [`/api/votes/${selectedProposal?.id}`],
+    enabled: !!selectedProposal?.id,
   });
 
   // Extract research brief and financial model from agent responses
@@ -217,6 +226,21 @@ export default function ICMeeting() {
     },
   });
 
+  // Update meeting status mutation
+  const updateMeetingMutation = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<ICMeetingType> }) => {
+      return await apiRequest('PATCH', `/api/ic-meetings/${id}`, updates);
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/ic-meetings'] });
+      const statusText = variables.updates.status === 'IN_PROGRESS' ? 'started' : 'completed';
+      toast({ 
+        title: "Meeting Updated",
+        description: `Meeting ${statusText} successfully`
+      });
+    },
+  });
+
   // Delete meeting mutation
   const deleteMeetingMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -252,30 +276,75 @@ export default function ICMeeting() {
     },
   });
 
-  const handleVote = (voterName: string, vote: 'APPROVE' | 'REJECT' | 'ABSTAIN') => {
-    if (meetingId && isConnected) {
-      sendMessage({
-        type: "cast_vote",
-        meetingId,
-        vote: {
-          proposalId: selectedProposal?.id || "mock-proposal-id",
-          voterName,
-          voterRole: "Committee Member",
-          vote,
-        },
+  // Vote submission mutation
+  const voteMutation = useMutation({
+    mutationFn: async (voteData: { 
+      proposalId: string; 
+      voterName: string; 
+      voterRole: string; 
+      vote: 'APPROVE' | 'REJECT' | 'ABSTAIN'; 
+      comment?: string 
+    }) => {
+      return await apiRequest('POST', '/api/votes', voteData);
+    },
+    onSuccess: () => {
+      if (selectedProposal) {
+        queryClient.invalidateQueries({ queryKey: [`/api/votes/${selectedProposal.id}`] });
+      }
+      setVoteComment("");
+      toast({
+        title: "Vote Submitted",
+        description: "Your vote has been recorded successfully",
       });
-    } else {
-      setVotes(prev => {
-        const filtered = prev.filter(v => v.name !== voterName);
-        return [...filtered, { name: voterName, vote }];
+    },
+  });
+
+  // Research brief generation mutation
+  const generateResearchMutation = useMutation({
+    mutationFn: async (ticker: string) => {
+      return await apiRequest('POST', '/api/agents/research-synthesizer', { ticker });
+    },
+    onSuccess: (data) => {
+      setResearchBrief(data);
+      queryClient.invalidateQueries({ queryKey: ['/api/agent-responses', selectedProposal?.ticker] });
+      toast({
+        title: "Research Brief Generated",
+        description: "AI analysis complete",
       });
-    }
+    },
+  });
+
+  // DCF model generation mutation
+  const generateDCFMutation = useMutation({
+    mutationFn: async (ticker: string) => {
+      return await apiRequest('POST', '/api/agents/financial-modeler', { ticker });
+    },
+    onSuccess: (data) => {
+      setFinancialModel(data);
+      queryClient.invalidateQueries({ queryKey: ['/api/agent-responses', selectedProposal?.ticker] });
+      toast({
+        title: "DCF Model Generated",
+        description: "Valuation analysis complete",
+      });
+    },
+  });
+
+  const handleVote = (voteType: 'APPROVE' | 'REJECT' | 'ABSTAIN') => {
+    if (!selectedProposal) return;
+    
+    voteMutation.mutate({
+      proposalId: selectedProposal.id,
+      voterName,
+      voterRole: "Committee Member",
+      vote: voteType,
+      comment: voteComment || undefined,
+    });
   };
 
   const voteCount = {
-    approve: votes.filter(v => v.vote === 'APPROVE').length,
-    reject: votes.filter(v => v.vote === 'REJECT').length,
-    abstain: votes.filter(v => v.vote === 'ABSTAIN').length,
+    approve: proposalVotes.filter((v: any) => v.vote === 'APPROVE').length,
+    reject: proposalVotes.filter((v: any) => v.vote === 'REJECT').length,
+    abstain: proposalVotes.filter((v: any) => v.vote === 'ABSTAIN').length,
   };
 
   // Sort meetings: active first, then upcoming, then past
@@ -423,10 +492,14 @@ export default function ICMeeting() {
                   'COMPLETED': 'bg-muted/50 text-muted-foreground border-muted',
                 };
                 
+                const isActiveMeeting = activeMeeting?.id === meeting.id;
+                
                 return (
                   <div
                     key={meeting.id}
-                    className="flex items-center gap-4 rounded-md border p-4"
+                    className={`flex items-center gap-4 rounded-md border p-4 transition-colors ${
+                      isActiveMeeting ? 'border-primary bg-primary/5' : ''
+                    }`}
                     data-testid={`card-meeting-${meeting.id}`}
                   >
                     <div className="flex-1 min-w-0">
@@ -438,6 +511,9 @@ export default function ICMeeting() {
                         <Badge variant="outline" className={statusColors[meeting.status as keyof typeof statusColors]}>
                           {meeting.status}
                         </Badge>
+                        {isActiveMeeting && (
+                          <Badge variant="default" className="text-xs">Active</Badge>
+                        )}
                       </div>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <div className="flex items-center gap-1">
@@ -459,16 +535,44 @@ export default function ICMeeting() {
                         </div>
                       )}
                     </div>
-                    {meeting.status === 'SCHEDULED' && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteMeetingMutation.mutate(meeting.id)}
-                        data-testid={`button-delete-meeting-${meeting.id}`}
-                      >
-                        <Trash2 className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {meeting.status === 'SCHEDULED' && (
+                        <>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => updateMeetingMutation.mutate({ 
+                              id: meeting.id, 
+                              updates: { status: 'IN_PROGRESS' } 
+                            })}
+                            data-testid={`button-start-meeting-${meeting.id}`}
+                          >
+                            Start Meeting
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => deleteMeetingMutation.mutate(meeting.id)}
+                            data-testid={`button-delete-meeting-${meeting.id}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                        </>
+                      )}
+                      {meeting.status === 'IN_PROGRESS' && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => updateMeetingMutation.mutate({ 
+                            id: meeting.id, 
+                            updates: { status: 'COMPLETED' } 
+                          })}
+                          data-testid={`button-complete-meeting-${meeting.id}`}
+                        >
+                          Complete Meeting
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -619,10 +723,24 @@ export default function ICMeeting() {
                       ) : (
                         <div className="flex flex-col items-center justify-center py-8">
                           <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                          <p className="text-sm text-muted-foreground">No research brief available</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            <Link href="/proposals"><a className="text-primary hover:underline">View Proposal Detail</a></Link> to generate research
-                          </p>
+                          <p className="text-sm text-muted-foreground mb-4">No research brief available</p>
+                          <Button
+                            onClick={() => generateResearchMutation.mutate(selectedProposal.ticker)}
+                            disabled={generateResearchMutation.isPending}
+                            data-testid="button-generate-research"
+                          >
+                            {generateResearchMutation.isPending ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Generating...
+                              </>
+                            ) : (
+                              <>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Generate Research Brief
+                              </>
+                            )}
+                          </Button>
                         </div>
                       )}
                     </TabsContent>
@@ -681,10 +799,24 @@ export default function ICMeeting() {
                       ) : (
                         <div className="flex flex-col items-center justify-center py-8">
                           <TrendingUp className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                          <p className="text-sm text-muted-foreground">No valuation model available</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            <Link href="/proposals"><a className="text-primary hover:underline">View Proposal Detail</a></Link> to generate DCF model
-                          </p>
+                          <p className="text-sm text-muted-foreground mb-4">No valuation model available</p>
+                          <Button
+                            onClick={() => generateDCFMutation.mutate(selectedProposal.ticker)}
+                            disabled={generateDCFMutation.isPending}
+                            data-testid="button-generate-dcf"
+                          >
+                            {generateDCFMutation.isPending ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Generating...
+                              </>
+                            ) : (
+                              <>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Generate DCF Model
+                              </>
+                            )}
+                          </Button>
                         </div>
                       )}
                     </TabsContent>
@@ -755,50 +887,89 @@ export default function ICMeeting() {
                       </Card>
                     </div>
 
+                    <div className="space-y-3">
+                      <div>
+                        <Label htmlFor="voter-name">Your Name</Label>
+                        <Input
+                          id="voter-name"
+                          value={voterName}
+                          onChange={(e) => setVoterName(e.target.value)}
+                          placeholder="Enter your name"
+                          data-testid="input-voter-name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="vote-comment">Comment (optional)</Label>
+                        <Textarea
+                          id="vote-comment"
+                          value={voteComment}
+                          onChange={(e) => setVoteComment(e.target.value)}
+                          placeholder="Add your reasoning..."
+                          className="resize-none"
+                          rows={2}
+                          data-testid="input-vote-comment"
+                        />
+                      </div>
+                    </div>
+
                     <div className="flex items-center gap-2">
                       <Button
-                        onClick={() => handleVote("You", 'APPROVE')}
+                        onClick={() => handleVote('APPROVE')}
                         variant="default"
                         className="flex-1"
+                        disabled={voteMutation.isPending || !voterName.trim()}
                         data-testid="button-vote-approve"
                       >
-                        <Check className="h-4 w-4 mr-2" />
+                        {voteMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
                         Approve
                       </Button>
                       <Button
-                        onClick={() => handleVote("You", 'REJECT')}
+                        onClick={() => handleVote('REJECT')}
                         variant="destructive"
                         className="flex-1"
+                        disabled={voteMutation.isPending || !voterName.trim()}
                         data-testid="button-vote-reject"
                       >
-                        <X className="h-4 w-4 mr-2" />
+                        {voteMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <X className="h-4 w-4 mr-2" />}
                         Reject
                       </Button>
                       <Button
-                        onClick={() => handleVote("You", 'ABSTAIN')}
+                        onClick={() => handleVote('ABSTAIN')}
                         variant="secondary"
                         className="flex-1"
+                        disabled={voteMutation.isPending || !voterName.trim()}
                         data-testid="button-vote-abstain"
                       >
-                        <Minus className="h-4 w-4 mr-2" />
+                        {voteMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Minus className="h-4 w-4 mr-2" />}
                         Abstain
                       </Button>
                     </div>
 
-                    {votes.length > 0 && (
+                    {proposalVotes.length > 0 && (
                       <div className="border-t pt-4">
-                        <h4 className="font-semibold text-sm mb-3">Vote History</h4>
-                        <div className="space-y-2">
-                          {votes.map((v, i) => (
-                            <div key={i} className="flex items-center justify-between text-sm">
-                              <span className="text-foreground">{v.name}</span>
-                              <Badge variant={
-                                v.vote === 'APPROVE' ? 'default' : 
-                                v.vote === 'REJECT' ? 'destructive' : 
-                                'secondary'
-                              }>
-                                {v.vote}
-                              </Badge>
+                        <h4 className="font-semibold text-sm mb-3">Vote History ({proposalVotes.length})</h4>
+                        <div className="space-y-3">
+                          {proposalVotes.map((v: any) => (
+                            <div key={v.id} className="border rounded-md p-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-foreground text-sm">{v.voterName}</span>
+                                  <span className="text-xs text-muted-foreground">{v.voterRole}</span>
+                                </div>
+                                <Badge variant={
+                                  v.vote === 'APPROVE' ? 'default' : 
+                                  v.vote === 'REJECT' ? 'destructive' : 
+                                  'secondary'
+                                }>
+                                  {v.vote}
+                                </Badge>
+                              </div>
+                              {v.comment && (
+                                <p className="text-sm text-muted-foreground">{v.comment}</p>
+                              )}
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {format(new Date(v.createdAt), 'MMM d, yyyy h:mm a')}
+                              </p>
                             </div>
                           ))}
                         </div>
@@ -824,5 +995,3 @@ export default function ICMeeting() {
     </div>
   );
 }
-
-import { AlertTriangle } from "lucide-react";

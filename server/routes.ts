@@ -154,6 +154,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/ic-meetings/:id", async (req, res) => {
+    try {
+      const meetingId = req.params.id;
+      const updates = req.body;
+      
+      // Validate status if provided
+      if (updates.status && !['SCHEDULED', 'IN_PROGRESS', 'COMPLETED'].includes(updates.status)) {
+        res.status(400).json({ error: "Invalid meeting status" });
+        return;
+      }
+      
+      const updated = await storage.updateICMeeting(meetingId, updates);
+      res.json(updated);
+    } catch (error) {
+      console.error("IC Meeting update error:", error);
+      res.status(500).json({ error: "Failed to update IC meeting" });
+    }
+  });
+
   app.delete("/api/ic-meetings/:id", async (req, res) => {
     try {
       const meetingId = req.params.id;
