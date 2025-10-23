@@ -31,9 +31,10 @@ import {
   Calendar,
   Target,
   Loader2,
-  Filter
+  Filter,
+  CalendarPlus
 } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -67,6 +68,7 @@ type ProposalFormValues = z.infer<typeof proposalFormSchema>;
 
 export default function ProposalsPage() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -523,23 +525,28 @@ export default function ProposalsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 flex-1 overflow-y-auto">
           {filteredProposals.map((proposal) => (
-            <Link key={proposal.id} href={`/proposals/${proposal.id}`}>
-              <Card className="hover-elevate cursor-pointer h-full" data-testid={`card-proposal-${proposal.ticker}`}>
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <CardTitle className="text-xl font-bold">{proposal.ticker}</CardTitle>
-                    <div className="flex flex-col gap-1">
-                      <Badge variant="outline" className={getTypeColor(proposal.proposalType)}>
-                        {proposal.proposalType}
-                      </Badge>
-                      <Badge variant="outline" className={getStatusColor(proposal.status)}>
-                        {proposal.status}
-                      </Badge>
-                    </div>
+            <Card 
+              key={proposal.id}
+              className="hover-elevate cursor-pointer h-full flex flex-col" 
+              data-testid={`card-proposal-${proposal.ticker}`}
+              onClick={() => setLocation(`/proposals/${proposal.id}`)}
+            >
+              <CardHeader>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <CardTitle className="text-xl font-bold">{proposal.ticker}</CardTitle>
+                  <div className="flex flex-col gap-1">
+                    <Badge variant="outline" className={getTypeColor(proposal.proposalType)}>
+                      {proposal.proposalType}
+                    </Badge>
+                    <Badge variant="outline" className={getStatusColor(proposal.status)}>
+                      {proposal.status}
+                    </Badge>
                   </div>
-                  <p className="text-sm text-foreground">{proposal.companyName}</p>
-                </CardHeader>
-                <CardContent className="space-y-3">
+                </div>
+                <p className="text-sm text-foreground">{proposal.companyName}</p>
+              </CardHeader>
+              <CardContent className="space-y-3 flex-1 flex flex-col">
+                <div className="space-y-3 flex-1">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <User className="h-4 w-4" />
                     <span>{proposal.analyst}</span>
@@ -558,9 +565,34 @@ export default function ProposalsPage() {
                     <Calendar className="h-3 w-3" />
                     <span>{formatDate(proposal.createdAt)}</span>
                   </div>
-                </CardContent>
-              </Card>
-            </Link>
+                </div>
+                {proposal.status === 'PENDING' && !proposal.icMeetingId && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLocation('/ic-meeting');
+                      toast({
+                        title: "Navigate to IC Meetings",
+                        description: `Schedule a meeting for ${proposal.ticker}`,
+                      });
+                    }}
+                    data-testid={`button-schedule-${proposal.ticker}`}
+                  >
+                    <CalendarPlus className="h-4 w-4 mr-2" />
+                    Schedule for IC Meeting
+                  </Button>
+                )}
+                {proposal.icMeetingId && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2 p-2 bg-muted/50 rounded-md">
+                    <CalendarPlus className="h-3 w-3" />
+                    <span>Scheduled for IC Meeting</span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}

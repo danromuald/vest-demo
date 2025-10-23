@@ -147,6 +147,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/ic-meetings/:id", async (req, res) => {
+    try {
+      const meetingId = req.params.id;
+      
+      // First, clear icMeetingId from all proposals linked to this meeting
+      const allProposals = await storage.getProposals();
+      const linkedProposals = allProposals.filter(p => p.icMeetingId === meetingId);
+      
+      await Promise.all(
+        linkedProposals.map(p => storage.updateProposal(p.id, { icMeetingId: null }))
+      );
+      
+      // Then delete the meeting
+      await storage.deleteICMeeting(meetingId);
+      
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete IC meeting" });
+    }
+  });
+
   // Votes
   app.get("/api/votes/:proposalId", async (req, res) => {
     try {

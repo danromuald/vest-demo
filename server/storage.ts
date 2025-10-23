@@ -52,6 +52,7 @@ export interface IStorage {
   getICMeeting(id: string): Promise<ICMeeting | undefined>;
   createICMeeting(meeting: InsertICMeeting): Promise<ICMeeting>;
   updateICMeeting(id: string, meeting: Partial<ICMeeting>): Promise<ICMeeting | undefined>;
+  deleteICMeeting(id: string): Promise<void>;
   
   // Votes
   getVotes(proposalId: string): Promise<Vote[]>;
@@ -238,6 +239,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(icMeetings.id, id))
       .returning();
     return meeting || undefined;
+  }
+
+  async deleteICMeeting(id: string): Promise<void> {
+    await db.delete(icMeetings).where(eq(icMeetings.id, id));
   }
 
   // Votes
