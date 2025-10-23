@@ -176,12 +176,10 @@ export default function ICMeeting() {
       const attendees = newMeetingAttendees.split(',').map(a => a.trim()).filter(Boolean);
       
       const meeting: any = await apiRequest('POST', '/api/ic-meetings', {
-        meetingDate: new Date(newMeetingDate).toISOString(),
+        meetingDate: new Date(newMeetingDate), // Convert to Date object for Zod validation
         status: 'SCHEDULED',
         attendees,
         agenda: { proposals: selectedProposalIds },
-        decisions: null,
-        minutes: null,
       });
 
       // Update selected proposals with meeting ID
@@ -207,10 +205,13 @@ export default function ICMeeting() {
       setNewMeetingDate("");
       setNewMeetingAttendees("");
     },
-    onError: () => {
+    onError: (error: any) => {
+      const errorMessage = error?.message || error?.error || "Unknown error";
+      const details = error?.details || error?.message;
+      console.error("Create meeting error:", error);
       toast({
         title: "Error",
-        description: "Failed to schedule IC meeting",
+        description: details || errorMessage || "Failed to schedule IC meeting",
         variant: "destructive",
       });
     },
@@ -410,7 +411,12 @@ export default function ICMeeting() {
           ) : (
             <div className="space-y-3">
               {sortedMeetings.map((meeting) => {
-                const meetingProposals = allProposals.filter(p => p.icMeetingId === meeting.id);
+                // Get proposals either by icMeetingId OR from meeting agenda
+                const proposalsFromMeeting = allProposals.filter(p => p.icMeetingId === meeting.id);
+                const proposalIdsFromAgenda = (meeting.agenda as any)?.proposals || [];
+                const meetingProposals = proposalsFromMeeting.length > 0 
+                  ? proposalsFromMeeting 
+                  : allProposals.filter(p => proposalIdsFromAgenda.includes(p.id));
                 const statusColors = {
                   'SCHEDULED': 'bg-chart-4/10 text-chart-4 border-chart-4/20',
                   'IN_PROGRESS': 'bg-chart-1/10 text-chart-1 border-chart-1/20',

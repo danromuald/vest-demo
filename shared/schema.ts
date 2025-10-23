@@ -93,6 +93,8 @@ export const icMeetings = pgTable("ic_meetings", {
 export const insertICMeetingSchema = createInsertSchema(icMeetings).omit({
   id: true,
   createdAt: true,
+}).extend({
+  meetingDate: z.coerce.date(), // Accept string or Date and coerce to Date
 });
 
 export type ICMeeting = typeof icMeetings.$inferSelect;

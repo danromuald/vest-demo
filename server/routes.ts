@@ -135,14 +135,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/ic-meetings", async (req, res) => {
     try {
+      console.log("IC Meeting creation payload:", JSON.stringify(req.body, null, 2));
       const validated = insertICMeetingSchema.parse(req.body);
       const meeting = await storage.createICMeeting(validated);
       res.json(meeting);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ error: "Validation failed", details: error.errors });
+        console.error("IC Meeting validation errors:", error.errors);
+        res.status(400).json({ 
+          error: "Validation failed", 
+          details: error.errors,
+          message: error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+        });
         return;
       }
+      console.error("IC Meeting creation error:", error);
       res.status(500).json({ error: "Failed to create IC meeting" });
     }
   });
