@@ -2,7 +2,7 @@
 
 ## Overview
 
-Vest is an AI-powered investment committee workflow system designed to automate and enhance the investment decision-making process. The platform streamlines workflows from initial research through execution and ongoing portfolio monitoring, leveraging multi-agent AI systems to reduce analyst workload, enhance meeting quality, ensure compliance, and maintain institutional knowledge. Vest provides capabilities for automated research synthesis, AI-assisted investment committee meetings with real-time contrarian analysis, portfolio monitoring with thesis health tracking, document generation, and scenario simulation. The project is currently a production-ready enterprise MVP.
+Vest is an AI-powered investment committee workflow system designed to automate and enhance the investment decision-making process. The platform streamlines workflows from initial research through execution and ongoing portfolio monitoring, leveraging a complete 16-agent AI system to reduce analyst workload, enhance meeting quality, ensure compliance, and maintain institutional knowledge. Vest provides capabilities for automated research synthesis, AI-assisted investment committee meetings with real-time contrarian analysis, portfolio monitoring with thesis health tracking, document generation, scenario simulation, compliance checks, trade order generation, and risk assessment. The project is a production-ready enterprise MVP with comprehensive workflow automation.
 
 ## User Preferences
 
@@ -46,7 +46,7 @@ Vest supports a comprehensive workflow from `DISCOVERY` to `MONITORING`, includi
 - **Notification System**: Real-time alerts for thesis health, market events, and IC votes.
 
 #### AI Agent Integration
-Twelve specialized agents organized by workflow phase provide comprehensive analysis and automation:
+Sixteen specialized agents organized by workflow phase provide comprehensive analysis and automation:
 
 **Pre-Work Agents (Research & Analysis)**:
 1. **Research Synthesizer**: Comprehensive company research briefs with executive summaries, key metrics, strengths, and recommendations
@@ -68,7 +68,13 @@ Twelve specialized agents organized by workflow phase provide comprehensive anal
 11. **Market Event Monitor**: Real-time market event tracking with price movements, news events, analyst changes, technical alerts, and severity assessment (LOW/MEDIUM/HIGH/CRITICAL)
 12. **Thesis Monitor**: Investment thesis health tracking with drift scores (0-100%), status badges (HEALTHY/WARNING/ALERT), key concerns, and recommendations (HOLD/REVIEW/SELL)
 
-All specialized agent pages (8 total) support:
+**Supporting Agents (Data & Analysis)**:
+13. **Data Retrieval Specialist**: Historical precedent transactions, comparable deals, and historical data with relevance scoring and insights
+14. **Voice Synthesizer**: Audio summaries of IC decisions with transcript summaries and key points
+15. **Attribution Analyst**: Performance attribution analysis with asset allocation, stock selection, top contributors/detractors
+16. **Risk Regime Monitor**: Continuous risk regime tracking (LOW/MODERATE/HIGH/CRISIS volatility) with market indicators and portfolio adjustments
+
+Dedicated agent pages (9 total, with additional agents accessible via API):
 - **Research Brief** (`/research-brief`): Company research with metrics, strengths, and recommendations
 - **Financial Model** (`/financial-model`): DCF valuation with Bull/Base/Bear scenarios  
 - **Risk Analysis** (`/risk-analysis`): Contrarian bear case analysis
@@ -77,6 +83,16 @@ All specialized agent pages (8 total) support:
 - **Thesis Monitor** (`/thesis-monitor`): Thesis health tracking with drift scores
 - **Market Events** (`/market-events`): Real-time price alerts and news monitoring
 - **Investment Memos** (`/investment-memos`): Formatted investment memorandums
+- **Compliance Reports** (`/compliance-reports`): Regulatory compliance checks and violation tracking
+
+Additional agents accessible via API endpoints:
+- **Meeting Minutes** (`POST /api/agents/minutes-scribe`): Automated IC meeting documentation
+- **Trade Orders** (`POST /api/agents/trade-order-generator`): Execution ticket generation
+- **Risk Reports** (`POST /api/agents/risk-reporter`): Pre-trade risk assessments
+- **Data Retrieval** (`POST /api/agents/data-retrieval`): Historical precedents and comparables
+- **Voice Summaries** (`POST /api/agents/voice-synthesizer`): Meeting audio summaries
+- **Attribution Reports** (`POST /api/agents/attribution-analyst`): Performance attribution
+- **Risk Regime** (`POST /api/agents/risk-regime-monitor`): Market risk regime assessment
 
 Common features across all agent pages:
 - In-page artifact generation via dialog forms

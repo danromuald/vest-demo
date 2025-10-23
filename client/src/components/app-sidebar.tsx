@@ -10,7 +10,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, GitBranch, Search, Users, TrendingUp, Bell, FileText, Bot, DollarSign, AlertTriangle, BarChart3, Activity, Newspaper, FileCheck } from "lucide-react";
+import { LayoutDashboard, GitBranch, Search, Users, TrendingUp, Bell, FileText, Bot, DollarSign, AlertTriangle, BarChart3, Activity, Newspaper, FileCheck, Shield, Send, Database, Mic, PieChart } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 const menuItems = [
@@ -83,9 +83,44 @@ const agentItems = [
     icon: Activity,
   },
   {
-    title: "Thesis Monitor",
-    url: "/thesis-monitor",
-    icon: TrendingUp,
+    title: "Investment Memos",
+    url: "/investment-memos",
+    icon: FileCheck,
+  },
+  {
+    title: "Compliance Reports",
+    url: "/compliance-reports",
+    icon: Shield,
+  },
+  {
+    title: "Meeting Minutes",
+    url: "/meeting-minutes",
+    icon: FileText,
+  },
+  {
+    title: "Trade Orders",
+    url: "/trade-orders",
+    icon: Send,
+  },
+  {
+    title: "Risk Reports",
+    url: "/risk-reports",
+    icon: AlertTriangle,
+  },
+  {
+    title: "Data Retrieval",
+    url: "/data-retrieval",
+    icon: Database,
+  },
+  {
+    title: "Voice Summaries",
+    url: "/voice-summaries",
+    icon: Mic,
+  },
+  {
+    title: "Attribution Reports",
+    url: "/attribution-reports",
+    icon: PieChart,
   },
   {
     title: "Market Events",
@@ -93,9 +128,14 @@ const agentItems = [
     icon: Newspaper,
   },
   {
-    title: "Investment Memos",
-    url: "/investment-memos",
-    icon: FileCheck,
+    title: "Thesis Monitor",
+    url: "/thesis-monitor",
+    icon: TrendingUp,
+  },
+  {
+    title: "Risk Regime",
+    url: "/risk-regime",
+    icon: Shield,
   },
 ];
 
