@@ -402,6 +402,210 @@ Return ONLY valid JSON matching this exact structure:
       throw error;
     }
   }
+
+  async generateComplianceReport(ticker: string, proposalId: string): Promise<import('@shared/schema').ComplianceReport> {
+    try {
+      const prompt = `You are a compliance officer. Generate a comprehensive compliance report for ${ticker} (Proposal ID: ${proposalId}).
+
+Include:
+1. Compliance checks (position limits, sector concentration, regulatory restrictions, conflicts of interest)
+2. Any violations found
+3. Severity assessment
+4. Remediation steps
+5. Whether additional approval is required
+
+Return ONLY valid JSON matching this exact structure:
+{
+  "ticker": "${ticker}",
+  "proposalId": "${proposalId}",
+  "complianceChecks": {
+    "positionLimits": { "passed": true, "detail": "Position size 5.2% within 10% single-name limit" },
+    "sectorConcentration": { "passed": true, "detail": "Technology sector 28% within 35% limit" },
+    "regulatoryRestrictions": { "passed": true, "detail": "No restricted securities or insider holdings" },
+    "conflictOfInterest": { "passed": true, "detail": "No conflicts identified" }
+  },
+  "violations": [],
+  "severity": "LOW",
+  "remediation": [],
+  "approvalRequired": false,
+  "recommendation": "Proposal meets all compliance requirements and is approved for execution"
+}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 2048,
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (!content) throw new Error("No response from AI");
+
+      return JSON.parse(content);
+    } catch (error) {
+      console.error("Error generating compliance report:", error);
+      throw error;
+    }
+  }
+
+  async generateMeetingMinutes(meetingId: string): Promise<import('@shared/schema').MeetingMinutes> {
+    try {
+      const prompt = `You are an IC meeting secretary. Generate comprehensive meeting minutes for meeting ID: ${meetingId}.
+
+Include:
+1. Meeting date and attendees
+2. Proposals reviewed with decisions and vote tallies
+3. Key discussion points
+4. Action items with assignments and due dates
+5. Next meeting date
+
+Return ONLY valid JSON matching this exact structure:
+{
+  "meetingId": "${meetingId}",
+  "date": "${new Date().toISOString().split('T')[0]}",
+  "attendees": ["Sarah Chen - Technology Analyst", "Michael Torres - Portfolio Manager", "Lisa Park - Risk Officer", "David Kim - Head of Research"],
+  "proposalsReviewed": [
+    {
+      "ticker": "AAPL",
+      "proposalId": "prop-123",
+      "decision": "APPROVED",
+      "voteSummary": { "for": 3, "against": 0, "abstain": 1 }
+    }
+  ],
+  "keyDiscussionPoints": [
+    "Strong revenue growth and margin expansion justify 5% position",
+    "Services segment provides recurring revenue stream",
+    "Risk mitigated by diversified product portfolio"
+  ],
+  "actionItems": [
+    {
+      "description": "Execute AAPL purchase order via TWAP over 3 days",
+      "assignedTo": "Trading Desk",
+      "dueDate": "${new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}"
+    }
+  ],
+  "nextMeetingDate": "${new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}"
+}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 3072,
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (!content) throw new Error("No response from AI");
+
+      return JSON.parse(content);
+    } catch (error) {
+      console.error("Error generating meeting minutes:", error);
+      throw error;
+    }
+  }
+
+  async generateTradeOrder(ticker: string, proposalId: string, proposalData: any): Promise<import('@shared/schema').TradeOrder> {
+    try {
+      const prompt = `You are a trade execution specialist. Generate a detailed trade order for ${ticker} (Proposal ID: ${proposalId}).
+
+Proposal data: ${JSON.stringify(proposalData, null, 2)}
+
+Include:
+1. Order type (BUY/SELL) and shares
+2. Target price and execution strategy
+3. Estimated cost
+4. Risk parameters (max slippage, stop loss)
+5. Execution instructions
+
+Return ONLY valid JSON matching this exact structure:
+{
+  "ticker": "${ticker}",
+  "proposalId": "${proposalId}",
+  "orderType": "BUY",
+  "shares": 5000,
+  "targetPrice": 185.50,
+  "orderStrategy": "TWAP",
+  "timeframe": "3 days",
+  "estimatedCost": 927500,
+  "riskParameters": {
+    "maxSlippage": 0.5,
+    "stopLoss": 175.00
+  },
+  "executionInstructions": [
+    "Execute via TWAP algorithm over 3 trading days",
+    "Target 30% of average daily volume",
+    "Avoid first/last 30 minutes of trading day",
+    "Monitor order flow for adverse selection"
+  ],
+  "generatedAt": "${new Date().toISOString()}"
+}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 2048,
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (!content) throw new Error("No response from AI");
+
+      return JSON.parse(content);
+    } catch (error) {
+      console.error("Error generating trade order:", error);
+      throw error;
+    }
+  }
+
+  async generatePreTradeRisk(ticker: string, proposalId: string, proposedShares: number): Promise<import('@shared/schema').PreTradeRiskReport> {
+    try {
+      const prompt = `You are a risk analyst. Generate a pre-trade risk assessment for ${ticker} (Proposal ID: ${proposalId}, Proposed Shares: ${proposedShares}).
+
+Include:
+1. Proposed weight and portfolio impact
+2. Risk metrics (VaR, beta, correlation)
+3. Any limit breaches
+4. Overall risk rating
+5. Recommendation
+
+Return ONLY valid JSON matching this exact structure:
+{
+  "ticker": "${ticker}",
+  "proposalId": "${proposalId}",
+  "proposedShares": ${proposedShares},
+  "proposedWeight": 5.2,
+  "portfolioImpact": {
+    "newPortfolioWeight": 5.2,
+    "sectorConcentration": 28.5,
+    "factorExposureChange": "Growth +0.15, Quality +0.08",
+    "trackingErrorChange": 0.35
+  },
+  "riskMetrics": {
+    "varImpact": 125000,
+    "betaContribution": 0.08,
+    "correlationToPortfolio": 0.72
+  },
+  "limitBreaches": [],
+  "riskRating": "MEDIUM",
+  "recommendation": "Position size within acceptable risk parameters. Monitor sector concentration."
+}`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        response_format: { type: "json_object" },
+        max_completion_tokens: 2048,
+      });
+
+      const content = completion.choices[0]?.message?.content;
+      if (!content) throw new Error("No response from AI");
+
+      return JSON.parse(content);
+    } catch (error) {
+      console.error("Error generating pre-trade risk report:", error);
+      throw error;
+    }
+  }
 }
 
 export const agentService = new AgentService();

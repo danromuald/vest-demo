@@ -564,3 +564,76 @@ export interface InvestmentMemo {
   preparedBy: string;
   date: string;
 }
+
+export interface ComplianceReport {
+  ticker: string;
+  proposalId: string;
+  complianceChecks: {
+    positionLimits: { passed: boolean; detail: string };
+    sectorConcentration: { passed: boolean; detail: string };
+    regulatoryRestrictions: { passed: boolean; detail: string };
+    conflictOfInterest: { passed: boolean; detail: string };
+  };
+  violations: string[];
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  remediation: string[];
+  approvalRequired: boolean;
+  recommendation: string;
+}
+
+export interface MeetingMinutes {
+  meetingId: string;
+  date: string;
+  attendees: string[];
+  proposalsReviewed: {
+    ticker: string;
+    proposalId: string;
+    decision: 'APPROVED' | 'REJECTED' | 'DEFERRED';
+    voteSummary: { for: number; against: number; abstain: number };
+  }[];
+  keyDiscussionPoints: string[];
+  actionItems: {
+    description: string;
+    assignedTo: string;
+    dueDate: string;
+  }[];
+  nextMeetingDate: string;
+}
+
+export interface TradeOrder {
+  ticker: string;
+  proposalId: string;
+  orderType: 'BUY' | 'SELL';
+  shares: number;
+  targetPrice: number;
+  orderStrategy: 'MARKET' | 'LIMIT' | 'TWAP' | 'VWAP';
+  timeframe: string;
+  estimatedCost: number;
+  riskParameters: {
+    maxSlippage: number;
+    stopLoss: number;
+  };
+  executionInstructions: string[];
+  generatedAt: string;
+}
+
+export interface PreTradeRiskReport {
+  ticker: string;
+  proposalId: string;
+  proposedShares: number;
+  proposedWeight: number;
+  portfolioImpact: {
+    newPortfolioWeight: number;
+    sectorConcentration: number;
+    factorExposureChange: string;
+    trackingErrorChange: number;
+  };
+  riskMetrics: {
+    varImpact: number;
+    betaContribution: number;
+    correlationToPortfolio: number;
+  };
+  limitBreaches: string[];
+  riskRating: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  recommendation: string;
+}

@@ -24,6 +24,9 @@ import FinancialModel from "@/pages/financial-model";
 import RiskAnalysis from "@/pages/risk-analysis";
 import ScenarioSimulator from "@/pages/scenario-simulator";
 import ThesisMonitor from "@/pages/thesis-monitor";
+import QuantAnalysis from "@/pages/quant-analysis";
+import MarketEvents from "@/pages/market-events";
+import InvestmentMemos from "@/pages/investment-memos";
 import Proposals from "@/pages/proposals";
 import ProposalDetail from "@/pages/proposal-detail";
 import NotFound from "@/pages/not-found";
@@ -39,6 +42,9 @@ function Router() {
       <Route path="/risk-analysis" component={RiskAnalysis} />
       <Route path="/scenario-simulator" component={ScenarioSimulator} />
       <Route path="/thesis-monitor" component={ThesisMonitor} />
+      <Route path="/quant-analysis" component={QuantAnalysis} />
+      <Route path="/market-events" component={MarketEvents} />
+      <Route path="/investment-memos" component={InvestmentMemos} />
       <Route path="/proposals" component={Proposals} />
       <Route path="/proposals/:id" component={ProposalDetail} />
       <Route path="/ic-meeting" component={ICMeeting} />

@@ -391,6 +391,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/agents/compliance-monitor", async (req, res) => {
+    try {
+      const { ticker, proposalId } = req.body;
+      if (!ticker || !proposalId) {
+        res.status(400).json({ error: "Ticker and proposalId are required" });
+        return;
+      }
+
+      const report = await agentService.generateComplianceReport(ticker, proposalId);
+      
+      // Store the agent response
+      await storage.createAgentResponse({
+        agentType: "COMPLIANCE_MONITOR",
+        ticker,
+        prompt: `Generate compliance report for ${ticker} (Proposal: ${proposalId})`,
+        response: report,
+        metadata: { proposalId },
+      });
+
+      res.json(report);
+    } catch (error) {
+      console.error("Compliance monitor error:", error);
+      res.status(500).json({ error: "Failed to generate compliance report" });
+    }
+  });
+
+  app.post("/api/agents/minutes-scribe", async (req, res) => {
+    try {
+      const { meetingId } = req.body;
+      if (!meetingId) {
+        res.status(400).json({ error: "Meeting ID is required" });
+        return;
+      }
+
+      const minutes = await agentService.generateMeetingMinutes(meetingId);
+      
+      // Store the agent response
+      await storage.createAgentResponse({
+        agentType: "MINUTES_SCRIBE",
+        ticker: "N/A",
+        prompt: `Generate meeting minutes for meeting ${meetingId}`,
+        response: minutes,
+        metadata: { meetingId },
+      });
+
+      res.json(minutes);
+    } catch (error) {
+      console.error("Minutes scribe error:", error);
+      res.status(500).json({ error: "Failed to generate meeting minutes" });
+    }
+  });
+
+  app.post("/api/agents/trade-order-generator", async (req, res) => {
+    try {
+      const { ticker, proposalId, proposalData } = req.body;
+      if (!ticker || !proposalId) {
+        res.status(400).json({ error: "Ticker and proposalId are required" });
+        return;
+      }
+
+      const order = await agentService.generateTradeOrder(ticker, proposalId, proposalData);
+      
+      // Store the agent response
+      await storage.createAgentResponse({
+        agentType: "TRADE_ORDER_GENERATOR",
+        ticker,
+        prompt: `Generate trade order for ${ticker} (Proposal: ${proposalId})`,
+        response: order,
+        metadata: { proposalId, proposalData },
+      });
+
+      res.json(order);
+    } catch (error) {
+      console.error("Trade order generator error:", error);
+      res.status(500).json({ error: "Failed to generate trade order" });
+    }
+  });
+
+  app.post("/api/agents/risk-reporter", async (req, res) => {
+    try {
+      const { ticker, proposalId, proposedShares } = req.body;
+      if (!ticker || !proposalId || !proposedShares) {
+        res.status(400).json({ error: "Ticker, proposalId, and proposedShares are required" });
+        return;
+      }
+
+      const report = await agentService.generatePreTradeRisk(ticker, proposalId, proposedShares);
+      
+      // Store the agent response
+      await storage.createAgentResponse({
+        agentType: "RISK_REPORTER",
+        ticker,
+        prompt: `Generate pre-trade risk report for ${ticker} (Proposal: ${proposalId}, Shares: ${proposedShares})`,
+        response: report,
+        metadata: { proposalId, proposedShares },
+      });
+
+      res.json(report);
+    } catch (error) {
+      console.error("Risk reporter error:", error);
+      res.status(500).json({ error: "Failed to generate pre-trade risk report" });
+    }
+  });
+
   // Agent Responses (history)
   app.get("/api/agent-responses", async (req, res) => {
     try {

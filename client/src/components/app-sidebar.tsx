@@ -10,7 +10,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { LayoutDashboard, GitBranch, Search, Users, TrendingUp, Bell, FileText, Bot, DollarSign, AlertTriangle, BarChart3, Activity } from "lucide-react";
+import { LayoutDashboard, GitBranch, Search, Users, TrendingUp, Bell, FileText, Bot, DollarSign, AlertTriangle, BarChart3, Activity, Newspaper, FileCheck } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 const menuItems = [
@@ -73,14 +73,29 @@ const agentItems = [
     icon: AlertTriangle,
   },
   {
+    title: "Quant Analysis",
+    url: "/quant-analysis",
+    icon: BarChart3,
+  },
+  {
     title: "Scenario Simulator",
     url: "/scenario-simulator",
-    icon: BarChart3,
+    icon: Activity,
   },
   {
     title: "Thesis Monitor",
     url: "/thesis-monitor",
-    icon: Activity,
+    icon: TrendingUp,
+  },
+  {
+    title: "Market Events",
+    url: "/market-events",
+    icon: Newspaper,
+  },
+  {
+    title: "Investment Memos",
+    url: "/investment-memos",
+    icon: FileCheck,
   },
 ];
 

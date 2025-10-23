@@ -46,17 +46,39 @@ Vest supports a comprehensive workflow from `DISCOVERY` to `MONITORING`, includi
 - **Notification System**: Real-time alerts for thesis health, market events, and IC votes.
 
 #### AI Agent Integration
-Eight specialized agents provide analysis and recommendations with JSON-structured outputs:
+Twelve specialized agents organized by workflow phase provide comprehensive analysis and automation:
+
+**Pre-Work Agents (Research & Analysis)**:
 1. **Research Synthesizer**: Comprehensive company research briefs with executive summaries, key metrics, strengths, and recommendations
 2. **DCF Modeler**: Three-scenario financial valuation models (Bull/Base/Bear) with target prices, IRRs, WACC, and terminal growth rates
-3. **Contrarian Analyst**: Bear case analysis and risk identification with counterarguments to investment thesis
-4. **Scenario Simulator**: Portfolio impact analysis with risk metrics comparing current vs. projected portfolio characteristics
-5. **Thesis Monitor**: Investment thesis health tracking with drift scores (0-100%), status badges, and actionable recommendations
-6. **Quant Analyst**: Statistical factor analysis with exposures (growth, value, momentum, quality, size, volatility), Sharpe ratio, beta, alpha, portfolio correlation, and quant scores
-7. **Market Event Monitor**: Real-time market event tracking with price movements, news events, analyst changes, technical alerts, and severity assessment (LOW/MEDIUM/HIGH/CRITICAL)
-8. **Document Generator**: Investment memo generation with formatted executive summaries, thesis, valuation analysis, risk factors, and recommendations
+3. **Quant Analyst**: Statistical factor analysis with exposures (growth, value, momentum, quality, size, volatility), Sharpe ratio, beta, alpha, portfolio correlation, and quant scores
+4. **Contrarian Analyst**: Bear case analysis and risk identification with counterarguments to investment thesis
+5. **Scenario Simulator**: Portfolio impact analysis with risk metrics comparing current vs. projected portfolio characteristics
 
-All specialized agent pages support:
+**In-Session Agents (IC Meeting Support)**:
+6. **Document Generator**: Investment memo generation with formatted executive summaries, thesis, valuation analysis, risk factors, and recommendations
+
+**Post-Session Agents (Execution)**:
+7. **Minutes Scribe**: Automated IC meeting minutes with attendees, decisions, vote tallies, discussion points, and action items
+8. **Compliance Monitor**: Regulatory checks covering position limits, sector concentration, conflicts of interest, with violation tracking and remediation steps
+9. **Risk Reporter**: Pre-trade risk analysis with portfolio impact, VaR, beta contribution, limit breach detection, and risk ratings
+10. **Trade Order Generator**: Execution ticket generation with order type, shares, strategy (MARKET/LIMIT/TWAP/VWAP), risk parameters, and detailed instructions
+
+**Sleeper Agents (Ongoing Monitoring)**:
+11. **Market Event Monitor**: Real-time market event tracking with price movements, news events, analyst changes, technical alerts, and severity assessment (LOW/MEDIUM/HIGH/CRITICAL)
+12. **Thesis Monitor**: Investment thesis health tracking with drift scores (0-100%), status badges (HEALTHY/WARNING/ALERT), key concerns, and recommendations (HOLD/REVIEW/SELL)
+
+All specialized agent pages (8 total) support:
+- **Research Brief** (`/research-brief`): Company research with metrics, strengths, and recommendations
+- **Financial Model** (`/financial-model`): DCF valuation with Bull/Base/Bear scenarios  
+- **Risk Analysis** (`/risk-analysis`): Contrarian bear case analysis
+- **Quant Analysis** (`/quant-analysis`): Factor exposures and statistical metrics
+- **Scenario Simulator** (`/scenario-simulator`): Portfolio impact analysis
+- **Thesis Monitor** (`/thesis-monitor`): Thesis health tracking with drift scores
+- **Market Events** (`/market-events`): Real-time price alerts and news monitoring
+- **Investment Memos** (`/investment-memos`): Formatted investment memorandums
+
+Common features across all agent pages:
 - In-page artifact generation via dialog forms
 - Historical browsing of all generated analyses
 - Master-detail layout with list/detail views
