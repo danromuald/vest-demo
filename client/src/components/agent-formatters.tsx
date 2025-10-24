@@ -11,7 +11,17 @@ import {
 export function ResearchBriefDisplay({ data }: { data: any }) {
   if (!data) return null;
 
-  const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+  let parsedData;
+  try {
+    parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+  } catch (error) {
+    console.error('Failed to parse research brief data:', error);
+    return (
+      <div className="text-sm text-destructive" data-testid="error-parsing-data">
+        Error displaying research brief. Invalid data format.
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6" data-testid="research-brief-display">
@@ -106,7 +116,18 @@ export function ResearchBriefDisplay({ data }: { data: any }) {
 export function DCFModelDisplay({ data }: { data: any }) {
   if (!data) return null;
 
-  const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+  let parsedData;
+  try {
+    parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+  } catch (error) {
+    console.error('Failed to parse DCF model data:', error);
+    return (
+      <div className="text-sm text-destructive" data-testid="error-parsing-data">
+        Error displaying DCF model. Invalid data format.
+      </div>
+    );
+  }
+  
   const scenarios = parsedData.scenarios || {};
   
   return (
@@ -244,7 +265,17 @@ export function DCFModelDisplay({ data }: { data: any }) {
 export function QuantAnalysisDisplay({ data }: { data: any }) {
   if (!data) return null;
 
-  const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+  let parsedData;
+  try {
+    parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+  } catch (error) {
+    console.error('Failed to parse quant analysis data:', error);
+    return (
+      <div className="text-sm text-destructive" data-testid="error-parsing-data">
+        Error displaying quant analysis. Invalid data format.
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6" data-testid="quant-analysis-display">
@@ -326,7 +357,17 @@ export function QuantAnalysisDisplay({ data }: { data: any }) {
 export function RiskAnalysisDisplay({ data }: { data: any }) {
   if (!data) return null;
 
-  const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+  let parsedData;
+  try {
+    parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+  } catch (error) {
+    console.error('Failed to parse risk analysis data:', error);
+    return (
+      <div className="text-sm text-destructive" data-testid="error-parsing-data">
+        Error displaying risk analysis. Invalid data format.
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-6" data-testid="risk-analysis-display">
@@ -404,7 +445,18 @@ export function RiskAnalysisDisplay({ data }: { data: any }) {
 export function ComplianceReportDisplay({ data }: { data: any }) {
   if (!data) return null;
 
-  const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+  let parsedData;
+  try {
+    parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+  } catch (error) {
+    console.error('Failed to parse compliance report data:', error);
+    return (
+      <div className="text-sm text-destructive" data-testid="error-parsing-data">
+        Error displaying compliance report. Invalid data format.
+      </div>
+    );
+  }
+  
   const checks = parsedData.complianceChecks || {};
   
   return (
