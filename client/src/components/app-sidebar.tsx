@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/sidebar";
 import { 
   LayoutDashboard, GitBranch, Search, FileText, Users, TrendingUp, 
-  Bell, FolderOpen, Bot 
+  Bell, FolderOpen, Bot, Brain, Calculator, AlertTriangle, BarChart3,
+  Sparkles
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
@@ -54,6 +55,33 @@ const workflowItems = [
   },
 ];
 
+const agentItems = [
+  {
+    title: "Research Briefs",
+    url: "/research-brief",
+    icon: Brain,
+    description: "AI-powered company research"
+  },
+  {
+    title: "Financial Models",
+    url: "/financial-model",
+    icon: Calculator,
+    description: "DCF valuations & scenarios"
+  },
+  {
+    title: "Risk Analysis",
+    url: "/risk-analysis",
+    icon: AlertTriangle,
+    description: "Contrarian bear cases"
+  },
+  {
+    title: "All Agent Outputs",
+    url: "/agent-outputs",
+    icon: Sparkles,
+    description: "Complete agent archive"
+  },
+];
+
 const resourceItems = [
   {
     title: "Documents",
@@ -61,9 +89,9 @@ const resourceItems = [
     icon: FolderOpen,
   },
   {
-    title: "Agent Outputs",
-    url: "/agent-outputs",
-    icon: Bot,
+    title: "Monitoring Hub",
+    url: "/monitoring-hub",
+    icon: BarChart3,
   },
 ];
 
@@ -89,6 +117,27 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {workflowItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === item.url}
+                    data-testid={`link-${item.title.toLowerCase().replace(/ /g, '-')}`}
+                  >
+                    <Link href={item.url}>
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>AI Agents</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {agentItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild

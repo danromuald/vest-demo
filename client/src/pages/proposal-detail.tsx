@@ -13,6 +13,7 @@ import {
 import type { Proposal, Vote, AgentResponse } from "@shared/schema";
 import { format } from "date-fns";
 import { Link } from "wouter";
+import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 
 export default function ProposalDetailPage() {
   const [, params] = useRoute("/proposals/:id");
@@ -136,6 +137,13 @@ export default function ProposalDetailPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] p-6">
+      <BreadcrumbNav 
+        items={[
+          { label: "Proposals", href: "/proposals" },
+          { label: `${proposal.ticker} - ${proposal.companyName}` }
+        ]} 
+      />
+      
       <div className="flex items-center gap-4 mb-6">
         <Link href="/proposals">
           <Button variant="outline" size="icon" data-testid="button-back">
