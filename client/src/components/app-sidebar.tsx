@@ -13,7 +13,8 @@ import {
 import { 
   LayoutDashboard, GitBranch, Search, FileText, Users, TrendingUp, 
   Bell, FolderOpen, Bot, Brain, Calculator, AlertTriangle, BarChart3,
-  Sparkles
+  Sparkles, Activity, Target, Shield, DollarSign, FileCheck, Database,
+  Volume2, PieChart, Gauge
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
@@ -55,31 +56,36 @@ const workflowItems = [
   },
 ];
 
-const agentItems = [
-  {
-    title: "Research Briefs",
-    url: "/research-brief",
-    icon: Brain,
-    description: "AI-powered company research"
-  },
-  {
-    title: "Financial Models",
-    url: "/financial-model",
-    icon: Calculator,
-    description: "DCF valuations & scenarios"
-  },
-  {
-    title: "Risk Analysis",
-    url: "/risk-analysis",
-    icon: AlertTriangle,
-    description: "Contrarian bear cases"
-  },
-  {
-    title: "All Agent Outputs",
-    url: "/agent-outputs",
-    icon: Sparkles,
-    description: "Complete agent archive"
-  },
+const preWorkAgents = [
+  { title: "Research Briefs", url: "/research-brief", icon: Brain },
+  { title: "Financial Models", url: "/financial-model", icon: Calculator },
+  { title: "Quant Analysis", url: "/quant-analysis", icon: Activity },
+  { title: "Risk Analysis", url: "/risk-analysis", icon: AlertTriangle },
+  { title: "Scenario Simulator", url: "/scenario-simulator", icon: Target },
+];
+
+const meetingAgents = [
+  { title: "Investment Memos", url: "/investment-memos", icon: FileText },
+];
+
+const executionAgents = [
+  { title: "Meeting Minutes", url: "/meeting-minutes", icon: FileCheck },
+  { title: "Compliance Reports", url: "/compliance-reports", icon: Shield },
+  { title: "Risk Reports", url: "/risk-reports", icon: AlertTriangle },
+  { title: "Trade Orders", url: "/trade-orders", icon: DollarSign },
+];
+
+const monitoringAgents = [
+  { title: "Thesis Monitor", url: "/thesis-monitor", icon: Target },
+  { title: "Market Events", url: "/market-events", icon: Bell },
+];
+
+const supportingAgents = [
+  { title: "Data Retrieval", url: "/data-retrieval", icon: Database },
+  { title: "Voice Summaries", url: "/voice-summaries", icon: Volume2 },
+  { title: "Attribution Reports", url: "/attribution-reports", icon: PieChart },
+  { title: "Risk Regime", url: "/risk-regime", icon: Gauge },
+  { title: "All Agent Outputs", url: "/agent-outputs", icon: Sparkles },
 ];
 
 const resourceItems = [
@@ -133,11 +139,12 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        
         <SidebarGroup>
-          <SidebarGroupLabel>AI Agents</SidebarGroupLabel>
+          <SidebarGroupLabel>Pre-Work Agents</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {agentItems.map((item) => (
+              {preWorkAgents.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
@@ -146,7 +153,7 @@ export function AppSidebar() {
                   >
                     <Link href={item.url}>
                       <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                      <span className="text-xs">{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -154,6 +161,51 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>IC & Execution</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {[...meetingAgents, ...executionAgents].map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === item.url}
+                    data-testid={`link-${item.title.toLowerCase().replace(/ /g, '-')}`}
+                  >
+                    <Link href={item.url}>
+                      <item.icon className="h-4 w-4" />
+                      <span className="text-xs">{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Monitoring & Analytics</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {[...monitoringAgents, ...supportingAgents].map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location === item.url}
+                    data-testid={`link-${item.title.toLowerCase().replace(/ /g, '-')}`}
+                  >
+                    <Link href={item.url}>
+                      <item.icon className="h-4 w-4" />
+                      <span className="text-xs">{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        
         <SidebarGroup>
           <SidebarGroupLabel>Resources</SidebarGroupLabel>
           <SidebarGroupContent>
