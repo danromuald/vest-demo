@@ -157,8 +157,12 @@ export default function Research() {
     mutationFn: async (ticker: string) => {
       return await apiRequest("POST", "/api/agents/research-synthesizer", { ticker });
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setResearchBrief(data);
+      // After both analyses complete, advance workflow to ANALYSIS stage
+      if (selectedRequest && dcfModel) {
+        await advanceWorkflowToAnalysis();
+      }
     },
   });
 
@@ -166,10 +170,28 @@ export default function Research() {
     mutationFn: async (ticker: string) => {
       return await apiRequest("POST", "/api/agents/financial-modeler", { ticker });
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setDcfModel(data);
+      // After both analyses complete, advance workflow to ANALYSIS stage
+      if (selectedRequest && researchBrief) {
+        await advanceWorkflowToAnalysis();
+      }
     },
   });
+
+  const advanceWorkflowToAnalysis = async () => {
+    if (!selectedRequest) return;
+    
+    try {
+      await apiRequest("POST", `/api/workflow/RESEARCH/${selectedRequest.id}/advance`, {
+        userId: "user-1",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/workflow-stages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/research-requests"] });
+    } catch (error) {
+      console.error("Failed to advance workflow stage:", error);
+    }
+  };
 
   const generateThesisMutation = useMutation({
     mutationFn: async ({ ticker, companyName, researchData, dcfData }: any) => {
@@ -287,6 +309,9 @@ export default function Research() {
   const handleAIAnalysis = (request: ResearchRequest) => {
     setSelectedRequest(request);
     setShowAIAgents(true);
+    // Reset previous data to show clean loading state
+    setResearchBrief(null);
+    setDcfModel(null);
     researchMutation.mutate(request.ticker);
     dcfMutation.mutate(request.ticker);
   };
@@ -917,30 +942,40 @@ export default function Research() {
       </Dialog>
 
       {/* AI Agents */}
-      {showAIAgents && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <AgentPanel
-            agentName="Research Synthesizer"
-            agentType="RESEARCH_SYNTHESIZER"
-            description="Comprehensive investment briefs from SEC filings and market data"
-            isGenerating={researchMutation.isPending}
-            response={researchBrief}
-            onInvoke={() => {
-              if (selectedRequest) researchMutation.mutate(selectedRequest.ticker);
-            }}
-          />
+      {showAIAgents && selectedRequest && (
+        <Card data-testid="ai-analysis-section">
+          <CardHeader>
+            <CardTitle>AI Analysis Results</CardTitle>
+            <CardDescription>
+              Analysis for {selectedRequest.ticker} - {selectedRequest.companyName}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <AgentPanel
+                agentName="Research Synthesizer"
+                agentType="RESEARCH_SYNTHESIZER"
+                description="Comprehensive investment briefs from SEC filings and market data"
+                isGenerating={researchMutation.isPending}
+                response={researchBrief}
+                onInvoke={() => {
+                  if (selectedRequest) researchMutation.mutate(selectedRequest.ticker);
+                }}
+              />
 
-          <AgentPanel
-            agentName="Financial Modeler"
-            agentType="DCF_MODELER"
-            description="DCF models with bull/base/bear scenarios"
-            isGenerating={dcfMutation.isPending}
-            response={dcfModel}
-            onInvoke={() => {
-              if (selectedRequest) dcfMutation.mutate(selectedRequest.ticker);
-            }}
-          />
-        </div>
+              <AgentPanel
+                agentName="Financial Modeler"
+                agentType="DCF_MODELER"
+                description="DCF models with bull/base/bear scenarios"
+                isGenerating={dcfMutation.isPending}
+                response={dcfModel}
+                onInvoke={() => {
+                  if (selectedRequest) dcfMutation.mutate(selectedRequest.ticker);
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
