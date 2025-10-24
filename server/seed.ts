@@ -1,6 +1,7 @@
 import { db } from "./db";
 import {
-  companies, positions, proposals, icMeetings, votes, marketEvents, thesisMonitors, notifications
+  companies, positions, proposals, icMeetings, votes, marketEvents, thesisMonitors, notifications,
+  researchRequests, agentResponses, financialModels, meetingParticipants
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -10,9 +11,13 @@ async function seed() {
   // Clear existing data
   await db.delete(notifications);
   await db.delete(votes);
+  await db.delete(meetingParticipants);
+  await db.delete(agentResponses);
+  await db.delete(financialModels);
   await db.delete(marketEvents);
   await db.delete(thesisMonitors);
   await db.delete(proposals);
+  await db.delete(researchRequests);
   await db.delete(icMeetings);
   await db.delete(positions);
   await db.delete(companies);
@@ -127,6 +132,36 @@ async function seed() {
 
   console.log(`✅ Seeded ${positionData.length} positions`);
 
+  // Seed Research Requests
+  const researchData = await db.insert(researchRequests).values([
+    {
+      id: randomUUID(),
+      ticker: "TSLA",
+      companyName: "Tesla Inc",
+      requestedBy: "Sarah Chen",
+      assignedTo: "Michael Torres",
+      priority: "HIGH",
+      status: "IN_PROGRESS",
+      researchType: "INITIAL",
+      description: "Evaluate Tesla for potential new position. Focus on FSD adoption trajectory and energy storage growth.",
+      dueDate: new Date("2025-10-30"),
+    },
+    {
+      id: randomUUID(),
+      ticker: "GOOGL",
+      companyName: "Alphabet Inc",
+      requestedBy: "Robert Anderson",
+      assignedTo: "Sarah Chen",
+      priority: "HIGH",
+      status: "COMPLETED",
+      researchType: "DEEP_DIVE",
+      description: "Analyze regulatory headwinds and competitive threats. Recommend trim or exit strategy.",
+      dueDate: new Date("2025-10-20"),
+    },
+  ]).returning();
+
+  console.log(`✅ Seeded ${researchData.length} research requests`);
+
   // Seed IC Meeting
   const meetingId = randomUUID();
   await db.insert(icMeetings).values({
@@ -227,6 +262,144 @@ async function seed() {
   }
 
   console.log("✅ Seeded votes");
+
+  // Seed Agent Responses (Research Briefs, DCF Models, etc.)
+  await db.insert(agentResponses).values([
+    {
+      id: randomUUID(),
+      agentType: "RESEARCH_SYNTHESIZER",
+      ticker: "TSLA",
+      prompt: "Generate comprehensive research brief for TSLA including key metrics, strengths, concerns, and recommendation",
+      response: JSON.stringify({
+        executiveSummary: "Tesla is evolving from pure EV manufacturer to autonomous driving and energy storage leader. FSD v13 shows meaningful progress with intervention rates down 80%. Energy storage business growing 150%+ YoY with strong margins. Cybertruck production ramping faster than expected.",
+        keyMetrics: {
+          marketCap: "$825B",
+          pe: "65x",
+          revenue: "$98B (est 2024)",
+          revenueGrowth: "22%",
+          margins: "Operating: 11%, Net: 15%",
+          evDeliveries: "1.9M units (2024E)",
+        },
+        strengths: [
+          "FSD technology 2-3 years ahead of competition",
+          "Energy storage deployments exceeding 100 GWh annually",
+          "Cybertruck orders backlog of 2M+ units",
+          "Vertical integration provides cost advantages",
+          "Strong brand loyalty and direct sales model"
+        ],
+        concerns: [
+          "Valuation elevated at 65x PE vs auto peers at 8x",
+          "Chinese EV competition intensifying (BYD, NIO)",
+          "Regulatory approval uncertainty for full autonomy",
+          "Execution risk on multiple product ramps"
+        ],
+        recommendation: "BUY - Target 4.5% weight at $310 price target (26% upside)"
+      }),
+    },
+    {
+      id: randomUUID(),
+      agentType: "RESEARCH_SYNTHESIZER",
+      ticker: "GOOGL",
+      prompt: "Generate comprehensive research brief for GOOGL including key metrics, strengths, concerns, and recommendation",
+      response: JSON.stringify({
+        executiveSummary: "Alphabet faces mounting regulatory pressure with DOJ antitrust case threatening search monopoly. AI disruption risk from ChatGPT and Claude gaining mindshare. Cloud growth decelerating while margins under pressure from AI infrastructure investments.",
+        keyMetrics: {
+          marketCap: "$2.05T",
+          pe: "24x",
+          revenue: "$307B (2024)",
+          revenueGrowth: "10%",
+          margins: "Operating: 30%, Net: 24%",
+          cloudRevenue: "$36B (12% of total)",
+        },
+        strengths: [
+          "Search still dominant with 90%+ market share",
+          "YouTube largest video platform with 2B+ users",
+          "Strong FCF supports 20% buyback program",
+          "Waymo autonomous driving leadership",
+          "AI research capabilities (DeepMind)"
+        ],
+        concerns: [
+          "DOJ seeking forced divestiture of Chrome/Android",
+          "AI-powered search alternatives gaining traction",
+          "Cloud margins compressed by AI investments",
+          "YouTube ad revenue growth slowing to 5%"
+        ],
+        recommendation: "SELL - Exit position given regulatory and competitive headwinds"
+      }),
+    },
+    {
+      id: randomUUID(),
+      agentType: "CONTRARIAN",
+      ticker: "TSLA",
+      prompt: "Provide contrarian bear case analysis for TSLA including key risks and counterarguments",
+      response: JSON.stringify({
+        bearCase: "Tesla faces intensifying competition from Chinese EV makers (BYD, NIO) with lower-cost models. FSD remains years away from true autonomy despite marketing claims. Energy storage margins will compress as commoditization accelerates. Valuation at 65x PE leaves no room for execution missteps.",
+        keyRisks: [
+          "BYD now #1 EV seller globally with superior battery tech",
+          "FSD regulatory approval uncertain - could take 5+ years",
+          "Energy storage becoming commoditized with margin pressure",
+          "Cybertruck production challenges and quality issues",
+          "Valuation disconnect: 65x PE vs Toyota at 8x PE"
+        ],
+        counterarguments: [
+          "FSD data advantage with 5B+ miles driven",
+          "Energy storage TAM massive and early stage",
+          "Brand strength supports pricing power",
+          "Vertical integration provides cost moat"
+        ],
+        recommendation: "Wait for valuation to compress to 35-40x PE before initiating"
+      }),
+    },
+  ]);
+
+  console.log("✅ Seeded agent responses");
+
+  // Seed Financial Models (DCF)
+  await db.insert(financialModels).values([
+    {
+      id: randomUUID(),
+      ticker: "TSLA",
+      modelType: "DCF",
+      createdBy: "Michael Torres",
+      bullCase: JSON.stringify({
+        targetPrice: 380,
+        irr: 42.5,
+        revenueGrowth: "30% CAGR (2025-2027)",
+        operatingMargin: "16%",
+        terminalGrowth: "4%",
+        wacc: "9%"
+      }),
+      baseCase: JSON.stringify({
+        targetPrice: 310,
+        irr: 26.1,
+        revenueGrowth: "22% CAGR (2025-2027)",
+        operatingMargin: "13%",
+        terminalGrowth: "3%",
+        wacc: "10%"
+      }),
+      bearCase: JSON.stringify({
+        targetPrice: 195,
+        irr: -6.5,
+        revenueGrowth: "12% CAGR (2025-2027)",
+        operatingMargin: "9%",
+        terminalGrowth: "2%",
+        wacc: "11.5%"
+      }),
+      assumptions: JSON.stringify({
+        evDeliveries: "2.8M units by 2027 (base case)",
+        energyStorage: "180 GWh deployments (20% of revenue)",
+        services: "$25B revenue (FSD subscriptions)",
+        automotive: "$145B revenue",
+        sensitivity: {
+          wacc: "±1% changes price by ±18%",
+          terminalGrowth: "±0.5% changes price by ±10%",
+          operatingMargin: "±2% changes price by ±15%"
+        }
+      }),
+    },
+  ]);
+
+  console.log("✅ Seeded financial models");
 
   // Seed Thesis Monitors
   await db.insert(thesisMonitors).values([
