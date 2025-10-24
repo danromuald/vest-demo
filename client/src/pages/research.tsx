@@ -55,6 +55,39 @@ export default function Research() {
   const [dcfModel, setDcfModel] = useState<any>(null);
   const { toast } = useToast();
 
+  // Fetch agent responses for the selected research request's ticker
+  const { data: agentResponses } = useQuery<any[]>({
+    queryKey: ["/api/agent-responses", selectedRequest?.ticker],
+    enabled: !!selectedRequest?.ticker,
+  });
+
+  // Helper to get research brief from either newly generated or saved data
+  const getResearchBrief = () => {
+    if (researchBrief) return researchBrief; // Newly generated takes precedence
+    if (agentResponses && Array.isArray(agentResponses)) {
+      const saved = agentResponses.find((r: any) => r.agentType === 'RESEARCH_SYNTHESIZER');
+      return saved?.response || null;
+    }
+    return null;
+  };
+
+  // Helper to get DCF model from either newly generated or saved data
+  const getDcfModel = () => {
+    if (dcfModel) return dcfModel; // Newly generated takes precedence
+    if (agentResponses && Array.isArray(agentResponses)) {
+      const saved = agentResponses.find((r: any) => r.agentType === 'DCF_MODELER');
+      return saved?.response || null;
+    }
+    return null;
+  };
+
+  // Check if both analyses are complete (either newly generated or saved)
+  const hasBothAnalyses = () => {
+    const brief = getResearchBrief();
+    const dcf = getDcfModel();
+    return !!(brief && dcf);
+  };
+
   const form = useForm<ResearchRequestFormValues>({
     resolver: zodResolver(researchRequestFormSchema),
     defaultValues: {
@@ -200,7 +233,7 @@ export default function Research() {
         companyName,
         researchData,
         dcfData,
-      }) as Promise<any>;
+      });
     },
     onSuccess: (data: any) => {
       if (data.thesis) {
@@ -309,11 +342,18 @@ export default function Research() {
   const handleAIAnalysis = (request: ResearchRequest) => {
     setSelectedRequest(request);
     setShowAIAgents(true);
-    // Reset previous data to show clean loading state
+    // Reset previous newly-generated data to show clean loading state
+    // (saved data will still be fetched via the query)
     setResearchBrief(null);
     setDcfModel(null);
     researchMutation.mutate(request.ticker);
     dcfMutation.mutate(request.ticker);
+  };
+
+  const handleViewAnalysis = (request: ResearchRequest) => {
+    setSelectedRequest(request);
+    setShowAIAgents(true);
+    // Don't reset anything - we want to show saved data
   };
 
   const handleCreateProposal = (request: ResearchRequest) => {
@@ -575,22 +615,27 @@ export default function Research() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {request.status === "COMPLETED" && !request.proposalId && (() => {
+                      {!request.proposalId && (() => {
                         const workflowStage = getWorkflowStage(request.id);
-                        const isAnalysisStage = workflowStage?.currentStage === "ANALYSIS";
-                        return (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleCreateProposal(request)}
-                            disabled={!isAnalysisStage}
-                            data-testid={`button-create-proposal-${request.ticker}`}
-                            title={!isAnalysisStage ? "Workflow must be at Analysis stage to create proposal" : ""}
-                          >
-                            <Plus className="h-3 w-3" />
-                            Create Proposal
-                          </Button>
-                        );
+                        const isAnalysisStage = workflowStage?.currentStage === "ANALYSIS" || 
+                                              workflowStage?.currentStage === "IC_PREP" ||
+                                              workflowStage?.currentStage === "IC_MEETING";
+                        
+                        // Show button if workflow is at analysis stage or later
+                        if (isAnalysisStage) {
+                          return (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => handleCreateProposal(request)}
+                              data-testid={`button-create-proposal-${request.ticker}`}
+                            >
+                              <Plus className="h-3 w-3" />
+                              Create Proposal
+                            </Button>
+                          );
+                        }
+                        return null;
                       })()}
                       <Button
                         variant="outline"
@@ -598,8 +643,17 @@ export default function Research() {
                         onClick={() => handleAIAnalysis(request)}
                         data-testid={`button-analyze-${request.ticker}`}
                       >
+                        <Bot className="h-3 w-3" />
+                        {workflowStage && workflowStage.currentStage === "ANALYSIS" ? "Regenerate" : "AI Analysis"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewAnalysis(request)}
+                        data-testid={`button-view-analysis-${request.ticker}`}
+                      >
                         <Search className="h-3 w-3" />
-                        AI Analysis
+                        View Analysis
                       </Button>
                       <Button
                         variant="ghost"
@@ -957,7 +1011,7 @@ export default function Research() {
                 agentType="RESEARCH_SYNTHESIZER"
                 description="Comprehensive investment briefs from SEC filings and market data"
                 isGenerating={researchMutation.isPending}
-                response={researchBrief}
+                response={getResearchBrief()}
                 onInvoke={() => {
                   if (selectedRequest) researchMutation.mutate(selectedRequest.ticker);
                 }}
@@ -968,7 +1022,7 @@ export default function Research() {
                 agentType="DCF_MODELER"
                 description="DCF models with bull/base/bear scenarios"
                 isGenerating={dcfMutation.isPending}
-                response={dcfModel}
+                response={getDcfModel()}
                 onInvoke={() => {
                   if (selectedRequest) dcfMutation.mutate(selectedRequest.ticker);
                 }}
