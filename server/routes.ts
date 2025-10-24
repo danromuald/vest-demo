@@ -334,6 +334,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/agents/thesis-generator", async (req, res) => {
+    try {
+      const { ticker, companyName, researchData, dcfData } = req.body;
+
+      const thesis = await agentService.generateInvestmentThesis(
+        ticker, 
+        companyName, 
+        researchData, 
+        dcfData
+      );
+      
+      // Store the agent response
+      await storage.createAgentResponse({
+        agentType: "DOCUMENT_GENERATOR",
+        ticker,
+        prompt: `Generate investment thesis for ${ticker}`,
+        response: thesis,
+        metadata: { companyName },
+      });
+
+      res.json(thesis);
+    } catch (error) {
+      console.error("Thesis generator error:", error);
+      res.status(500).json({ error: "Failed to generate investment thesis" });
+    }
+  });
+
   app.post("/api/agents/thesis-monitor", async (req, res) => {
     try {
       const { ticker } = agentTickerSchema.parse(req.body);

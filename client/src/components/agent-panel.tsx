@@ -1,11 +1,18 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Bot, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { 
+  ResearchBriefDisplay, 
+  DCFModelDisplay, 
+  QuantAnalysisDisplay, 
+  RiskAnalysisDisplay,
+  ComplianceReportDisplay 
+} from "@/components/agent-formatters";
 
 interface AgentPanelProps {
   agentName: string;
+  agentType?: 'RESEARCH_SYNTHESIZER' | 'DCF_MODELER' | 'QUANT_ANALYST' | 'CONTRARIAN' | 'COMPLIANCE_MONITOR';
   description: string;
   isGenerating?: boolean;
   response?: any;
@@ -15,6 +22,7 @@ interface AgentPanelProps {
 
 export function AgentPanel({
   agentName,
+  agentType,
   description,
   isGenerating = false,
   response,
@@ -51,20 +59,20 @@ export function AgentPanel({
           </Button>
         )}
       </CardHeader>
-      {response && (
+      {isGenerating && (
+        <CardContent className="pt-0">
+          <div className="rounded-md bg-muted/50 p-4 flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>AI is analyzing...</span>
+          </div>
+        </CardContent>
+      )}
+      {!isGenerating && response && (
         <CardContent className="pt-0">
           <div className="rounded-md bg-muted/50 p-4">
-            {isGenerating && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>AI is analyzing...</span>
-              </div>
-            )}
-            {!isGenerating && response && (
-              <div className="space-y-3 text-sm" data-testid="agent-response">
-                {renderAgentResponse(response)}
-              </div>
-            )}
+            <div data-testid="agent-response">
+              {renderAgentResponse(response, agentType)}
+            </div>
           </div>
         </CardContent>
       )}
@@ -72,31 +80,57 @@ export function AgentPanel({
   );
 }
 
-function renderAgentResponse(response: any) {
-  if (typeof response === 'string') {
-    return <p className="text-foreground">{response}</p>;
+function renderAgentResponse(response: any, agentType?: string) {
+  // If response has a response field (nested), use that
+  const actualResponse = response.response || response;
+  
+  // Use formatted components based on agent type
+  if (agentType === 'RESEARCH_SYNTHESIZER') {
+    return <ResearchBriefDisplay data={actualResponse} />;
   }
-
-  if (response.summary) {
-    return (
-      <div className="space-y-2">
-        <p className="font-medium text-foreground">{response.summary}</p>
-        {response.keyPoints && (
-          <ul className="space-y-1 pl-4">
-            {response.keyPoints.map((point: string, i: number) => (
-              <li key={i} className="list-disc text-muted-foreground">{point}</li>
-            ))}
-          </ul>
-        )}
-        {response.recommendation && (
-          <div className="mt-3 flex items-center gap-2">
-            <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Recommendation:</span>
-            <Badge variant="secondary">{response.recommendation}</Badge>
-          </div>
-        )}
-      </div>
-    );
+  
+  if (agentType === 'DCF_MODELER') {
+    return <DCFModelDisplay data={actualResponse} />;
   }
-
-  return <pre className="text-xs text-foreground">{JSON.stringify(response, null, 2)}</pre>;
+  
+  if (agentType === 'QUANT_ANALYST') {
+    return <QuantAnalysisDisplay data={actualResponse} />;
+  }
+  
+  if (agentType === 'CONTRARIAN') {
+    return <RiskAnalysisDisplay data={actualResponse} />;
+  }
+  
+  if (agentType === 'COMPLIANCE_MONITOR') {
+    return <ComplianceReportDisplay data={actualResponse} />;
+  }
+  
+  // Fallback to basic rendering
+  if (typeof actualResponse === 'string') {
+    return <p className="text-sm text-foreground">{actualResponse}</p>;
+  }
+  
+  // Try to detect the type from response structure
+  if (actualResponse.summary && actualResponse.keyMetrics) {
+    return <ResearchBriefDisplay data={actualResponse} />;
+  }
+  
+  if (actualResponse.scenarios || (actualResponse.bullCase && actualResponse.baseCase)) {
+    return <DCFModelDisplay data={actualResponse} />;
+  }
+  
+  if (actualResponse.factorExposures) {
+    return <QuantAnalysisDisplay data={actualResponse} />;
+  }
+  
+  if (actualResponse.bearCase || actualResponse.keyRisks) {
+    return <RiskAnalysisDisplay data={actualResponse} />;
+  }
+  
+  if (actualResponse.complianceChecks || actualResponse.violations) {
+    return <ComplianceReportDisplay data={actualResponse} />;
+  }
+  
+  // Final fallback
+  return <pre className="text-xs text-foreground overflow-auto">{JSON.stringify(actualResponse, null, 2)}</pre>;
 }

@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, Edit, Trash2, Clock, CheckCircle2, AlertCircle, TrendingUp } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Clock, CheckCircle2, AlertCircle, TrendingUp, Bot, Loader2 } from "lucide-react";
 import { AgentPanel } from "@/components/agent-panel";
 import type { ResearchRequest } from "@shared/schema";
 
@@ -171,6 +171,42 @@ export default function Research() {
     },
   });
 
+  const generateThesisMutation = useMutation({
+    mutationFn: async ({ ticker, companyName, researchData, dcfData }: any) => {
+      return await apiRequest("POST", "/api/agents/thesis-generator", {
+        ticker,
+        companyName,
+        researchData,
+        dcfData,
+      }) as Promise<any>;
+    },
+    onSuccess: (data: any) => {
+      if (data.thesis) {
+        proposalForm.setValue('thesis', data.thesis);
+      }
+      if (data.catalysts && data.catalysts.length > 0) {
+        proposalForm.setValue('catalysts', data.catalysts.join('\n'));
+      }
+      if (data.risks && data.risks.length > 0) {
+        proposalForm.setValue('risks', data.risks.join('\n'));
+      }
+      if (data.targetPrice) {
+        proposalForm.setValue('targetPrice', data.targetPrice.toString());
+      }
+      toast({
+        title: "Thesis Generated",
+        description: "AI has drafted your investment thesis",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate thesis",
+        variant: "destructive",
+      });
+    },
+  });
+
   const createProposalMutation = useMutation({
     mutationFn: async (data: ProposalFormValues) => {
       // Guard: Ensure we have a selected research request
@@ -182,7 +218,7 @@ export default function Research() {
       const risksArray = data.risks ? data.risks.split('\n').filter(r => r.trim()) : [];
       
       // Create the proposal
-      const proposal = await apiRequest("POST", "/api/proposals", {
+      const proposal: any = await apiRequest("POST", "/api/proposals", {
         ...data,
         catalysts: catalystsArray,
         risks: risksArray,
@@ -248,10 +284,11 @@ export default function Research() {
     setIsEditDialogOpen(true);
   };
 
-  const handleAIAnalysis = (ticker: string) => {
+  const handleAIAnalysis = (request: ResearchRequest) => {
+    setSelectedRequest(request);
     setShowAIAgents(true);
-    researchMutation.mutate(ticker);
-    dcfMutation.mutate(ticker);
+    researchMutation.mutate(request.ticker);
+    dcfMutation.mutate(request.ticker);
   };
 
   const handleCreateProposal = (request: ResearchRequest) => {
@@ -533,7 +570,7 @@ export default function Research() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleAIAnalysis(request.ticker)}
+                        onClick={() => handleAIAnalysis(request)}
                         data-testid={`button-analyze-${request.ticker}`}
                       >
                         <Search className="h-3 w-3" />
@@ -760,7 +797,38 @@ export default function Research() {
                 name="thesis"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Investment Thesis</FormLabel>
+                    <div className="flex items-center justify-between mb-2">
+                      <FormLabel>Investment Thesis</FormLabel>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (selectedRequest) {
+                            generateThesisMutation.mutate({
+                              ticker: selectedRequest.ticker,
+                              companyName: selectedRequest.companyName,
+                              researchData: researchBrief,
+                              dcfData: dcfModel,
+                            });
+                          }
+                        }}
+                        disabled={generateThesisMutation.isPending || !selectedRequest}
+                        data-testid="button-generate-thesis"
+                      >
+                        {generateThesisMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Bot className="h-3 w-3 mr-1" />
+                            Generate with AI
+                          </>
+                        )}
+                      </Button>
+                    </div>
                     <FormControl>
                       <Textarea 
                         {...field} 
@@ -853,6 +921,7 @@ export default function Research() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <AgentPanel
             agentName="Research Synthesizer"
+            agentType="RESEARCH_SYNTHESIZER"
             description="Comprehensive investment briefs from SEC filings and market data"
             isGenerating={researchMutation.isPending}
             response={researchBrief}
@@ -863,6 +932,7 @@ export default function Research() {
 
           <AgentPanel
             agentName="Financial Modeler"
+            agentType="DCF_MODELER"
             description="DCF models with bull/base/bear scenarios"
             isGenerating={dcfMutation.isPending}
             response={dcfModel}

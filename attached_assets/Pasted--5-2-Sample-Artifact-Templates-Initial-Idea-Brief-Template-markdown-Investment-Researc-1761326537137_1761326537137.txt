@@ -1,0 +1,814 @@
+
+## 5.2 Sample Artifact Templates
+
+### Initial Idea Brief Template
+
+```markdown
+# Investment Research Brief: {{company_name}} ({{ticker}})
+
+**Analyst**: {{analyst_name}}  
+**Date**: {{date}}  
+**Current Price**: ${{price}}  
+**Market Cap**: ${{market_cap}}B  
+
+---
+
+## Executive Summary
+
+{{executive_summary}}
+
+**Key Thesis Points**:
+- {{thesis_point_1}}
+- {{thesis_point_2}}
+- {{thesis_point_3}}
+
+**Preliminary View**: {{recommendation}} - {{rationale}}
+
+---
+
+## Business Overview
+
+{{business_description}}
+
+### Segment Breakdown ({{fiscal_year}})
+
+| Segment | Revenue ($M) | % of Total | YoY Growth |
+|---------|-------------|------------|------------|
+{{#each segments}}
+| {{name}} | {{revenue}} | {{pct_total}}% | {{yoy_growth}}% |
+{{/each}}
+
+---
+
+## Financial Analysis
+
+### Revenue Growth
+
+{{revenue_analysis}}
+
+| Metric | {{fy_minus_2}} | {{fy_minus_1}} | {{fy_current}} | {{fy_plus_1}}E |
+|--------|---------------|---------------|---------------|----------------|
+| Revenue ($M) | {{rev_m2}} | {{rev_m1}} | {{rev_c}} | {{rev_p1}} |
+| YoY Growth % | {{growth_m2}} | {{growth_m1}} | {{growth_c}} | {{growth_p1}} |
+
+### Profitability
+
+{{profitability_analysis}}
+
+| Metric | {{fy_minus_2}} | {{fy_minus_1}} | {{fy_current}} | {{fy_plus_1}}E |
+|--------|---------------|---------------|---------------|----------------|
+| Gross Margin % | {{gm_m2}} | {{gm_m1}} | {{gm_c}} | {{gm_p1}} |
+| Operating Margin % | {{om_m2}} | {{om_m1}} | {{om_c}} | {{om_p1}} |
+| Net Margin % | {{nm_m2}} | {{nm_m1}} | {{nm_c}} | {{nm_p1}} |
+
+---
+
+## Investment Thesis (Bull Case)
+
+{{#each bull_points}}
+### {{number}}. {{title}}
+
+{{description}}
+
+**Supporting Evidence**:
+{{#each evidence}}
+- {{this}}
+{{/each}}
+
+{{/each}}
+
+---
+
+## Key Risks (Bear Case)
+
+{{#each bear_points}}
+### {{number}}. {{title}}
+
+{{description}}
+
+**Probability**: {{probability}}  
+**Impact**: {{impact}}
+
+{{/each}}
+
+---
+
+## Competitive Positioning
+
+{{competitive_analysis}}
+
+### Key Competitors
+
+| Company | Market Share | Strengths | Weaknesses |
+|---------|-------------|-----------|------------|
+{{#each competitors}}
+| {{name}} | {{share}}% | {{strengths}} | {{weaknesses}} |
+{{/each}}
+
+---
+
+## Preliminary Valuation
+
+### Current Valuation Multiples
+
+| Metric | {{ticker}} | Peer Avg | Premium/(Discount) |
+|--------|-----------|----------|-------------------|
+| P/E (FWD) | {{pe_fwd}}x | {{pe_peer}}x | {{pe_prem}}% |
+| EV/Sales | {{ev_sales}}x | {{evs_peer}}x | {{evs_prem}}% |
+| EV/EBITDA | {{ev_ebitda}}x | {{eve_peer}}x | {{eve_prem}}% |
+
+**Qualitative Assessment**: {{valuation_view}}
+
+---
+
+## Appendix
+
+### Data Sources
+{{#each sources}}
+- {{this}}
+{{/each}}
+
+### Analyst Notes
+{{notes}}
+```
+
+---
+
+### Full Research Report Template
+
+```markdown
+# Investment Research Report
+## {{company_name}} ({{ticker}})
+
+---
+
+**Recommendation**: {{recommendation}}  
+**Price Target**: ${{price_target}} ({{upside}}% upside)  
+**Risk Rating**: {{risk_rating}}  
+
+**Analyst**: {{analyst_name}}  
+**Date**: {{date}}  
+**Current Price**: ${{current_price}}  
+
+---
+
+## Table of Contents
+
+1. Executive Summary
+2. Investment Thesis
+3. Business Overview
+4. Financial Analysis
+5. Valuation
+6. Risks
+7. Conclusion
+8. Appendices
+
+---
+
+## 1. Executive Summary
+
+{{executive_summary}}
+
+### Key Investment Highlights
+
+{{#each highlights}}
+- **{{title}}**: {{description}}
+{{/each}}
+
+### Financial Summary
+
+| Metric | FY{{year_m1}} | FY{{year_c}} | FY{{year_p1}}E | FY{{year_p2}}E |
+|--------|--------------|-------------|---------------|---------------|
+| Revenue ($M) | {{rev_m1}} | {{rev_c}} | {{rev_p1}} | {{rev_p2}} |
+| YoY Growth | {{g_m1}}% | {{g_c}}% | {{g_p1}}% | {{g_p2}}% |
+| EPS ($) | {{eps_m1}} | {{eps_c}} | {{eps_p1}} | {{eps_p2}} |
+| FCF/Share ($) | {{fcf_m1}} | {{fcf_c}} | {{fcf_p1}} | {{fcf_p2}} |
+
+---
+
+## 2. Investment Thesis
+
+Our investment thesis rests on {{num_pillars}} key pillars:
+
+{{#each thesis_pillars}}
+### Pillar {{number}}: {{title}}
+
+{{description}}
+
+**Key Drivers**:
+{{#each drivers}}
+- {{this}}
+{{/each}}
+
+**Quantification**:
+{{quantification}}
+
+**Risk Factors**:
+{{#each risks}}
+- {{this}}
+{{/each}}
+
+---
+{{/each}}
+
+### Bull Case Scenario
+
+**Assumptions**:
+{{#each bull_assumptions}}
+- {{this}}
+{{/each}}
+
+**Outcome**: {{bull_outcome}}  
+**Price Target**: ${{bull_target}} ({{bull_upside}}% upside)  
+**Probability**: {{bull_prob}}%
+
+### Base Case Scenario
+
+**Assumptions**:
+{{#each base_assumptions}}
+- {{this}}
+{{/each}}
+
+**Outcome**: {{base_outcome}}  
+**Price Target**: ${{base_target}} ({{base_upside}}% upside)  
+**Probability**: {{base_prob}}%
+
+### Bear Case Scenario
+
+**Assumptions**:
+{{#each bear_assumptions}}
+- {{this}}
+{{/each}}
+
+**Outcome**: {{bear_outcome}}  
+**Price Target**: ${{bear_target}} ({{bear_downside}}% downside)  
+**Probability**: {{bear_prob}}%
+
+---
+
+## 3. Business Overview
+
+### Company Description
+
+{{business_description}}
+
+### Business Model
+
+{{business_model}}
+
+### Competitive Advantages (Moats)
+
+{{#each moats}}
+#### {{number}}. {{title}}
+
+{{description}}
+
+**Sustainability**: {{sustainability}}  
+**Evidence**: {{evidence}}
+{{/each}}
+
+### Segment Analysis
+
+{{#each segments}}
+#### {{name}} Segment
+
+**Size**: ${{size}}M ({{pct}}% of total revenue)  
+**Growth**: {{growth}}% YoY  
+
+{{description}}
+
+**Key Metrics**:
+{{#each metrics}}
+- {{metric}}: {{value}}
+{{/each}}
+
+**Outlook**: {{outlook}}
+
+---
+{{/each}}
+
+---
+
+## 4. Financial Analysis
+
+### Historical Performance
+
+#### Revenue Trends
+
+{{revenue_narrative}}
+
+[Chart: Revenue and Growth Rate (8 quarters)]
+
+#### Profitability Trends
+
+{{profitability_narrative}}
+
+[Chart: Margin Progression]
+
+#### Cash Generation
+
+{{cash_generation_narrative}}
+
+[Chart: FCF and Conversion Rate]
+
+### Financial Model
+
+#### Income Statement Projection
+
+| Line Item | FY{{y_m1}} | FY{{y_c}} | FY{{y_p1}}E | FY{{y_p2}}E | FY{{y_p3}}E |
+|-----------|-----------|----------|------------|------------|------------|
+| Revenue | {{rev_m1}} | {{rev_c}} | {{rev_p1}} | {{rev_p2}} | {{rev_p3}} |
+| YoY Growth % | {{g_m1}} | {{g_c}} | {{g_p1}} | {{g_p2}} | {{g_p3}} |
+| COGS | {{cogs_m1}} | {{cogs_c}} | {{cogs_p1}} | {{cogs_p2}} | {{cogs_p3}} |
+| Gross Profit | {{gp_m1}} | {{gp_c}} | {{gp_p1}} | {{gp_p2}} | {{gp_p3}} |
+| Gross Margin % | {{gm_m1}} | {{gm_c}} | {{gm_p1}} | {{gm_p2}} | {{gm_p3}} |
+| Operating Expenses | {{opex_m1}} | {{opex_c}} | {{opex_p1}} | {{opex_p2}} | {{opex_p3}} |
+| Operating Income | {{oi_m1}} | {{oi_c}} | {{oi_p1}} | {{oi_p2}} | {{oi_p3}} |
+| Operating Margin % | {{om_m1}} | {{om_c}} | {{om_p1}} | {{om_p2}} | {{om_p3}} |
+| Net Income | {{ni_m1}} | {{ni_c}} | {{ni_p1}} | {{ni_p2}} | {{ni_p3}} |
+| EPS ($) | {{eps_m1}} | {{eps_c}} | {{eps_p1}} | {{eps_p2}} | {{eps_p3}} |
+
+#### Key Assumptions
+
+{{#each assumptions}}
+- **{{name}}**: {{value}} (Rationale: {{rationale}})
+{{/each}}
+
+#### Sensitivity Analysis
+
+[Table: Revenue and Margin Sensitivity]
+
+---
+
+## 5. Valuation
+
+### DCF Analysis
+
+**Base Case Fair Value**: ${{dcf_base}}
+
+#### Key Inputs
+
+- **WACC**: {{wacc}}%
+- **Terminal Growth Rate**: {{terminal_growth}}%
+- **Projection Period**: {{projection_years}} years
+
+#### DCF Calculation
+
+| Year | Revenue | EBIT | Tax | NOPAT | Capex | ΔWC | FCF | PV |
+|------|---------|------|-----|-------|-------|-----|-----|-----|
+{{#each dcf_years}}
+| {{year}} | {{rev}} | {{ebit}} | {{tax}} | {{nopat}} | {{capex}} | {{wc}} | {{fcf}} | {{pv}} |
+{{/each}}
+| Terminal | - | - | - | - | - | - | {{terminal_fcf}} | {{terminal_pv}} |
+
+**Enterprise Value**: ${{enterprise_value}}M  
+**Net Debt**: ${{net_debt}}M  
+**Equity Value**: ${{equity_value}}M  
+**Shares Outstanding**: {{shares}}M  
+**Fair Value Per Share**: ${{fair_value}}
+
+#### Sensitivity Analysis
+
+[Table: Fair Value Sensitivity (WACC vs Terminal Growth)]
+
+---
+
+### Relative Valuation
+
+#### Trading Multiples
+
+| Company | P/E (FWD) | EV/Sales | EV/EBITDA | PEG |
+|---------|----------|----------|-----------|-----|
+| {{ticker}} | {{pe}}x | {{evs}}x | {{eve}}x | {{peg}}x |
+{{#each peers}}
+| {{ticker}} | {{pe}}x | {{evs}}x | {{eve}}x | {{peg}}x |
+{{/each}}
+| **Peer Average** | **{{pe_avg}}x** | **{{evs_avg}}x** | **{{eve_avg}}x** | **{{peg_avg}}x** |
+
+**Valuation Assessment**: {{valuation_view}}
+
+#### Historical Valuation Ranges
+
+[Chart: P/E Multiple Over Time]
+
+**Current vs History**:
+- Current P/E: {{pe_current}}x
+- 3-Year Average: {{pe_3y}}x
+- 5-Year Range: {{pe_min}}x - {{pe_max}}x
+- Percentile: {{pe_percentile}}th
+
+---
+
+### Sum-of-the-Parts (if applicable)
+
+{{#if sotp_applicable}}
+| Segment | Valuation Method | Value ($M) |
+|---------|-----------------|-----------|
+{{#each sotp_segments}}
+| {{name}} | {{method}} | {{value}} |
+{{/each}}
+| **Total Enterprise Value** | - | **{{ev_total}}** |
+| Less: Net Debt | - | ({{net_debt}}) |
+| **Equity Value** | - | **{{eq_value}}** |
+| **Per Share** | - | **${{per_share}}** |
+{{/if}}
+
+---
+
+## 6. Risks
+
+### Key Risks to Investment Thesis
+
+{{#each risks}}
+#### {{number}}. {{title}}
+
+**Description**: {{description}}
+
+**Probability**: {{probability}}  
+**Impact**: {{impact}}  
+**Mitigation**: {{mitigation}}
+
+**Quantification**: {{quantification}}
+
+---
+{{/each}}
+
+### Risk Matrix
+
+[Chart: Probability vs Impact Matrix]
+
+---
+
+## 7. Conclusion
+
+{{conclusion}}
+
+### Recommendation Summary
+
+- **Rating**: {{recommendation}}
+- **Price Target**: ${{price_target}}
+- **Upside/Downside**: {{upside_downside}}%
+- **Risk/Reward**: {{risk_reward}}
+- **Time Horizon**: {{time_horizon}}
+
+### Catalysts
+
+{{#each catalysts}}
+- **{{title}}** ({{timing}}): {{description}}
+{{/each}}
+
+### Sell Disciplines
+
+We will reassess our thesis if:
+
+{{#each sell_disciplines}}
+- {{this}}
+{{/each}}
+
+---
+
+## 8. Appendices
+
+### Appendix A: Company Financials (10 Years)
+
+[Full financial statements]
+
+### Appendix B: Comparable Company Analysis
+
+[Detailed peer comparison]
+
+### Appendix C: Management Team
+
+{{#each management}}
+**{{name}}** - {{title}}  
+{{bio}}
+{{/each}}
+
+### Appendix D: Sources
+
+{{#each sources}}
+- {{this}}
+{{/each}}
+
+---
+
+**Disclaimer**: {{disclaimer_text}}
+```
+
+---
+
+### IC Minutes Template
+
+```markdown
+# Investment Committee Meeting Minutes
+
+**Date**: {{meeting_date}}  
+**Time**: {{start_time}} - {{end_time}}  
+**Location**: {{location}}  
+
+---
+
+## Attendees
+
+**Present**:
+{{#each attendees_present}}
+- {{name}} ({{title}})
+{{/each}}
+
+**Absent**:
+{{#each attendees_absent}}
+- {{name}} ({{title}})
+{{/each}}
+
+---
+
+## Agenda
+
+1. Portfolio Review
+2. Macro Update
+3. Investment Proposals
+{{#each proposals}}
+   - {{ticker}}: {{proposal_type}}
+{{/each}}
+4. Position Reviews
+5. Risk Update
+6. Other Business
+
+---
+
+## 1. Portfolio Review
+
+**Presented by**: {{portfolio_presenter}}
+
+{{portfolio_summary}}
+
+### Performance Summary ({{period}})
+
+| Portfolio | Return | Benchmark | Active Return | Tracking Error |
+|-----------|--------|-----------|---------------|----------------|
+{{#each portfolios}}
+| {{name}} | {{return}}% | {{benchmark}}% | {{active}}% | {{te}}% |
+{{/each}}
+
+### Key Points Discussed
+
+{{#each portfolio_discussion_points}}
+- {{this}}
+{{/each}}
+
+---
+
+## 2. Macro Update
+
+**Presented by**: {{macro_presenter}}
+
+{{macro_summary}}
+
+### Economic Outlook
+
+{{economic_outlook}}
+
+### Market Implications
+
+{{market_implications}}
+
+### Key Points Discussed
+
+{{#each macro_discussion_points}}
+- {{this}}
+{{/each}}
+
+---
+
+## 3. Investment Proposals
+
+{{#each proposals}}
+### Proposal {{proposal_number}}: {{ticker}} - {{proposal_type}}
+
+**Presenter**: {{presenter}}  
+**Proposed Action**: {{action}}  
+**Proposed Weight**: {{weight}}%  
+
+#### Executive Summary
+
+{{executive_summary}}
+
+#### Key Discussion Points
+
+{{#each discussion_points}}
+**{{speaker}}**: {{comment}}
+
+{{#if agent_invoked}}
+[{{agent_name}} Agent Invoked]
+{{agent_output_summary}}
+{{/if}}
+{{/each}}
+
+#### Vote
+
+**Motion**: {{motion_text}}
+
+| Member | Vote |
+|--------|------|
+{{#each votes}}
+| {{member}} | {{vote}} |
+{{/each}}
+
+**Result**: {{vote_result}} ({{yes_votes}}-{{no_votes}}-{{abstain_votes}})
+
+#### Decision
+
+{{decision_text}}
+
+#### Rationale
+
+{{decision_rationale}}
+
+#### Action Items
+
+{{#each action_items}}
+- [ ] {{task}} (Owner: {{owner}}, Due: {{due_date}})
+{{/each}}
+
+---
+{{/each}}
+
+---
+
+## 4. Position Reviews
+
+{{#each position_reviews}}
+### {{ticker}}
+
+**Presenter**: {{presenter}}  
+**Current Weight**: {{current_weight}}%  
+**Return Since Entry**: {{return}}%  
+
+#### Status Update
+
+{{status_update}}
+
+#### Thesis Check
+
+{{thesis_check}}
+
+#### Discussion
+
+{{#each discussion_points}}
+- {{this}}
+{{/each}}
+
+#### Decision
+
+{{decision}}
+
+---
+{{/each}}
+
+---
+
+## 5. Risk Update
+
+**Presented by**: {{risk_presenter}}
+
+{{risk_summary}}
+
+### Current Risk Metrics
+
+| Metric | Current | Limit | Utilization |
+|--------|---------|-------|-------------|
+| Tracking Error | {{te}}% | {{te_limit}}% | {{te_util}}% |
+| VaR (95%, 1-day) | {{var}}% | {{var_limit}}% | {{var_util}}% |
+| Max Position | {{max_pos}}% | {{max_pos_limit}}% | {{max_pos_util}}% |
+
+### Key Points Discussed
+
+{{#each risk_discussion_points}}
+- {{this}}
+{{/each}}
+
+---
+
+## 6. Other Business
+
+{{other_business}}
+
+---
+
+## Action Items Summary
+
+{{#each all_action_items}}
+- [ ] {{task}} (Owner: {{owner}}, Due: {{due_date}})
+{{/each}}
+
+---
+
+## Next Meeting
+
+**Date**: {{next_meeting_date}}  
+**Tentative Agenda**: {{next_agenda}}
+
+---
+
+**Minutes Prepared By**: {{minutes_preparer}}  
+**Approved By**: {{approver}}  
+**Date**: {{approval_date}}
+```
+
+---
+
+### Trade Order Ticket Template
+
+```markdown
+# Trade Order Ticket
+
+**Order ID**: {{order_id}}  
+**Date**: {{date}}  
+**Time**: {{time}}  
+
+---
+
+## Order Details
+
+**Security**: {{company_name}} ({{ticker}})  
+**Action**: {{action}}  # BUY / SELL  
+**Order Type**: {{order_type}}  # MARKET / LIMIT / VWAP / TWAP  
+**Quantity**: {{quantity}} shares  
+**Value**: ${{value}}  
+
+---
+
+## Portfolio Details
+
+**Portfolio**: {{portfolio_name}}  
+**Current Position**: {{current_shares}} shares (${{current_value}})  
+**Current Weight**: {{current_weight}}%  
+**Target Weight**: {{target_weight}}%  
+**New Position**: {{new_shares}} shares (${{new_value}})  
+
+---
+
+## Pricing
+
+**Reference Price**: ${{reference_price}} ({{price_time}})  
+**Limit Price**: {{#if limit_price}}${{limit_price}}{{else}}N/A{{/if}}  
+**Price Range**: ${{price_low}} - ${{price_high}}  
+
+---
+
+## Execution Instructions
+
+**Execution Strategy**: {{execution_strategy}}  
+**Time Horizon**: {{time_horizon}}  
+**Urgency**: {{urgency}}  
+**Special Instructions**: {{special_instructions}}
+
+{{#if vwap_twap}}
+**Algorithm Parameters**:
+- Start Time: {{algo_start}}
+- End Time: {{algo_end}}
+- Participation Rate: {{participation_rate}}%
+- Max % of Volume: {{max_volume_pct}}%
+{{/if}}
+
+---
+
+## Risk & Compliance
+
+**Pre-Trade Compliance**: {{compliance_status}}  
+**Restricted List Check**: {{restricted_check}}  
+**Compliance Notes**: {{compliance_notes}}
+
+**Risk Approval**: {{risk_approval_status}}  
+**Risk Notes**: {{risk_notes}}
+
+---
+
+## Approvals
+
+| Role | Name | Status | Timestamp |
+|------|------|--------|-----------|
+| Portfolio Manager | {{pm_name}} | {{pm_status}} | {{pm_time}} |
+| Risk Manager | {{risk_name}} | {{risk_status}} | {{risk_time}} |
+| Compliance Officer | {{comp_name}} | {{comp_status}} | {{comp_time}} |
+| Head of Trading | {{trading_name}} | {{trading_status}} | {{trading_time}} |
+
+---
+
+## Routing
+
+**Assigned Trader**: {{trader_name}}  
+**Broker**: {{broker}}  
+**Trading Desk**: {{trading_desk}}  
+
+---
+
+## Notes
+
+{{notes}}
+
+---
+
+**Generated By**: Trade Order Generator Agent  
+**IC Decision Reference**: {{ic_decision_id}}
+```
