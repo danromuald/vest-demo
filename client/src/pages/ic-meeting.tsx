@@ -536,6 +536,16 @@ export default function ICMeeting() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
+                      <Link href={`/ic-meeting/${meeting.id}`}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          data-testid={`button-view-meeting-${meeting.id}`}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          View Details
+                        </Button>
+                      </Link>
                       {meeting.status === 'SCHEDULED' && (
                         <>
                           <Button

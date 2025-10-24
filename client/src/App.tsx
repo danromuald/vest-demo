@@ -11,6 +11,7 @@ import { NotificationBell } from "@/components/notification-bell";
 import Dashboard from "@/pages/dashboard";
 import Research from "@/pages/research";
 import ICMeeting from "@/pages/ic-meeting";
+import ICMeetingDetail from "@/pages/ic-meeting-detail";
 import Portfolio from "@/pages/portfolio";
 import Monitoring from "@/pages/monitoring";
 import Documents from "@/pages/documents";
@@ -48,6 +49,7 @@ function Router() {
       <Route path="/proposals" component={Proposals} />
       <Route path="/proposals/:id" component={ProposalDetail} />
       <Route path="/ic-meeting" component={ICMeeting} />
+      <Route path="/ic-meeting/:id" component={ICMeetingDetail} />
       <Route path="/portfolio" component={Portfolio} />
       <Route path="/monitoring" component={Monitoring} />
       <Route path="/monitoring-hub" component={MonitoringHub} />
