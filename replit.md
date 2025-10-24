@@ -74,25 +74,30 @@ Sixteen specialized agents organized by workflow phase provide comprehensive ana
 15. **Attribution Analyst**: Performance attribution analysis with asset allocation, stock selection, top contributors/detractors
 16. **Risk Regime Monitor**: Continuous risk regime tracking (LOW/MODERATE/HIGH/CRISIS volatility) with market indicators and portfolio adjustments
 
-Dedicated agent pages (9 total, with additional agents accessible via API):
+All 16 agent types now have dedicated pages, organized in the sidebar by workflow phase:
+
+**Pre-Work Agents (Research & Analysis)**:
 - **Research Brief** (`/research-brief`): Company research with metrics, strengths, and recommendations
 - **Financial Model** (`/financial-model`): DCF valuation with Bull/Base/Bear scenarios  
-- **Risk Analysis** (`/risk-analysis`): Contrarian bear case analysis
 - **Quant Analysis** (`/quant-analysis`): Factor exposures and statistical metrics
+- **Risk Analysis** (`/risk-analysis`): Contrarian bear case analysis
 - **Scenario Simulator** (`/scenario-simulator`): Portfolio impact analysis
+
+**IC & Execution Agents**:
+- **Investment Memos** (`/investment-memos`): Formatted investment memorandums
+- **Meeting Minutes** (`/meeting-minutes`): Automated IC meeting documentation
+- **Compliance Reports** (`/compliance-reports`): Regulatory compliance checks and violation tracking
+- **Risk Reports** (`/risk-reports`): Pre-trade risk assessments
+- **Trade Orders** (`/trade-orders`): Execution ticket generation
+
+**Monitoring & Analytics Agents**:
 - **Thesis Monitor** (`/thesis-monitor`): Thesis health tracking with drift scores
 - **Market Events** (`/market-events`): Real-time price alerts and news monitoring
-- **Investment Memos** (`/investment-memos`): Formatted investment memorandums
-- **Compliance Reports** (`/compliance-reports`): Regulatory compliance checks and violation tracking
-
-Additional agents accessible via API endpoints:
-- **Meeting Minutes** (`POST /api/agents/minutes-scribe`): Automated IC meeting documentation
-- **Trade Orders** (`POST /api/agents/trade-order-generator`): Execution ticket generation
-- **Risk Reports** (`POST /api/agents/risk-reporter`): Pre-trade risk assessments
-- **Data Retrieval** (`POST /api/agents/data-retrieval`): Historical precedents and comparables
-- **Voice Summaries** (`POST /api/agents/voice-synthesizer`): Meeting audio summaries
-- **Attribution Reports** (`POST /api/agents/attribution-analyst`): Performance attribution
-- **Risk Regime** (`POST /api/agents/risk-regime-monitor`): Market risk regime assessment
+- **Data Retrieval** (`/data-retrieval`): Historical precedents and comparables
+- **Voice Summaries** (`/voice-summaries`): Meeting audio summaries
+- **Attribution Reports** (`/attribution-reports`): Performance attribution
+- **Risk Regime** (`/risk-regime`): Market risk regime assessment
+- **All Agent Outputs** (`/agent-outputs`): Complete agent archive with filtering and search
 
 Common features across all agent pages:
 - In-page artifact generation via dialog forms
@@ -102,9 +107,22 @@ Common features across all agent pages:
 - Defensive data parsing for dates and numbers
 - Data testids for automated testing
 
+### Navigation & User Experience
+
+**Sidebar Organization**: The sidebar is organized into logical sections for efficient navigation:
+- **Workflow**: Core workflow pages (Dashboard, Workflow Timeline, Research, Proposals, IC Meeting, Portfolio, Monitoring)
+- **Pre-Work Agents**: Research and analysis agents (5 pages)
+- **IC & Execution**: Meeting support and post-session agents (5 pages)
+- **Monitoring & Analytics**: Ongoing monitoring and supporting agents (7 pages)
+- **Resources**: Documents and Monitoring Hub
+
+**Breadcrumb Navigation**: A reusable BreadcrumbNav component provides context-aware navigation breadcrumbs on detail pages, showing the navigation path from Home through intermediate pages to the current page.
+
+**Proposal Detail Page**: Features comprehensive proposal information with breadcrumb navigation (Home > Proposals > [Ticker - Company]), back button, and tabbed interface showing Overview, Research, Valuation, Voting, and Timeline.
+
 ### System Design Choices
 
-The architecture emphasizes modularity with a clear separation of concerns between frontend and backend. Data integrity is maintained through Zod schemas and Drizzle ORM, ensuring consistent validation across the stack. The AI agent system follows a service-based pattern, allowing for specialized, independently functioning agents. A robust error handling and validation strategy is implemented across the platform to prevent data corruption and enhance user experience.
+The architecture emphasizes modularity with a clear separation of concerns between frontend and backend. Data integrity is maintained through Zod schemas and Drizzle ORM, ensuring consistent validation across the stack. The AI agent system follows a service-based pattern, allowing for specialized, independently functioning agents. All 16 agent types are now fully accessible through dedicated pages organized by workflow phase in the sidebar. A robust error handling and validation strategy is implemented across the platform to prevent data corruption and enhance user experience.
 
 ## External Dependencies
 
