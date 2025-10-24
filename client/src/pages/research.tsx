@@ -896,11 +896,15 @@ export default function Research() {
                         size="sm"
                         onClick={() => {
                           if (selectedRequest) {
+                            // Use helper functions to get data from saved responses or local state
+                            const researchData = getResearchBrief();
+                            const dcfData = getDcfModel();
+                            
                             generateThesisMutation.mutate({
                               ticker: selectedRequest.ticker,
                               companyName: selectedRequest.companyName,
-                              researchData: researchBrief,
-                              dcfData: dcfModel,
+                              researchData,
+                              dcfData,
                             });
                           }
                         }}
