@@ -14,6 +14,13 @@ import type { Proposal, Vote, AgentResponse } from "@shared/schema";
 import { format } from "date-fns";
 import { Link } from "wouter";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { 
+  ResearchBriefDisplay, 
+  DCFModelDisplay, 
+  QuantAnalysisDisplay, 
+  RiskAnalysisDisplay,
+  ComplianceReportDisplay 
+} from "@/components/agent-formatters";
 
 export default function ProposalDetailPage() {
   const [, params] = useRoute("/proposals/:id");
@@ -384,11 +391,7 @@ export default function ProposalDetailPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="prose prose-sm max-w-none">
-                      <pre className="whitespace-pre-wrap text-sm text-foreground">
-                        {JSON.stringify(researchBrief.response, null, 2)}
-                      </pre>
-                    </div>
+                    <ResearchBriefDisplay data={researchBrief.response} />
                   </CardContent>
                 </Card>
               ) : (
@@ -420,9 +423,7 @@ export default function ProposalDetailPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <pre className="whitespace-pre-wrap text-sm text-foreground">
-                      {JSON.stringify(quantAnalysis.response, null, 2)}
-                    </pre>
+                    <QuantAnalysisDisplay data={quantAnalysis.response} />
                   </CardContent>
                 </Card>
               )}
@@ -451,9 +452,7 @@ export default function ProposalDetailPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <pre className="whitespace-pre-wrap text-sm text-foreground">
-                      {JSON.stringify(dcfModel.response, null, 2)}
-                    </pre>
+                    <DCFModelDisplay data={dcfModel.response} />
                   </CardContent>
                 </Card>
               ) : (
@@ -497,9 +496,7 @@ export default function ProposalDetailPage() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <pre className="whitespace-pre-wrap text-sm text-foreground">
-                      {JSON.stringify(riskAnalysis.response, null, 2)}
-                    </pre>
+                    <RiskAnalysisDisplay data={riskAnalysis.response} />
                   </CardContent>
                 </Card>
               ) : (
@@ -531,9 +528,7 @@ export default function ProposalDetailPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <pre className="whitespace-pre-wrap text-sm text-foreground">
-                      {JSON.stringify(complianceCheck.response, null, 2)}
-                    </pre>
+                    <ComplianceReportDisplay data={complianceCheck.response} />
                   </CardContent>
                 </Card>
               )}
