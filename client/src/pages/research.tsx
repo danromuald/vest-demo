@@ -58,6 +58,9 @@ export default function Research() {
   // Fetch agent responses for the selected research request's ticker
   const { data: agentResponses } = useQuery<any[]>({
     queryKey: ["/api/agent-responses", selectedRequest?.ticker],
+    queryFn: selectedRequest?.ticker 
+      ? () => fetch(`/api/agent-responses?ticker=${selectedRequest.ticker}`).then(res => res.json())
+      : undefined,
     enabled: !!selectedRequest?.ticker,
   });
 
@@ -351,9 +354,18 @@ export default function Research() {
   };
 
   const handleViewAnalysis = (request: ResearchRequest) => {
+    // First invalidate to force a fresh fetch
+    queryClient.invalidateQueries({ queryKey: ["/api/agent-responses", request.ticker] });
+    // Then set the selected request (this will trigger the query)
     setSelectedRequest(request);
     setShowAIAgents(true);
-    // Don't reset anything - we want to show saved data
+    // Don't reset local state - we want to show saved data
+    
+    // Scroll to AI section after a brief delay to let it render
+    setTimeout(() => {
+      const element = document.querySelector('[data-testid="ai-analysis-section"]');
+      element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const handleCreateProposal = (request: ResearchRequest) => {
