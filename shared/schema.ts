@@ -108,7 +108,7 @@ export type InsertWorkflow = z.infer<typeof insertWorkflowSchema>;
 // Workflow Stages - Track completion and metadata for each stage
 export const workflowStages = pgTable("workflow_stages", {
   id: varchar("id").primaryKey(),
-  workflowId: varchar("workflow_id").notNull(),
+  workflowId: varchar("workflow_id").notNull().references(() => workflows.id, { onDelete: "cascade" }),
   stage: text("stage").notNull(), // DISCOVERY, ANALYSIS, IC_MEETING, EXECUTION, MONITORING
   status: text("status").notNull().default("PENDING"), // PENDING, IN_PROGRESS, COMPLETED, SKIPPED
   owner: varchar("owner"), // User ID assigned to this stage
@@ -150,7 +150,7 @@ export type InsertWorkflowAssignment = z.infer<typeof insertWorkflowAssignmentSc
 // Workflow Artifacts - Versioned outputs from each stage
 export const workflowArtifacts = pgTable("workflow_artifacts", {
   id: varchar("id").primaryKey(),
-  workflowId: varchar("workflow_id").notNull(),
+  workflowId: varchar("workflow_id").notNull().references(() => workflows.id, { onDelete: "cascade" }),
   artifactType: text("artifact_type").notNull(), // RESEARCH_BRIEF, FINANCIAL_MODEL, RISK_ANALYSIS, THESIS, IC_DECK, TRADE_PACKET, MEETING_MINUTES
   stage: text("stage").notNull(), // Which stage produced this
   version: integer("version").notNull().default(1),
@@ -175,7 +175,7 @@ export type InsertWorkflowArtifact = z.infer<typeof insertWorkflowArtifactSchema
 // Artifact Revisions - Track changes to artifacts
 export const artifactRevisions = pgTable("artifact_revisions", {
   id: varchar("id").primaryKey(),
-  artifactId: varchar("artifact_id").notNull(),
+  artifactId: varchar("artifact_id").notNull().references(() => workflowArtifacts.id, { onDelete: "cascade" }),
   version: integer("version").notNull(),
   content: jsonb("content").notNull(),
   changeDescription: text("change_description"),
@@ -194,7 +194,7 @@ export type InsertArtifactRevision = z.infer<typeof insertArtifactRevisionSchema
 // Investment Proposals - Now linked to workflows
 export const proposals = pgTable("proposals", {
   id: varchar("id").primaryKey(),
-  workflowId: varchar("workflow_id"), // Link to workflow
+  workflowId: varchar("workflow_id").references(() => workflows.id, { onDelete: "set null" }), // Link to workflow
   ticker: text("ticker").notNull(),
   companyName: text("company_name").notNull(),
   analyst: text("analyst").notNull(),
@@ -205,7 +205,7 @@ export const proposals = pgTable("proposals", {
   catalysts: text("catalysts").array(),
   risks: text("risks").array(),
   status: text("status").notNull(), // DRAFT, PENDING, APPROVED, REJECTED
-  icMeetingId: varchar("ic_meeting_id"),
+  icMeetingId: varchar("ic_meeting_id").references(() => icMeetings.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -222,7 +222,7 @@ export type InsertProposal = z.infer<typeof insertProposalSchema>;
 // IC Meetings - Extended for real-time collaboration
 export const icMeetings = pgTable("ic_meetings", {
   id: varchar("id").primaryKey(),
-  workflowId: varchar("workflow_id"), // Link to workflow
+  workflowId: varchar("workflow_id").references(() => workflows.id, { onDelete: "set null" }), // Link to workflow
   meetingDate: timestamp("meeting_date").notNull(),
   status: text("status").notNull(), // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
   title: text("title").notNull(),
@@ -251,7 +251,7 @@ export type InsertICMeeting = z.infer<typeof insertICMeetingSchema>;
 // Meeting Sessions - Track real-time session state
 export const meetingSessions = pgTable("meeting_sessions", {
   id: varchar("id").primaryKey(),
-  meetingId: varchar("meeting_id").notNull(),
+  meetingId: varchar("meeting_id").notNull().references(() => icMeetings.id, { onDelete: "cascade" }),
   status: text("status").notNull().default("ACTIVE"), // ACTIVE, PAUSED, ENDED
   currentPhase: text("current_phase").notNull().default("PRESENTATION"), // PRESENTATION, QUESTIONING, DELIBERATION, VOTING, CONCLUDED
   activeParticipants: integer("active_participants").default(0),
@@ -271,8 +271,8 @@ export type InsertMeetingSession = z.infer<typeof insertMeetingSessionSchema>;
 // Debate Messages - Real-time chat/discussion during IC meetings
 export const debateMessages = pgTable("debate_messages", {
   id: varchar("id").primaryKey(),
-  meetingId: varchar("meeting_id").notNull(),
-  debateSessionId: varchar("debate_session_id"),
+  meetingId: varchar("meeting_id").notNull().references(() => icMeetings.id, { onDelete: "cascade" }),
+  debateSessionId: varchar("debate_session_id").references(() => debateSessions.id, { onDelete: "set null" }),
   userId: varchar("user_id"), // null for AI agents
   senderName: text("sender_name").notNull(),
   senderRole: text("sender_role").notNull(), // ANALYST, PM, COMPLIANCE, BULL_AGENT, BEAR_AGENT, MODERATOR
@@ -354,7 +354,7 @@ export type InsertFinancialModel = z.infer<typeof insertFinancialModelSchema>;
 // Thesis Health Metrics - Track investment thesis health over time
 export const thesisHealthMetrics = pgTable("thesis_health_metrics", {
   id: varchar("id").primaryKey(),
-  workflowId: varchar("workflow_id").notNull(),
+  workflowId: varchar("workflow_id").notNull().references(() => workflows.id, { onDelete: "cascade" }),
   positionId: varchar("position_id"), // null if not yet executed
   ticker: text("ticker").notNull(),
   healthStatus: text("health_status").notNull(), // HEALTHY, WARNING, ALERT, CRITICAL
@@ -380,7 +380,7 @@ export type InsertThesisHealthMetric = z.infer<typeof insertThesisHealthMetricSc
 // Monitoring Events - Track all monitoring events
 export const monitoringEvents = pgTable("monitoring_events", {
   id: varchar("id").primaryKey(),
-  workflowId: varchar("workflow_id").notNull(),
+  workflowId: varchar("workflow_id").notNull().references(() => workflows.id, { onDelete: "cascade" }),
   eventType: text("event_type").notNull(), // THESIS_CHECK, MARKET_EVENT, PRICE_ALERT, METRIC_DEVIATION, CATALYST_UPDATE, RISK_MATERIALIZED
   severity: text("severity").notNull(), // INFO, WARNING, ALERT, CRITICAL
   ticker: text("ticker"),
@@ -558,7 +558,7 @@ export type InsertResearchRequest = z.infer<typeof insertResearchRequestSchema>;
 // Meeting Participants
 export const meetingParticipants = pgTable("meeting_participants", {
   id: varchar("id").primaryKey(),
-  meetingId: varchar("meeting_id").notNull(),
+  meetingId: varchar("meeting_id").notNull().references(() => icMeetings.id, { onDelete: "cascade" }),
   userId: varchar("user_id").notNull(),
   role: text("role").notNull(), // CHAIR, VOTING_MEMBER, OBSERVER, PRESENTER
   attended: boolean("attended").default(false),
@@ -576,7 +576,7 @@ export type InsertMeetingParticipant = z.infer<typeof insertMeetingParticipantSc
 // Debate Sessions
 export const debateSessions = pgTable("debate_sessions", {
   id: varchar("id").primaryKey(),
-  meetingId: varchar("meeting_id").notNull(),
+  meetingId: varchar("meeting_id").notNull().references(() => icMeetings.id, { onDelete: "cascade" }),
   proposalId: varchar("proposal_id").notNull(),
   ticker: text("ticker").notNull(),
   topic: text("topic").notNull(),
@@ -631,7 +631,7 @@ export type InsertPortfolioImpact = z.infer<typeof insertPortfolioImpactSchema>;
 // Trade Orders - Execution stage trade preparation
 export const tradeOrders = pgTable("trade_orders", {
   id: varchar("id").primaryKey(),
-  workflowId: varchar("workflow_id").notNull(),
+  workflowId: varchar("workflow_id").notNull().references(() => workflows.id, { onDelete: "cascade" }),
   proposalId: varchar("proposal_id"),
   ticker: text("ticker").notNull(),
   orderType: text("order_type").notNull(), // MARKET, LIMIT, STOP_LOSS, ICEBERG
@@ -665,8 +665,8 @@ export type InsertTradeOrder = z.infer<typeof insertTradeOrderSchema>;
 // Compliance Checks - Pre-trade and post-trade compliance
 export const complianceChecks = pgTable("compliance_checks", {
   id: varchar("id").primaryKey(),
-  workflowId: varchar("workflow_id"),
-  tradeOrderId: varchar("trade_order_id"),
+  workflowId: varchar("workflow_id").references(() => workflows.id, { onDelete: "set null" }),
+  tradeOrderId: varchar("trade_order_id").references(() => tradeOrders.id, { onDelete: "cascade" }),
   proposalId: varchar("proposal_id"),
   checkType: text("check_type").notNull(), // PRE_TRADE, POST_TRADE, POSITION_LIMIT, CONCENTRATION, RESTRICTED_LIST, WASH_SALE
   status: text("status").notNull(), // PENDING, PASSED, FAILED, WARNING, OVERRIDE
@@ -694,7 +694,7 @@ export type InsertComplianceCheck = z.infer<typeof insertComplianceCheckSchema>;
 // Risk Assessments - Portfolio risk analysis
 export const riskAssessments = pgTable("risk_assessments", {
   id: varchar("id").primaryKey(),
-  workflowId: varchar("workflow_id").notNull(),
+  workflowId: varchar("workflow_id").notNull().references(() => workflows.id, { onDelete: "cascade" }),
   proposalId: varchar("proposal_id"),
   assessmentType: text("assessment_type").notNull(), // PRE_IC, PRE_EXECUTION, POST_EXECUTION, PERIODIC
   ticker: text("ticker"),

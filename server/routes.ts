@@ -20,6 +20,14 @@ import {
   insertDebateSessionSchema,
   insertDebateMessageSchema,
   insertPortfolioImpactSchema,
+  insertWorkflowSchema,
+  insertWorkflowArtifactSchema,
+  insertThesisHealthMetricSchema,
+  insertMonitoringEventSchema,
+  insertMarketAlertSchema,
+  insertTradeOrderSchema,
+  insertComplianceCheckSchema,
+  insertRiskAssessmentSchema,
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -1636,6 +1644,421 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
       res.status(500).json({ error: "Failed to update portfolio impact" });
+    }
+  });
+
+  // ============= WORKFLOW CORE ENDPOINTS =============
+  
+  // 1. GET /api/workflows - List all workflows with filtering
+  app.get("/api/workflows", async (req, res) => {
+    try {
+      const filters: any = {};
+      if (req.query.stage) filters.stage = req.query.stage as string;
+      if (req.query.owner) filters.owner = req.query.owner as string;
+      if (req.query.ticker) filters.ticker = req.query.ticker as string;
+      
+      const workflows = await storage.getWorkflows(filters);
+      res.json(workflows);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch workflows" });
+    }
+  });
+
+  // 2. GET /api/workflows/:id - Get workflow details
+  app.get("/api/workflows/:id", async (req, res) => {
+    try {
+      const workflow = await storage.getWorkflow(req.params.id);
+      if (!workflow) {
+        res.status(404).json({ error: "Workflow not found" });
+        return;
+      }
+      res.json(workflow);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch workflow" });
+    }
+  });
+
+  // 3. POST /api/workflows - Create new workflow
+  app.post("/api/workflows", async (req, res) => {
+    try {
+      const validated = insertWorkflowSchema.parse(req.body);
+      const workflow = await storage.createWorkflow(validated);
+      res.json(workflow);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to create workflow" });
+    }
+  });
+
+  // 4. PATCH /api/workflows/:id - Update workflow
+  app.patch("/api/workflows/:id", async (req, res) => {
+    try {
+      const workflow = await storage.updateWorkflow(req.params.id, req.body);
+      if (!workflow) {
+        res.status(404).json({ error: "Workflow not found" });
+        return;
+      }
+      res.json(workflow);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update workflow" });
+    }
+  });
+
+  // 5. DELETE /api/workflows/:id - Delete workflow
+  app.delete("/api/workflows/:id", async (req, res) => {
+    try {
+      await storage.deleteWorkflow(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete workflow" });
+    }
+  });
+
+  // 6. POST /api/workflows/:id/transition - Transition workflow stage
+  app.post("/api/workflows/:id/transition", async (req, res) => {
+    try {
+      const validated = z.object({
+        toStage: z.string(),
+        transitionedBy: z.string(),
+      }).parse(req.body);
+      
+      const stage = await storage.transitionStage(
+        req.params.id,
+        validated.toStage,
+        validated.transitionedBy
+      );
+      res.json(stage);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to transition workflow stage" });
+    }
+  });
+
+  // 7. GET /api/workflows/:id/stages - Get workflow stages
+  app.get("/api/workflows/:id/stages", async (req, res) => {
+    try {
+      const stages = await storage.getWorkflowStages(req.params.id);
+      res.json(stages);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch workflow stages" });
+    }
+  });
+
+  // 8. GET /api/workflows/:id/current-stage - Get current stage
+  app.get("/api/workflows/:id/current-stage", async (req, res) => {
+    try {
+      const stage = await storage.getCurrentStage(req.params.id);
+      if (!stage) {
+        res.status(404).json({ error: "Current stage not found" });
+        return;
+      }
+      res.json(stage);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch current stage" });
+    }
+  });
+
+  // ============= WORKFLOW ARTIFACTS ENDPOINTS =============
+
+  // 9. GET /api/workflows/:id/artifacts - Get workflow artifacts
+  app.get("/api/workflows/:id/artifacts", async (req, res) => {
+    try {
+      const artifactType = req.query.artifactType as string | undefined;
+      const artifacts = await storage.getWorkflowArtifacts(req.params.id, artifactType);
+      res.json(artifacts);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch workflow artifacts" });
+    }
+  });
+
+  // 10. POST /api/workflows/:id/artifacts - Create artifact
+  app.post("/api/workflows/:id/artifacts", async (req, res) => {
+    try {
+      const validated = insertWorkflowArtifactSchema.omit({ workflowId: true }).parse(req.body);
+      const artifact = await storage.createWorkflowArtifact({
+        ...validated,
+        workflowId: req.params.id,
+      });
+      res.json(artifact);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to create artifact" });
+    }
+  });
+
+  // 11. PATCH /api/artifacts/:id - Update artifact
+  app.patch("/api/artifacts/:id", async (req, res) => {
+    try {
+      const artifact = await storage.updateWorkflowArtifact(req.params.id, req.body);
+      if (!artifact) {
+        res.status(404).json({ error: "Artifact not found" });
+        return;
+      }
+      res.json(artifact);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update artifact" });
+    }
+  });
+
+  // ============= MONITORING ENDPOINTS =============
+
+  // 12. GET /api/workflows/:id/thesis-health - Get thesis health metrics
+  app.get("/api/workflows/:id/thesis-health", async (req, res) => {
+    try {
+      const metrics = await storage.getThesisHealthMetrics(req.params.id);
+      res.json(metrics);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch thesis health metrics" });
+    }
+  });
+
+  // 13. GET /api/workflows/:id/thesis-health/latest - Get latest health
+  app.get("/api/workflows/:id/thesis-health/latest", async (req, res) => {
+    try {
+      const metric = await storage.getLatestThesisHealth(req.params.id);
+      if (!metric) {
+        res.status(404).json({ error: "Latest thesis health metric not found" });
+        return;
+      }
+      res.json(metric);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch latest thesis health" });
+    }
+  });
+
+  // 14. POST /api/workflows/:id/thesis-health - Create health metric
+  app.post("/api/workflows/:id/thesis-health", async (req, res) => {
+    try {
+      const validated = insertThesisHealthMetricSchema.omit({ workflowId: true }).parse(req.body);
+      const metric = await storage.createThesisHealthMetric({
+        ...validated,
+        workflowId: req.params.id,
+      });
+      res.json(metric);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to create thesis health metric" });
+    }
+  });
+
+  // 15. GET /api/workflows/:id/monitoring-events - Get monitoring events
+  app.get("/api/workflows/:id/monitoring-events", async (req, res) => {
+    try {
+      const events = await storage.getMonitoringEvents(req.params.id);
+      res.json(events);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch monitoring events" });
+    }
+  });
+
+  // 16. POST /api/workflows/:id/monitoring-events - Create event
+  app.post("/api/workflows/:id/monitoring-events", async (req, res) => {
+    try {
+      const validated = insertMonitoringEventSchema.omit({ workflowId: true }).parse(req.body);
+      const event = await storage.createMonitoringEvent({
+        ...validated,
+        workflowId: req.params.id,
+      });
+      res.json(event);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to create monitoring event" });
+    }
+  });
+
+  // 17. POST /api/monitoring-events/:id/resolve - Resolve event
+  app.post("/api/monitoring-events/:id/resolve", async (req, res) => {
+    try {
+      const validated = z.object({
+        actionTaken: z.string(),
+      }).parse(req.body);
+      
+      const event = await storage.resolveMonitoringEvent(req.params.id, validated.actionTaken);
+      if (!event) {
+        res.status(404).json({ error: "Monitoring event not found" });
+        return;
+      }
+      res.json(event);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to resolve monitoring event" });
+    }
+  });
+
+  // 18. GET /api/market-alerts - Get market alerts
+  app.get("/api/market-alerts", async (req, res) => {
+    try {
+      const filters: any = {};
+      if (req.query.ticker) filters.ticker = req.query.ticker as string;
+      if (req.query.read !== undefined) {
+        filters.read = req.query.read === 'true';
+      }
+      
+      const alerts = await storage.getMarketAlerts(filters);
+      res.json(alerts);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch market alerts" });
+    }
+  });
+
+  // 19. POST /api/market-alerts - Create market alert
+  app.post("/api/market-alerts", async (req, res) => {
+    try {
+      const validated = insertMarketAlertSchema.parse(req.body);
+      const alert = await storage.createMarketAlert(validated);
+      res.json(alert);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to create market alert" });
+    }
+  });
+
+  // 20. POST /api/market-alerts/:id/read - Mark alert as read
+  app.post("/api/market-alerts/:id/read", async (req, res) => {
+    try {
+      const alert = await storage.markAlertRead(req.params.id);
+      if (!alert) {
+        res.status(404).json({ error: "Market alert not found" });
+        return;
+      }
+      res.json(alert);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to mark alert as read" });
+    }
+  });
+
+  // ============= EXECUTION ENDPOINTS =============
+
+  // 21. GET /api/workflows/:id/trade-orders - Get trade orders
+  app.get("/api/workflows/:id/trade-orders", async (req, res) => {
+    try {
+      const orders = await storage.getTradeOrders(req.params.id);
+      res.json(orders);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch trade orders" });
+    }
+  });
+
+  // 22. POST /api/workflows/:id/trade-orders - Create trade order
+  app.post("/api/workflows/:id/trade-orders", async (req, res) => {
+    try {
+      const validated = insertTradeOrderSchema.omit({ workflowId: true }).parse(req.body);
+      const order = await storage.createTradeOrder({
+        ...validated,
+        workflowId: req.params.id,
+      });
+      res.json(order);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to create trade order" });
+    }
+  });
+
+  // 23. PATCH /api/trade-orders/:id - Update trade order
+  app.patch("/api/trade-orders/:id", async (req, res) => {
+    try {
+      const order = await storage.updateTradeOrder(req.params.id, req.body);
+      if (!order) {
+        res.status(404).json({ error: "Trade order not found" });
+        return;
+      }
+      res.json(order);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update trade order" });
+    }
+  });
+
+  // 24. GET /api/workflows/:id/compliance-checks - Get compliance checks
+  app.get("/api/workflows/:id/compliance-checks", async (req, res) => {
+    try {
+      const checks = await storage.getComplianceChecks(req.params.id);
+      res.json(checks);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch compliance checks" });
+    }
+  });
+
+  // 25. POST /api/workflows/:id/compliance-checks - Create check
+  app.post("/api/workflows/:id/compliance-checks", async (req, res) => {
+    try {
+      const validated = insertComplianceCheckSchema.omit({ workflowId: true }).parse(req.body);
+      const check = await storage.createComplianceCheck({
+        ...validated,
+        workflowId: req.params.id,
+      });
+      res.json(check);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to create compliance check" });
+    }
+  });
+
+  // 26. PATCH /api/compliance-checks/:id - Update check
+  app.patch("/api/compliance-checks/:id", async (req, res) => {
+    try {
+      const check = await storage.updateComplianceCheck(req.params.id, req.body);
+      if (!check) {
+        res.status(404).json({ error: "Compliance check not found" });
+        return;
+      }
+      res.json(check);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update compliance check" });
+    }
+  });
+
+  // 27. GET /api/workflows/:id/risk-assessments - Get risk assessments
+  app.get("/api/workflows/:id/risk-assessments", async (req, res) => {
+    try {
+      const assessments = await storage.getRiskAssessments(req.params.id);
+      res.json(assessments);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch risk assessments" });
+    }
+  });
+
+  // 28. POST /api/workflows/:id/risk-assessments - Create assessment
+  app.post("/api/workflows/:id/risk-assessments", async (req, res) => {
+    try {
+      const validated = insertRiskAssessmentSchema.omit({ workflowId: true }).parse(req.body);
+      const assessment = await storage.createRiskAssessment({
+        ...validated,
+        workflowId: req.params.id,
+      });
+      res.json(assessment);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to create risk assessment" });
     }
   });
 
