@@ -24,11 +24,14 @@ export function UserMenu() {
 
   const roleChangeMutation = useMutation({
     mutationFn: async (role: string) => {
-      return await apiRequest("/api/auth/user/role", {
+      const res = await fetch("/api/auth/user/role", {
         method: "PATCH",
-        body: JSON.stringify({ role }),
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // Important: Include cookies for session auth
+        body: JSON.stringify({ role }),
       });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });

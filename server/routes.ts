@@ -39,20 +39,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+  app.get('/api/auth/user', async (req: any, res) => {
+    // Development mode: return mock user if auth not configured
+    if (!process.env.REPLIT_DOMAINS || !process.env.REPL_ID) {
+      const mockUser = {
+        id: "dev-user-1",
+        email: "demo@vest.com",
+        firstName: "Demo",
+        lastName: "User",
+        profileImageUrl: null,
+        role: "ANALYST",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      // Ensure mock user exists in database
+      await storage.upsertUser(mockUser);
+      const user = await storage.getUser(mockUser.id);
+      return res.json(user);
     }
+
+    // Production: use real auth
+    return isAuthenticated(req, res, async () => {
+      try {
+        const userId = req.user.claims.sub;
+        const user = await storage.getUser(userId);
+        res.json(user);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        res.status(500).json({ message: "Failed to fetch user" });
+      }
+    });
   });
 
-  app.patch('/api/auth/user/role', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
+  app.patch('/api/auth/user/role', async (req: any, res) => {
+    // Development mode: allow role changes without auth
+    if (!process.env.REPLIT_DOMAINS || !process.env.REPL_ID) {
       const { role } = req.body;
       
       if (!['ANALYST', 'PM', 'COMPLIANCE', 'ADMIN'].includes(role)) {
@@ -60,12 +81,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
-      const user = await storage.updateUserRole(userId, role);
-      res.json(user);
-    } catch (error) {
-      console.error("Error updating user role:", error);
-      res.status(500).json({ message: "Failed to update role" });
+      try {
+        const user = await storage.updateUserRole("dev-user-1", role);
+        return res.json(user);
+      } catch (error) {
+        console.error("Error updating role:", error);
+        return res.status(500).json({ message: "Failed to update role" });
+      }
     }
+
+    // Production: use real auth
+    return isAuthenticated(req, res, async () => {
+      try {
+        const userId = req.user.claims.sub;
+        const { role } = req.body;
+        
+        if (!['ANALYST', 'PM', 'COMPLIANCE', 'ADMIN'].includes(role)) {
+          res.status(400).json({ message: "Invalid role" });
+          return;
+        }
+
+        const user = await storage.updateUserRole(userId, role);
+        res.json(user);
+      } catch (error) {
+        console.error("Error updating user role:", error);
+        res.status(500).json({ message: "Failed to update role" });
+      }
+    });
   });
 
   // Positions

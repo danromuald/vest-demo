@@ -8,8 +8,14 @@ import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
+// Check for required environment variables
 if (!process.env.REPLIT_DOMAINS) {
-  throw new Error("Environment variable REPLIT_DOMAINS not provided");
+  console.warn("⚠️  REPLIT_DOMAINS not set - Auth system will not function");
+  console.warn("ℹ️  This is expected in local development. Deploy to Replit for full auth.");
+}
+
+if (!process.env.SESSION_SECRET) {
+  console.warn("⚠️  SESSION_SECRET not set - Using fallback (insecure for production)");
 }
 
 const getOidcConfig = memoize(
@@ -67,6 +73,19 @@ async function upsertUser(
 }
 
 export async function setupAuth(app: Express) {
+  // Skip auth setup if required env vars are missing (development mode)
+  if (!process.env.REPLIT_DOMAINS || !process.env.REPL_ID) {
+    console.warn("🔓 Running without authentication - Development mode");
+    // Add development-only routes for testing
+    app.get("/api/login", (_req, res) => {
+      res.redirect("/");
+    });
+    app.get("/api/logout", (_req, res) => {
+      res.redirect("/");
+    });
+    return;
+  }
+
   app.set("trust proxy", 1);
   app.use(getSession());
   app.use(passport.initialize());
