@@ -42,7 +42,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: sh -c "npm run db:push --force && npm run db:seed && npm run dev"
+    command: sh -c "npm run db:push --force && npx tsx scripts/seed.ts && npm run dev"
 
 volumes:
   postgres_data:

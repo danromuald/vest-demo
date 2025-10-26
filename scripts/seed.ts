@@ -4,6 +4,15 @@ async function seed() {
   console.log("🌱 Starting database seeding...");
 
   try {
+    // Check if already seeded by looking for a marker company
+    const existingCompany = await storage.getCompanyByTicker("TSLA");
+    if (existingCompany) {
+      console.log("✅ Database already seeded - skipping");
+      return;
+    }
+
+    console.log("Database not seeded yet - proceeding with seed...");
+
     // Create demo user
     console.log("Creating demo user...");
     await storage.upsertUser({
