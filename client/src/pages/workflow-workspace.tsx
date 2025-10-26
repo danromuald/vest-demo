@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import type { Workflow } from "@shared/schema";
+import type { Workflow, MonitoringEvent as MonitoringEventType, ThesisHealthMetric } from "@shared/schema";
 
 export default function WorkflowWorkspace() {
   const params = useParams<{ id: string }>();
@@ -1082,21 +1082,374 @@ function ExecutionTab({ workflowId }: { workflowId: string }) {
 
 // Monitoring Tab (Placeholder)
 function MonitoringTab({ workflowId }: { workflowId: string }) {
+  const [selectedMetric, setSelectedMetric] = useState<"all" | "price" | "fundamentals" | "market">("all");
+
+  // Fetch monitoring events
+  const { data: events, isLoading: eventsLoading } = useQuery<MonitoringEventType[]>({
+    queryKey: [`/api/workflows/${workflowId}/monitoring/events`],
+    enabled: !!workflowId,
+  });
+
+  // Fetch thesis health metrics
+  const { data: healthMetric, isLoading: healthLoading } = useQuery<ThesisHealthMetric>({
+    queryKey: [`/api/workflows/${workflowId}/monitoring/thesis-health`],
+    enabled: !!workflowId,
+  });
+
+  // Use actual data or fallback to demo data if API not ready
+  const displayEvents = events && events.length > 0 ? events : [
+    {
+      id: "demo-1",
+      workflowId,
+      ticker: "DEMO",
+      eventType: "PRICE_ALERT",
+      severity: "HIGH",
+      title: "Price moved -8% below target",
+      description: "Current price $132 vs target $145, triggering review threshold",
+      eventData: {},
+      status: "ACTIVE",
+      triggeredAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      resolvedAt: null,
+      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+    },
+    {
+      id: "demo-2",
+      workflowId,
+      ticker: "DEMO",
+      eventType: "FUNDAMENTAL",
+      severity: "MEDIUM",
+      title: "Earnings beat expectations",
+      description: "Q3 EPS $2.15 vs est. $1.98, revenue $14.2B vs $13.8B expected",
+      eventData: {},
+      status: "RESOLVED",
+      triggeredAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      resolvedAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
+      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+    },
+    {
+      id: "demo-3",
+      workflowId,
+      ticker: "DEMO",
+      eventType: "MARKET_EVENT",
+      severity: "LOW",
+      title: "Analyst upgrade from Morgan Stanley",
+      description: "Upgraded to Overweight with $155 price target",
+      eventData: {},
+      status: "RESOLVED",
+      triggeredAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      resolvedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+    }
+  ] as MonitoringEventType[];
+
+  // Map healthMetric to display format, with fallback for demo
+  const displayHealth = healthMetric ? {
+    overall: healthMetric.healthScore,
+    catalyst: 85, // Would extract from catalystsStatus jsonb in production
+    risk: 65, // Would extract from risksStatus jsonb in production
+    valuation: 72 // Would extract from keyMetrics jsonb in production
+  } : {
+    overall: 78,
+    catalyst: 85,
+    risk: 65,
+    valuation: 72
+  };
+
+  // Filter events based on selected metric
+  const filteredEvents = selectedMetric === "all" 
+    ? displayEvents 
+    : displayEvents.filter((e) => {
+        const type = e.eventType.toLowerCase();
+        if (selectedMetric === "price") return type.includes("price");
+        if (selectedMetric === "fundamentals") return type.includes("fundamental");
+        if (selectedMetric === "market") return type.includes("market");
+        return true;
+      });
+
+  // Show loading state
+  if (eventsLoading || healthLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-20 w-64" />
+        </div>
+        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-96 w-full" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <Card>
+      {/* Header with Thesis Health */}
+      <div className="flex items-start justify-between gap-6">
+        <div className="flex-1">
+          <h2 className="text-2xl font-semibold" data-testid="title-monitoring">
+            Monitoring Center
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Track thesis health, market events, and automated alerts
+          </p>
+        </div>
+        
+        {/* Thesis Health Score */}
+        <Card className="w-64" data-testid="card-thesis-health">
+          <CardHeader className="pb-3">
+            <CardDescription className="text-xs">Thesis Health Score</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <div className="relative w-20 h-20">
+                <svg className="w-20 h-20 transform -rotate-90">
+                  <circle
+                    cx="40"
+                    cy="40"
+                    r="32"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="none"
+                    className="text-muted"
+                  />
+                  <circle
+                    cx="40"
+                    cy="40"
+                    r="32"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="none"
+                    strokeDasharray={`${displayHealth.overall * 2} ${200 - displayHealth.overall * 2}`}
+                    className="text-green-500"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-2xl font-bold">{displayHealth.overall}</span>
+                </div>
+              </div>
+              <div className="flex-1 space-y-1 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Catalysts</span>
+                  <span className="font-mono">{displayHealth.catalyst}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Valuation</span>
+                  <span className="font-mono">{displayHealth.valuation}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Risk</span>
+                  <span className="font-mono">{displayHealth.risk}</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Alert Rules */}
+      <Card data-testid="card-alert-rules">
         <CardHeader>
-          <CardTitle>Monitoring Center</CardTitle>
-          <CardDescription>
-            Thesis monitoring, market events, and portfolio tracking
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Alert Rules</CardTitle>
+              <CardDescription>Automated monitoring thresholds and notifications</CardDescription>
+            </div>
+            <Button size="sm" variant="outline" data-testid="button-add-rule">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Rule
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Monitoring Center implementation coming in next task...
-          </p>
+          <div className="space-y-3">
+            <AlertRule
+              name="Price threshold"
+              condition="Price moves ±10% from target"
+              status="ACTIVE"
+              triggered={1}
+            />
+            <AlertRule
+              name="Earnings release"
+              condition="Notify 1 day before earnings"
+              status="ACTIVE"
+              triggered={0}
+            />
+            <AlertRule
+              name="Insider trading"
+              condition="Notify on Form 4 filings"
+              status="ACTIVE"
+              triggered={0}
+            />
+            <AlertRule
+              name="Analyst rating change"
+              condition="Major bank upgrades/downgrades"
+              status="ACTIVE"
+              triggered={1}
+            />
+          </div>
         </CardContent>
       </Card>
+
+      {/* Event Stream */}
+      <Card data-testid="card-event-stream">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Event Stream</CardTitle>
+              <CardDescription>Real-time monitoring events and market alerts</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={selectedMetric === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedMetric("all")}
+                data-testid="filter-all"
+              >
+                All
+              </Button>
+              <Button
+                variant={selectedMetric === "price" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedMetric("price")}
+                data-testid="filter-price"
+              >
+                Price
+              </Button>
+              <Button
+                variant={selectedMetric === "fundamentals" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedMetric("fundamentals")}
+                data-testid="filter-fundamentals"
+              >
+                Fundamentals
+              </Button>
+              <Button
+                variant={selectedMetric === "market" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedMetric("market")}
+                data-testid="filter-market"
+              >
+                Market
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {filteredEvents.length > 0 ? (
+            <div className="space-y-3">
+              {filteredEvents.map(event => (
+                <MonitoringEvent key={event.id} event={event} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-muted-foreground">
+              <Activity className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p className="text-sm">No events found</p>
+              <p className="text-xs mt-1">Try adjusting your filters or check back later</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Performance Timeline */}
+      <Card data-testid="card-timeline">
+        <CardHeader>
+          <CardTitle>Performance Timeline</CardTitle>
+          <CardDescription>Historical price movement and key milestones</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64 flex items-center justify-center text-muted-foreground">
+            <div className="text-center">
+              <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Chart visualization placeholder</p>
+              <p className="text-xs mt-1">Would integrate with charting library (Recharts)</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Alert Rule Component
+function AlertRule({ 
+  name, 
+  condition, 
+  status, 
+  triggered 
+}: { 
+  name: string; 
+  condition: string; 
+  status: string; 
+  triggered: number;
+}) {
+  return (
+    <div 
+      className="flex items-center justify-between p-3 rounded-md border border-border hover-elevate"
+      data-testid={`alert-rule-${name.toLowerCase().replace(/\s+/g, '-')}`}
+    >
+      <div className="flex items-center gap-3 flex-1">
+        <div className={`w-2 h-2 rounded-full ${status === "ACTIVE" ? "bg-green-500" : "bg-gray-400"}`} />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium">{name}</p>
+          <p className="text-xs text-muted-foreground">{condition}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        {triggered > 0 && (
+          <Badge variant="outline" className="text-xs">
+            {triggered} trigger{triggered !== 1 ? "s" : ""}
+          </Badge>
+        )}
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Eye className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Monitoring Event Component
+function MonitoringEvent({ event }: { event: MonitoringEventType }) {
+  const severityColors = {
+    HIGH: "text-red-600 dark:text-red-400 bg-red-500/10 border-red-500/20",
+    MEDIUM: "text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 border-yellow-500/20",
+    LOW: "text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20"
+  };
+
+  const timeAgo = (timestamp: Date) => {
+    const seconds = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000);
+    if (seconds < 60) return `${seconds}s ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
+
+  return (
+    <div 
+      className={`p-4 rounded-md border ${severityColors[event.severity as keyof typeof severityColors]}`}
+      data-testid={`event-${event.id}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <Badge variant="outline" className="text-xs">
+              {event.eventType.replace(/_/g, " ")}
+            </Badge>
+            <span className="text-xs text-muted-foreground">{timeAgo(event.triggeredAt)}</span>
+            {event.status === "RESOLVED" && (
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            )}
+          </div>
+          <h4 className="font-medium text-sm mb-1">{event.title}</h4>
+          <p className="text-sm text-muted-foreground">{event.description}</p>
+        </div>
+        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 }
