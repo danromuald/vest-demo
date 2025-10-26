@@ -169,16 +169,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If meeting is being completed, update proposal statuses based on votes
       if (updates.status === 'COMPLETED') {
+        console.log(`[IC Meeting Completion] Meeting ${meetingId} being marked as COMPLETED`);
         const allProposals = await storage.getProposals();
         const meetingProposals = allProposals.filter(p => p.icMeetingId === meetingId);
+        console.log(`[IC Meeting Completion] Found ${meetingProposals.length} proposals linked to meeting`);
         
         for (const proposal of meetingProposals) {
+          console.log(`[IC Meeting Completion] Processing proposal ${proposal.id} (${proposal.ticker})`);
           const proposalVotes = await storage.getVotes(proposal.id);
+          console.log(`[IC Meeting Completion] Found ${proposalVotes.length} votes for proposal ${proposal.ticker}`);
           
           // Tally votes
           const approveCount = proposalVotes.filter(v => v.vote === 'APPROVE').length;
           const rejectCount = proposalVotes.filter(v => v.vote === 'REJECT').length;
           const abstainCount = proposalVotes.filter(v => v.vote === 'ABSTAIN').length;
+          console.log(`[IC Meeting Completion] Vote tally for ${proposal.ticker}: ${approveCount} APPROVE, ${rejectCount} REJECT, ${abstainCount} ABSTAIN`);
           
           // Determine outcome (simple majority of non-abstain votes)
           let newStatus: 'APPROVED' | 'REJECTED' | 'PENDING' = 'PENDING';
@@ -190,6 +195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             // If tie (approveCount === rejectCount), stays PENDING
           }
+          console.log(`[IC Meeting Completion] Updating proposal ${proposal.ticker} status from ${proposal.status} to ${newStatus}`);
           
           // Update proposal status
           await storage.updateProposal(proposal.id, { status: newStatus });
