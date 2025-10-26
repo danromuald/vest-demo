@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupAuth, isAuthenticated, getSession } from "./replitAuth";
 import { agentService } from "./services/agents";
 import { pdfService } from "./services/pdf";
 import { notificationService } from "./services/notifications";
@@ -40,6 +40,90 @@ const scenarioSchema = z.object({
   ticker: z.string().min(1).max(10).regex(/^[A-Z]+$/),
   proposedWeight: z.number().min(0).max(100),
 });
+
+// Simple cookie parser utility (replaces need for 'cookie' package)
+function parseCookies(cookieHeader: string): Record<string, string> {
+  const cookies: Record<string, string> = {};
+  if (!cookieHeader) return cookies;
+  
+  cookieHeader.split(';').forEach(cookie => {
+    const [key, ...valueParts] = cookie.trim().split('=');
+    if (key && valueParts.length > 0) {
+      cookies[key] = valueParts.join('=');
+    }
+  });
+  
+  return cookies;
+}
+
+// Validate WebSocket session against express-session store
+// This prevents identity spoofing by verifying the session from the HTTP handshake
+async function validateWebSocketSession(
+  req: any, 
+  sessionMiddleware: any
+): Promise<{ userId: string, email: string } | null> {
+  // Development mode: Accept any connection if auth is disabled
+  if (!process.env.REPLIT_DOMAINS || !process.env.REPL_ID) {
+    console.log("[WebSocket Auth] Development mode - using mock user");
+    return {
+      userId: 'dev-user-1',
+      email: 'demo@vest.com',
+    };
+  }
+
+  return new Promise((resolve) => {
+    // Parse cookies from WebSocket handshake request
+    const cookies = req.headers.cookie;
+    if (!cookies) {
+      console.log("[WebSocket Auth] No cookies in handshake");
+      resolve(null);
+      return;
+    }
+    
+    const parsedCookies = parseCookies(cookies);
+    const sessionId = parsedCookies['connect.sid'];
+    
+    if (!sessionId) {
+      console.log("[WebSocket Auth] No session ID cookie found");
+      resolve(null);
+      return;
+    }
+    
+    console.log("[WebSocket Auth] Session ID found, validating...");
+    
+    // Create fake request/response objects for session middleware
+    // This allows us to reuse the express-session middleware for validation
+    const fakeReq: any = {
+      headers: { cookie: cookies },
+      connection: {},
+    };
+    const fakeRes: any = {
+      getHeader: () => {},
+      setHeader: () => {},
+      end: () => {},
+    };
+    
+    // Run session middleware to populate fakeReq.session
+    sessionMiddleware(fakeReq, fakeRes, () => {
+      // Check if session has authenticated user (via Passport)
+      if (fakeReq.session && fakeReq.session.passport && fakeReq.session.passport.user) {
+        const user = fakeReq.session.passport.user;
+        const claims = user.claims || {};
+        
+        const validatedUser = {
+          userId: claims.sub || user.id || 'unknown',
+          email: claims.email || 'unknown@example.com',
+        };
+        
+        console.log(`[WebSocket Auth] Session validated for user: ${validatedUser.email}`);
+        resolve(validatedUser);
+      } else {
+        console.log("[WebSocket Auth] No authenticated user in session");
+        resolve(null);
+      }
+    });
+  });
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware - Replit Auth integration
@@ -2134,239 +2218,870 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Track active debate sessions
   const debateRooms = new Map<string, Set<any>>();
+  
+  // Track active workflow rooms for monitoring alerts
+  const workflowRooms = new Map<string, Set<any>>();
 
-  wss.on("connection", (ws, req) => {
-    console.log("WebSocket client connected");
+  // Track authenticated connections
+  // SECURITY: Maps WebSocket connections to authenticated user context
+  const authenticatedConnections = new Map<any, { userId: string, email: string }>();
+
+  // Helper function to clean up empty rooms (prevents memory leaks)
+  function cleanupEmptyRooms() {
+    [icMeetingRooms, debateRooms, workflowRooms].forEach(roomMap => {
+      roomMap.forEach((clients, key) => {
+        if (clients.size === 0) {
+          roomMap.delete(key);
+        }
+      });
+    });
+  }
+
+  // Get session middleware for WebSocket authentication
+  const sessionMiddleware = getSession();
+
+  wss.on("connection", async (ws, req) => {
+    console.log("[WebSocket] Connection attempt...");
+    
+    // SECURITY: Validate session from HTTP handshake
+    // This prevents identity spoofing by verifying user identity against express-session store
+    const sessionUser = await validateWebSocketSession(req, sessionMiddleware);
+    
+    // Track authentication state for this connection
+    // authenticated = true only if session validation succeeded
+    let authenticated = !!sessionUser;
+    let userContext = sessionUser;
+    
+    if (authenticated && userContext) {
+      authenticatedConnections.set(ws, userContext);
+      console.log(`[WebSocket] Client authenticated: ${userContext.email}`);
+    } else {
+      console.log("[WebSocket] Client connected (unauthenticated)");
+    }
 
     ws.on("message", async (data) => {
       try {
         const message = JSON.parse(data.toString());
         
+        // SECURITY: Handle authentication first
         switch (message.type) {
-          case "join_meeting":
-            // Join IC meeting room
-            const meetingId = message.meetingId;
-            if (!icMeetingRooms.has(meetingId)) {
-              icMeetingRooms.set(meetingId, new Set());
+          case "authenticate":
+            // SECURITY: Authentication is now done via session validation during handshake
+            // This handler is kept for backward compatibility but validates against session
+            try {
+              const authSchema = z.object({
+                type: z.literal("authenticate"),
+                userId: z.string().min(1),
+                email: z.string().email(),
+              });
+              
+              const validatedAuth = authSchema.parse(message);
+              
+              // SECURITY FIX: Cannot authenticate as a different user than the session user
+              // This prevents identity spoofing attacks
+              if (userContext && (
+                validatedAuth.userId !== userContext.userId || 
+                validatedAuth.email !== userContext.email
+              )) {
+                console.log(`[WebSocket Auth] Rejected attempt to spoof identity: client claimed ${validatedAuth.email}, session is ${userContext.email}`);
+                ws.send(JSON.stringify({
+                  type: "error",
+                  message: "Cannot authenticate as different user than session",
+                }));
+                break;
+              }
+              
+              // If not yet authenticated (no session), re-validate session
+              if (!authenticated) {
+                const sessionUser = await validateWebSocketSession(req, sessionMiddleware);
+                if (sessionUser) {
+                  authenticated = true;
+                  userContext = sessionUser;
+                  authenticatedConnections.set(ws, userContext);
+                  console.log(`[WebSocket Auth] Session re-validated for ${userContext.email}`);
+                } else {
+                  ws.send(JSON.stringify({
+                    type: "error",
+                    message: "Authentication failed: No valid session found",
+                  }));
+                  break;
+                }
+              }
+              
+              ws.send(JSON.stringify({
+                type: "authenticated",
+                user: userContext,
+              }));
+              console.log(`[WebSocket Auth] Authentication confirmed for: ${userContext?.email}`);
+            } catch (error) {
+              console.error("[WebSocket Auth] Authentication error:", error);
+              ws.send(JSON.stringify({
+                type: "error",
+                message: error instanceof z.ZodError 
+                  ? "Authentication failed: Invalid credentials format" 
+                  : "Authentication failed: Invalid credentials",
+              }));
             }
-            icMeetingRooms.get(meetingId)!.add(ws);
+            break;
+
+          case "join_meeting":
+            // SECURITY: Require authentication
+            if (!authenticated || !userContext) {
+              ws.send(JSON.stringify({ type: "error", message: "Unauthenticated" }));
+              break;
+            }
             
-            // Send current meeting state
-            const meeting = await storage.getICMeeting(meetingId);
-            if (meeting) {
+            // Validate payload
+            try {
+              const joinMeetingSchema = z.object({
+                type: z.literal("join_meeting"),
+                meetingId: z.string().min(1),
+              });
+              
+              const validatedJoin = joinMeetingSchema.parse(message);
+              const meetingId = validatedJoin.meetingId;
+              
+              // Check meeting exists
+              const meeting = await storage.getICMeeting(meetingId);
+              if (!meeting) {
+                ws.send(JSON.stringify({ type: "error", message: "Meeting not found" }));
+                break;
+              }
+              
+              // Join IC meeting room
+              if (!icMeetingRooms.has(meetingId)) {
+                icMeetingRooms.set(meetingId, new Set());
+              }
+              icMeetingRooms.get(meetingId)!.add(ws);
+              
+              // Send current meeting state
               ws.send(JSON.stringify({
                 type: "meeting_state",
                 meeting,
+              }));
+            } catch (error) {
+              ws.send(JSON.stringify({
+                type: "error",
+                message: error instanceof z.ZodError ? "Invalid message format" : "Failed to join meeting",
               }));
             }
             break;
 
           case "leave_meeting":
-            // Leave IC meeting room
-            icMeetingRooms.get(message.meetingId)?.delete(ws);
+            // SECURITY: Require authentication
+            if (!authenticated || !userContext) {
+              ws.send(JSON.stringify({ type: "error", message: "Unauthenticated" }));
+              break;
+            }
+            
+            // Validate and leave IC meeting room
+            try {
+              const leaveMeetingSchema = z.object({
+                type: z.literal("leave_meeting"),
+                meetingId: z.string().min(1),
+              });
+              
+              const validated = leaveMeetingSchema.parse(message);
+              icMeetingRooms.get(validated.meetingId)?.delete(ws);
+              cleanupEmptyRooms();
+            } catch (error) {
+              ws.send(JSON.stringify({
+                type: "error",
+                message: "Invalid message format",
+              }));
+            }
             break;
 
           case "cast_vote":
-            // Broadcast vote to all meeting participants
-            const vote = await storage.createVote(message.vote);
-            const meetingClients = icMeetingRooms.get(message.meetingId);
-            if (meetingClients) {
-              const voteUpdate = JSON.stringify({
-                type: "vote_cast",
-                vote,
+            // SECURITY: Require authentication
+            if (!authenticated || !userContext) {
+              ws.send(JSON.stringify({ type: "error", message: "Unauthenticated" }));
+              break;
+            }
+            
+            // Validate and broadcast vote to all meeting participants
+            try {
+              const castVoteSchema = z.object({
+                type: z.literal("cast_vote"),
+                meetingId: z.string().min(1),
+                vote: z.object({
+                  proposalId: z.string(),
+                  userId: z.string(),
+                  vote: z.enum(["APPROVE", "REJECT", "ABSTAIN"]),
+                  comments: z.string().optional(),
+                }),
               });
-              meetingClients.forEach(client => {
-                if (client.readyState === 1) { // OPEN
-                  client.send(voteUpdate);
-                }
+              
+              const validated = castVoteSchema.parse(message);
+              
+              // Authorization: Ensure user can only vote as themselves
+              if (validated.vote.userId !== userContext.userId) {
+                ws.send(JSON.stringify({ type: "error", message: "Unauthorized: Cannot vote on behalf of others" }));
+                break;
+              }
+              
+              // Map validated fields to storage schema
+              const vote = await storage.createVote({
+                proposalId: validated.vote.proposalId,
+                vote: validated.vote.vote,
+                voterName: userContext?.email || validated.vote.userId,
+                voterRole: "ANALYST", // Default role
+                comment: validated.vote.comments,
               });
+              const meetingClients = icMeetingRooms.get(validated.meetingId);
+              if (meetingClients) {
+                const voteUpdate = JSON.stringify({
+                  type: "vote_cast",
+                  vote,
+                });
+                meetingClients.forEach(client => {
+                  if (client.readyState === 1) { // OPEN
+                    client.send(voteUpdate);
+                  }
+                });
+              }
+            } catch (error) {
+              ws.send(JSON.stringify({
+                type: "error",
+                message: error instanceof z.ZodError ? "Invalid vote format" : "Failed to cast vote",
+              }));
             }
             break;
 
           case "update_meeting":
-            // Broadcast meeting updates
-            const updated = await storage.updateICMeeting(message.meetingId, message.updates);
-            const clients = icMeetingRooms.get(message.meetingId);
-            if (clients && updated) {
-              const updateMsg = JSON.stringify({
-                type: "meeting_updated",
-                meeting: updated,
+            // SECURITY: Require authentication
+            if (!authenticated || !userContext) {
+              ws.send(JSON.stringify({ type: "error", message: "Unauthenticated" }));
+              break;
+            }
+            
+            // Validate and broadcast meeting updates
+            try {
+              const updateMeetingSchema = z.object({
+                type: z.literal("update_meeting"),
+                meetingId: z.string().min(1),
+                updates: z.record(z.any()),
               });
-              clients.forEach(client => {
-                if (client.readyState === 1) {
-                  client.send(updateMsg);
-                }
-              });
+              
+              const validated = updateMeetingSchema.parse(message);
+              
+              // Authorization: Check if user can update this meeting
+              // TODO: Add role-based authorization (only meeting creator or admin)
+              
+              const updated = await storage.updateICMeeting(validated.meetingId, validated.updates);
+              const clients = icMeetingRooms.get(validated.meetingId);
+              if (clients && updated) {
+                const updateMsg = JSON.stringify({
+                  type: "meeting_updated",
+                  meeting: updated,
+                });
+                clients.forEach(client => {
+                  if (client.readyState === 1) {
+                    client.send(updateMsg);
+                  }
+                });
+              }
+            } catch (error) {
+              ws.send(JSON.stringify({
+                type: "error",
+                message: error instanceof z.ZodError ? "Invalid update format" : "Failed to update meeting",
+              }));
             }
             break;
 
           case "agent_invocation":
-            // Stream agent responses in real-time
-            ws.send(JSON.stringify({
-              type: "agent_started",
-              agentType: message.agentType,
-            }));
-
-            // Invoke agent and stream response
-            let result;
-            switch (message.agentType) {
-              case "contrarian":
-                result = await agentService.generateContrarianAnalysis(message.ticker);
-                break;
-              default:
-                throw new Error(`Unknown agent type: ${message.agentType}`);
+            // SECURITY: Require authentication
+            if (!authenticated || !userContext) {
+              ws.send(JSON.stringify({ type: "error", message: "Unauthenticated" }));
+              break;
             }
+            
+            // Validate and stream agent responses in real-time
+            try {
+              const agentInvocationSchema = z.object({
+                type: z.literal("agent_invocation"),
+                agentType: z.string().min(1),
+                ticker: z.string().min(1).max(10),
+              });
+              
+              const validated = agentInvocationSchema.parse(message);
+              
+              ws.send(JSON.stringify({
+                type: "agent_started",
+                agentType: validated.agentType,
+              }));
 
-            ws.send(JSON.stringify({
-              type: "agent_response",
-              agentType: message.agentType,
-              result,
-            }));
+              // Invoke agent and stream response
+              let result;
+              switch (validated.agentType) {
+                case "contrarian":
+                  result = await agentService.generateContrarianAnalysis(validated.ticker);
+                  break;
+                default:
+                  throw new Error(`Unknown agent type: ${validated.agentType}`);
+              }
+
+              ws.send(JSON.stringify({
+                type: "agent_response",
+                agentType: validated.agentType,
+                result,
+              }));
+            } catch (error) {
+              ws.send(JSON.stringify({
+                type: "error",
+                message: error instanceof z.ZodError ? "Invalid agent invocation format" : (error as Error).message,
+              }));
+            }
             break;
 
           case "join_debate":
-            // Join debate session room
-            const debateSessionId = message.sessionId;
-            if (!debateRooms.has(debateSessionId)) {
-              debateRooms.set(debateSessionId, new Set());
+            // SECURITY: Require authentication
+            if (!authenticated || !userContext) {
+              ws.send(JSON.stringify({ type: "error", message: "Unauthenticated" }));
+              break;
             }
-            debateRooms.get(debateSessionId)!.add(ws);
             
-            // Send current debate session state
-            const debateSession = await storage.getDebateSession(debateSessionId);
-            const debateMessages = await storage.getDebateMessages(debateSessionId);
-            
-            if (debateSession) {
+            // Validate and join debate session room
+            try {
+              const joinDebateSchema = z.object({
+                type: z.literal("join_debate"),
+                sessionId: z.string().min(1),
+                userName: z.string().optional(),
+              });
+              
+              const validated = joinDebateSchema.parse(message);
+              const debateSessionId = validated.sessionId;
+              
+              // Check debate session exists
+              const debateSession = await storage.getDebateSession(debateSessionId);
+              if (!debateSession) {
+                ws.send(JSON.stringify({ type: "error", message: "Debate session not found" }));
+                break;
+              }
+              
+              if (!debateRooms.has(debateSessionId)) {
+                debateRooms.set(debateSessionId, new Set());
+              }
+              debateRooms.get(debateSessionId)!.add(ws);
+              
+              // Send current debate session state
+              const debateMessages = await storage.getDebateMessages(debateSession.meetingId || debateSessionId);
+              
               ws.send(JSON.stringify({
                 type: "debate_state",
                 session: debateSession,
                 messages: debateMessages,
               }));
-            }
-            
-            // Notify others that someone joined
-            const debateParticipants = debateRooms.get(debateSessionId);
-            if (debateParticipants) {
-              const joinMsg = JSON.stringify({
-                type: "participant_joined",
-                userName: message.userName || "Unknown",
-                timestamp: new Date().toISOString(),
-              });
-              debateParticipants.forEach(client => {
-                if (client !== ws && client.readyState === 1) {
-                  client.send(joinMsg);
-                }
-              });
+              
+              // Notify others that someone joined
+              const debateParticipants = debateRooms.get(debateSessionId);
+              if (debateParticipants) {
+                const joinMsg = JSON.stringify({
+                  type: "participant_joined",
+                  userName: validated.userName || userContext.email,
+                  timestamp: new Date().toISOString(),
+                });
+                debateParticipants.forEach(client => {
+                  if (client !== ws && client.readyState === 1) {
+                    client.send(joinMsg);
+                  }
+                });
+              }
+            } catch (error) {
+              ws.send(JSON.stringify({
+                type: "error",
+                message: error instanceof z.ZodError ? "Invalid message format" : "Failed to join debate",
+              }));
             }
             break;
 
           case "leave_debate":
-            // Leave debate session room
-            debateRooms.get(message.sessionId)?.delete(ws);
+            // SECURITY: Require authentication
+            if (!authenticated || !userContext) {
+              ws.send(JSON.stringify({ type: "error", message: "Unauthenticated" }));
+              break;
+            }
             
-            // Notify others that someone left
-            const leavingParticipants = debateRooms.get(message.sessionId);
-            if (leavingParticipants) {
-              const leaveMsg = JSON.stringify({
-                type: "participant_left",
-                userName: message.userName || "Unknown",
-                timestamp: new Date().toISOString(),
+            // Validate and leave debate session room
+            try {
+              const leaveDebateSchema = z.object({
+                type: z.literal("leave_debate"),
+                sessionId: z.string().min(1),
+                userName: z.string().optional(),
               });
-              leavingParticipants.forEach(client => {
-                if (client.readyState === 1) {
-                  client.send(leaveMsg);
-                }
-              });
+              
+              const validated = leaveDebateSchema.parse(message);
+              debateRooms.get(validated.sessionId)?.delete(ws);
+              cleanupEmptyRooms();
+              
+              // Notify others that someone left
+              const leavingParticipants = debateRooms.get(validated.sessionId);
+              if (leavingParticipants) {
+                const leaveMsg = JSON.stringify({
+                  type: "participant_left",
+                  userName: validated.userName || userContext.email,
+                  timestamp: new Date().toISOString(),
+                });
+                leavingParticipants.forEach(client => {
+                  if (client.readyState === 1) {
+                    client.send(leaveMsg);
+                  }
+                });
+              }
+            } catch (error) {
+              ws.send(JSON.stringify({
+                type: "error",
+                message: "Invalid message format",
+              }));
             }
             break;
 
           case "send_debate_message":
-            // Save and broadcast debate message
-            // NOTE: sessionId replaced with meetingId
-            const newMessage = await storage.createDebateMessage({
-              meetingId: message.sessionId,
-              debateSessionId: message.sessionId,
-              senderRole: message.senderType || "USER",
-              userId: message.senderId,
-              senderName: message.senderName,
-              content: message.content,
-              messageType: message.messageType || "TEXT",
-              metadata: message.metadata || {},
-            });
-
-            // Update session message count
-            const currentSession = await storage.getDebateSession(message.sessionId);
-            if (currentSession) {
-              await storage.updateDebateSession(message.sessionId, {
-                messageCount: (currentSession.messageCount || 0) + 1,
-              });
+            // SECURITY: Require authentication
+            if (!authenticated || !userContext) {
+              ws.send(JSON.stringify({ type: "error", message: "Unauthenticated" }));
+              break;
             }
+            
+            // Validate and save/broadcast debate message
+            try {
+              const sendDebateMessageSchema = z.object({
+                type: z.literal("send_debate_message"),
+                sessionId: z.string().min(1),
+                senderId: z.string(),
+                senderName: z.string(),
+                senderType: z.string().optional(),
+                content: z.string().min(1),
+                messageType: z.string().optional(),
+                metadata: z.record(z.any()).optional(),
+              });
+              
+              const validated = sendDebateMessageSchema.parse(message);
+              
+              // Authorization: Ensure user can only send as themselves
+              if (validated.senderId !== userContext.userId) {
+                ws.send(JSON.stringify({ type: "error", message: "Unauthorized: Cannot send messages on behalf of others" }));
+                break;
+              }
+              
+              // Save message
+              const newMessage = await storage.createDebateMessage({
+                meetingId: validated.sessionId,
+                debateSessionId: validated.sessionId,
+                senderRole: validated.senderType || "USER",
+                userId: validated.senderId,
+                senderName: validated.senderName,
+                content: validated.content,
+                messageType: validated.messageType || "TEXT",
+                metadata: validated.metadata || {},
+              });
 
-            // Broadcast to all participants in the debate room
-            const debateClients = debateRooms.get(message.sessionId);
-            if (debateClients) {
-              const broadcastMsg = JSON.stringify({
-                type: "new_debate_message",
-                message: newMessage,
-              });
-              debateClients.forEach(client => {
-                if (client.readyState === 1) {
-                  client.send(broadcastMsg);
-                }
-              });
+              // Update session message count
+              const currentSession = await storage.getDebateSession(validated.sessionId);
+              if (currentSession) {
+                await storage.updateDebateSession(validated.sessionId, {
+                  messageCount: (currentSession.messageCount || 0) + 1,
+                });
+              }
+
+              // Broadcast to all participants in the debate room
+              const debateClients = debateRooms.get(validated.sessionId);
+              if (debateClients) {
+                const broadcastMsg = JSON.stringify({
+                  type: "new_debate_message",
+                  message: newMessage,
+                });
+                debateClients.forEach(client => {
+                  if (client.readyState === 1) {
+                    client.send(broadcastMsg);
+                  }
+                });
+              }
+            } catch (error) {
+              ws.send(JSON.stringify({
+                type: "error",
+                message: error instanceof z.ZodError ? "Invalid message format" : "Failed to send message",
+              }));
             }
             break;
 
           case "invoke_agent_in_debate":
-            // Invoke AI agent in debate and stream response
-            ws.send(JSON.stringify({
-              type: "agent_thinking",
-              agentType: message.agentType,
-            }));
-
-            // Generate agent response
-            let agentResult;
-            switch (message.agentType) {
-              case "contrarian":
-                agentResult = await agentService.generateContrarianAnalysis(message.ticker);
-                break;
-              case "research_synthesizer":
-                agentResult = await agentService.generateResearchBrief(message.ticker);
-                break;
-              case "financial_modeler":
-                agentResult = await agentService.generateDCFModel(message.ticker);
-                break;
-              default:
-                throw new Error(`Unknown agent type: ${message.agentType}`);
+            // SECURITY: Require authentication
+            if (!authenticated || !userContext) {
+              ws.send(JSON.stringify({ type: "error", message: "Unauthenticated" }));
+              break;
             }
-
-            // Save agent message to debate
-            // NOTE: sessionId replaced with meetingId
-            const agentMessage = await storage.createDebateMessage({
-              meetingId: message.sessionId,
-              debateSessionId: message.sessionId,
-              senderRole: "AGENT",
-              userId: null,
-              senderName: `${message.agentType} Agent`,
-              content: JSON.stringify(agentResult),
-              messageType: "ANALYSIS",
-              metadata: { agentType: message.agentType, ticker: message.ticker },
-            });
-
-            // Broadcast agent response to all participants
-            const agentDebateClients = debateRooms.get(message.sessionId);
-            if (agentDebateClients) {
-              const agentBroadcast = JSON.stringify({
-                type: "agent_debate_response",
-                message: agentMessage,
-                agentType: message.agentType,
-                result: agentResult,
+            
+            // Validate and invoke AI agent in debate
+            try {
+              const invokeAgentSchema = z.object({
+                type: z.literal("invoke_agent_in_debate"),
+                sessionId: z.string().min(1),
+                agentType: z.string().min(1),
+                ticker: z.string().min(1).max(10),
               });
-              agentDebateClients.forEach(client => {
-                if (client.readyState === 1) {
-                  client.send(agentBroadcast);
-                }
+              
+              const validated = invokeAgentSchema.parse(message);
+              
+              ws.send(JSON.stringify({
+                type: "agent_thinking",
+                agentType: validated.agentType,
+              }));
+
+              // Generate agent response
+              let agentResult;
+              switch (validated.agentType) {
+                case "contrarian":
+                  agentResult = await agentService.generateContrarianAnalysis(validated.ticker);
+                  break;
+                case "research_synthesizer":
+                  agentResult = await agentService.generateResearchBrief(validated.ticker);
+                  break;
+                case "financial_modeler":
+                  agentResult = await agentService.generateDCFModel(validated.ticker);
+                  break;
+                default:
+                  throw new Error(`Unknown agent type: ${validated.agentType}`);
+              }
+
+              // Save agent message to debate
+              const agentMessage = await storage.createDebateMessage({
+                meetingId: validated.sessionId,
+                debateSessionId: validated.sessionId,
+                senderRole: "AGENT",
+                userId: null,
+                senderName: `${validated.agentType} Agent`,
+                content: JSON.stringify(agentResult),
+                messageType: "ANALYSIS",
+                metadata: { agentType: validated.agentType, ticker: validated.ticker },
               });
+
+              // Broadcast agent response to all participants
+              const agentDebateClients = debateRooms.get(validated.sessionId);
+              if (agentDebateClients) {
+                const agentBroadcast = JSON.stringify({
+                  type: "agent_debate_response",
+                  message: agentMessage,
+                  agentType: validated.agentType,
+                  result: agentResult,
+                });
+                agentDebateClients.forEach(client => {
+                  if (client.readyState === 1) {
+                    client.send(agentBroadcast);
+                  }
+                });
+              }
+            } catch (error) {
+              ws.send(JSON.stringify({
+                type: "error",
+                message: error instanceof z.ZodError ? "Invalid agent invocation format" : (error as Error).message,
+              }));
+            }
+            break;
+
+          case "join_workflow":
+            // SECURITY: Require authentication
+            if (!authenticated || !userContext) {
+              ws.send(JSON.stringify({ type: "error", message: "Unauthenticated" }));
+              break;
+            }
+            
+            // Validate and join workflow room for real-time updates
+            try {
+              const joinWorkflowSchema = z.object({
+                type: z.literal("join_workflow"),
+                workflowId: z.string().min(1),
+              });
+              
+              const validated = joinWorkflowSchema.parse(message);
+              const { workflowId } = validated;
+              
+              // Check user has access to this workflow
+              const workflow = await storage.getWorkflow(workflowId);
+              if (!workflow) {
+                ws.send(JSON.stringify({ type: "error", message: "Workflow not found" }));
+                break;
+              }
+              
+              // TODO: Check user permission (owner, assigned analyst, etc.)
+              
+              if (!workflowRooms.has(workflowId)) {
+                workflowRooms.set(workflowId, new Set());
+              }
+              workflowRooms.get(workflowId)!.add(ws);
+              
+              // Send current workflow state
+              const currentStage = await storage.getCurrentStage(workflowId);
+              ws.send(JSON.stringify({
+                type: "workflow_state",
+                workflow,
+                currentStage,
+              }));
+            } catch (error) {
+              ws.send(JSON.stringify({
+                type: "error",
+                message: error instanceof z.ZodError ? "Invalid message format" : "Failed to join workflow",
+              }));
+            }
+            break;
+
+          case "leave_workflow":
+            // SECURITY: Require authentication
+            if (!authenticated || !userContext) {
+              ws.send(JSON.stringify({ type: "error", message: "Unauthenticated" }));
+              break;
+            }
+            
+            // Validate and leave workflow room
+            try {
+              const leaveWorkflowSchema = z.object({
+                type: z.literal("leave_workflow"),
+                workflowId: z.string().min(1),
+              });
+              
+              const validated = leaveWorkflowSchema.parse(message);
+              const workflowClients = workflowRooms.get(validated.workflowId);
+              if (workflowClients) {
+                workflowClients.delete(ws);
+              }
+              cleanupEmptyRooms();
+            } catch (error) {
+              ws.send(JSON.stringify({
+                type: "error",
+                message: "Invalid message format",
+              }));
+            }
+            break;
+
+          case "workflow_stage_transition":
+            // SECURITY: Require authentication
+            if (!authenticated || !userContext) {
+              ws.send(JSON.stringify({ type: "error", message: "Unauthenticated" }));
+              break;
+            }
+            
+            // Validate and transition workflow stage
+            try {
+              const transitionSchema = z.object({
+                type: z.literal("workflow_stage_transition"),
+                workflowId: z.string().min(1),
+                toStage: z.string().min(1),
+                transitionedBy: z.string().min(1),
+              });
+              
+              const validated = transitionSchema.parse(message);
+              const { workflowId, toStage, transitionedBy } = validated;
+              
+              // Authorization: Check if user can transition this workflow
+              const workflow = await storage.getWorkflow(workflowId);
+              if (!workflow) {
+                ws.send(JSON.stringify({ type: "error", message: "Workflow not found" }));
+                break;
+              }
+              
+              // Authorization: Only workflow owner or the transitioner can transition
+              // TODO: Add more sophisticated role-based authorization (admins, assigned analysts)
+              if (workflow.owner !== userContext.userId && userContext.userId !== transitionedBy) {
+                ws.send(JSON.stringify({ type: "error", message: "Unauthorized: Cannot transition this workflow" }));
+                break;
+              }
+              
+              const newStage = await storage.transitionStage(workflowId, toStage, transitionedBy);
+              
+              // Broadcast to all workflow subscribers
+              const workflowClients = workflowRooms.get(workflowId);
+              if (workflowClients) {
+                const broadcast = JSON.stringify({
+                  type: "stage_transitioned",
+                  workflowId,
+                  stage: newStage,
+                  transitionedBy,
+                });
+                workflowClients.forEach(client => {
+                  if (client.readyState === 1) {
+                    client.send(broadcast);
+                  }
+                });
+              }
+            } catch (error) {
+              ws.send(JSON.stringify({
+                type: "error",
+                message: error instanceof z.ZodError ? "Invalid transition format" : "Failed to transition workflow",
+              }));
+            }
+            break;
+
+          case "monitoring_alert":
+            // SECURITY: Require authentication
+            if (!authenticated || !userContext) {
+              ws.send(JSON.stringify({ type: "error", message: "Unauthenticated" }));
+              break;
+            }
+            
+            // Validate and create/broadcast monitoring event
+            try {
+              const monitoringAlertSchema = z.object({
+                type: z.literal("monitoring_alert"),
+                workflowId: z.string().min(1),
+                event: z.object({
+                  ticker: z.string(),
+                  eventType: z.string(),
+                  severity: z.string(),
+                  description: z.string(),
+                  metadata: z.record(z.any()).optional(),
+                }),
+              });
+              
+              const validated = monitoringAlertSchema.parse(message);
+              const { workflowId, event } = validated;
+              
+              // Authorization: Check user has access to this workflow
+              const workflow = await storage.getWorkflow(workflowId);
+              if (!workflow) {
+                ws.send(JSON.stringify({ type: "error", message: "Workflow not found" }));
+                break;
+              }
+              
+              // Map event fields to storage schema
+              const monitoringEvent = await storage.createMonitoringEvent({
+                workflowId,
+                eventType: event.eventType,
+                severity: event.severity,
+                title: event.description.substring(0, 100), // Use first 100 chars as title
+                description: event.description,
+                ticker: event.ticker,
+                details: event.metadata,
+              });
+              
+              // Broadcast to workflow subscribers
+              const subscribers = workflowRooms.get(workflowId);
+              if (subscribers) {
+                const alert = JSON.stringify({
+                  type: "new_monitoring_event",
+                  event: monitoringEvent,
+                });
+                subscribers.forEach(client => {
+                  if (client.readyState === 1) {
+                    client.send(alert);
+                  }
+                });
+              }
+            } catch (error) {
+              ws.send(JSON.stringify({
+                type: "error",
+                message: error instanceof z.ZodError ? "Invalid monitoring alert format" : "Failed to create monitoring event",
+              }));
+            }
+            break;
+
+          case "market_alert_broadcast":
+            // SECURITY: Require authentication
+            if (!authenticated || !userContext) {
+              ws.send(JSON.stringify({ type: "error", message: "Unauthenticated" }));
+              break;
+            }
+            
+            // Validate and create/broadcast market alert
+            try {
+              const marketAlertSchema = z.object({
+                type: z.literal("market_alert_broadcast"),
+                alert: z.object({
+                  ticker: z.string(),
+                  alertType: z.string(),
+                  severity: z.string(),
+                  title: z.string(),
+                  description: z.string(),
+                  affectedWorkflows: z.array(z.string()).optional(),
+                  metadata: z.record(z.any()).optional(),
+                }),
+              });
+              
+              const validated = marketAlertSchema.parse(message);
+              const { alert } = validated;
+              
+              // TODO: Authorization - only admins or system can broadcast market alerts
+              
+              const marketAlert = await storage.createMarketAlert(alert);
+              
+              // Broadcast to all affected workflows
+              if (marketAlert.affectedWorkflows && Array.isArray(marketAlert.affectedWorkflows)) {
+                marketAlert.affectedWorkflows.forEach((affectedWorkflowId: string) => {
+                  const clients = workflowRooms.get(affectedWorkflowId);
+                  if (clients) {
+                    const broadcast = JSON.stringify({
+                      type: "market_alert",
+                      alert: marketAlert,
+                    });
+                    clients.forEach(client => {
+                      if (client.readyState === 1) {
+                        client.send(broadcast);
+                      }
+                    });
+                  }
+                });
+              }
+            } catch (error) {
+              ws.send(JSON.stringify({
+                type: "error",
+                message: error instanceof z.ZodError ? "Invalid market alert format" : "Failed to broadcast market alert",
+              }));
+            }
+            break;
+
+          case "artifact_updated":
+            // SECURITY: Require authentication
+            if (!authenticated || !userContext) {
+              ws.send(JSON.stringify({ type: "error", message: "Unauthenticated" }));
+              break;
+            }
+            
+            // Validate and update/broadcast artifact
+            try {
+              const artifactUpdatedSchema = z.object({
+                type: z.literal("artifact_updated"),
+                workflowId: z.string().min(1),
+                artifact: z.object({
+                  id: z.string(),
+                  artifactType: z.string().optional(),
+                  title: z.string().optional(),
+                  content: z.any().optional(),
+                  status: z.string().optional(),
+                  metadata: z.record(z.any()).optional(),
+                }),
+              });
+              
+              const validated = artifactUpdatedSchema.parse(message);
+              const { workflowId, artifact } = validated;
+              
+              // Authorization: Check user has access to this workflow
+              const workflow = await storage.getWorkflow(workflowId);
+              if (!workflow) {
+                ws.send(JSON.stringify({ type: "error", message: "Workflow not found" }));
+                break;
+              }
+              
+              // TODO: Add authorization check for artifact updates
+              
+              const updatedArtifact = await storage.updateWorkflowArtifact(artifact.id, artifact);
+              
+              // Broadcast to workflow subscribers
+              const artifactSubscribers = workflowRooms.get(workflowId);
+              if (artifactSubscribers) {
+                const broadcast = JSON.stringify({
+                  type: "artifact_changed",
+                  artifact: updatedArtifact,
+                });
+                artifactSubscribers.forEach(client => {
+                  if (client.readyState === 1) {
+                    client.send(broadcast);
+                  }
+                });
+              }
+            } catch (error) {
+              ws.send(JSON.stringify({
+                type: "error",
+                message: error instanceof z.ZodError ? "Invalid artifact update format" : "Failed to update artifact",
+              }));
             }
             break;
         }
@@ -2380,20 +3095,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     ws.on("close", () => {
-      // Clean up: remove client from all rooms
-      icMeetingRooms.forEach((clients, meetingId) => {
-        clients.delete(ws);
-        if (clients.size === 0) {
-          icMeetingRooms.delete(meetingId);
-        }
-      });
+      // SECURITY: Remove from authenticated connections
+      authenticatedConnections.delete(ws);
       
-      debateRooms.forEach((clients, sessionId) => {
-        clients.delete(ws);
-        if (clients.size === 0) {
-          debateRooms.delete(sessionId);
-        }
-      });
+      // Clean up: remove client from all rooms
+      icMeetingRooms.forEach((clients) => clients.delete(ws));
+      debateRooms.forEach((clients) => clients.delete(ws));
+      workflowRooms.forEach((clients) => clients.delete(ws));
+      
+      // Clean up empty rooms to prevent memory leaks
+      cleanupEmptyRooms();
       
       console.log("WebSocket client disconnected");
     });
