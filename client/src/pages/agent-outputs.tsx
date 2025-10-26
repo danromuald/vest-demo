@@ -51,7 +51,7 @@ export default function AgentOutputs() {
   const getAgentIcon = (agentType: string) => {
     switch (agentType) {
       case "RESEARCH_SYNTHESIZER": return <FileText className="h-4 w-4" />;
-      case "DCF_MODELER": return <TrendingUp className="h-4 w-4" />;
+      case "FINANCIAL_MODELER": return <TrendingUp className="h-4 w-4" />;
       case "CONTRARIAN": return <AlertTriangle className="h-4 w-4" />;
       case "SCENARIO_SIMULATOR": return <TrendingUp className="h-4 w-4" />;
       case "THESIS_MONITOR": return <Clock className="h-4 w-4" />;
@@ -62,7 +62,7 @@ export default function AgentOutputs() {
   const getAgentColor = (agentType: string) => {
     switch (agentType) {
       case "RESEARCH_SYNTHESIZER": return "bg-blue-500/10 text-blue-500";
-      case "DCF_MODELER": return "bg-green-500/10 text-green-500";
+      case "FINANCIAL_MODELER": return "bg-green-500/10 text-green-500";
       case "CONTRARIAN": return "bg-orange-500/10 text-orange-500";
       case "SCENARIO_SIMULATOR": return "bg-purple-500/10 text-purple-500";
       case "THESIS_MONITOR": return "bg-teal-500/10 text-teal-500";

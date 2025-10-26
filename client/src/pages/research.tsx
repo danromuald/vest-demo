@@ -78,7 +78,7 @@ export default function Research() {
   const getDcfModel = () => {
     if (dcfModel) return dcfModel; // Newly generated takes precedence
     if (agentResponses && Array.isArray(agentResponses)) {
-      const saved = agentResponses.find((r: any) => r.agentType === 'DCF_MODELER');
+      const saved = agentResponses.find((r: any) => r.agentType === 'FINANCIAL_MODELER');
       return saved?.response || null;
     }
     return null;
@@ -1035,7 +1035,7 @@ export default function Research() {
 
               <AgentPanel
                 agentName="Financial Modeler"
-                agentType="DCF_MODELER"
+                agentType="FINANCIAL_MODELER"
                 description="DCF models with bull/base/bear scenarios"
                 isGenerating={dcfMutation.isPending}
                 response={getDcfModel()}

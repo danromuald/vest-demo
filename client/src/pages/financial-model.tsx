@@ -100,7 +100,7 @@ export default function FinancialModelPage() {
   });
 
   const dcfModels = agentResponses
-    .filter(response => response.agentType === "DCF_MODELER")
+    .filter(response => response.agentType === "FINANCIAL_MODELER")
     .filter(response => validateDCFModel(response.response) !== null);
 
   const selectedModel = selectedModelId
