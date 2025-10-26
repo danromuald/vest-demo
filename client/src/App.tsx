@@ -16,6 +16,7 @@ import Portfolio from "@/pages/portfolio";
 import Monitoring from "@/pages/monitoring";
 import Documents from "@/pages/documents";
 import DebateRoom from "@/pages/debate-room";
+import DebateArchives from "@/pages/debate-archives";
 import HistoricalMeetings from "@/pages/historical-meetings";
 import AgentOutputs from "@/pages/agent-outputs";
 import MonitoringHub from "@/pages/monitoring-hub";
@@ -55,6 +56,7 @@ function Router() {
       <Route path="/monitoring-hub" component={MonitoringHub} />
       <Route path="/documents" component={Documents} />
       <Route path="/debate-room" component={DebateRoom} />
+      <Route path="/debate-archives" component={DebateArchives} />
       <Route path="/historical-meetings" component={HistoricalMeetings} />
       <Route path="/agent-outputs" component={AgentOutputs} />
       <Route path="/research-brief" component={ResearchBrief} />

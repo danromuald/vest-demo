@@ -14,7 +14,7 @@ import {
   LayoutDashboard, GitBranch, Search, FileText, Users, TrendingUp, 
   Bell, FolderOpen, Bot, Brain, Calculator, AlertTriangle, BarChart3,
   Sparkles, Activity, Target, Shield, DollarSign, FileCheck, Database,
-  Volume2, PieChart, Gauge
+  Volume2, PieChart, Gauge, MessageCircle, Archive
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
@@ -65,6 +65,8 @@ const preWorkAgents = [
 ];
 
 const meetingAgents = [
+  { title: "Debate Room", url: "/debate-room", icon: MessageCircle },
+  { title: "Debate Archives", url: "/debate-archives", icon: Archive },
   { title: "Investment Memos", url: "/investment-memos", icon: FileText },
 ];
 
