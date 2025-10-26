@@ -1219,6 +1219,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Invoke debate agent endpoint
+  app.post("/api/debate-sessions/:sessionId/invoke-agent", async (req, res) => {
+    try {
+      const { agentRole, proposalId, context } = req.body;
+      const sessionId = req.params.sessionId;
+      
+      // Fetch session and proposal data
+      const session = await storage.getDebateSession(sessionId);
+      if (!session) {
+        res.status(404).json({ error: "Debate session not found" });
+        return;
+      }
+
+      const proposal = await storage.getProposal(proposalId || session.proposalId);
+      if (!proposal) {
+        res.status(404).json({ error: "Proposal not found" });
+        return;
+      }
+
+      let agentResponse: string;
+      let agentName: string;
+      let messageType: string;
+      let stance: string | null = null;
+
+      // Invoke the appropriate agent based on role
+      switch (agentRole) {
+        case "CONTRARIAN":
+          agentResponse = await agentService.generateDebateContrarianArgument(
+            proposal.ticker,
+            proposal,
+            context || {}
+          );
+          agentName = "Contrarian Analyst";
+          messageType = "ARGUMENT";
+          stance = "BEAR";
+          break;
+
+        case "DEFENDER":
+          // Get the contrarian's last argument for context
+          const messages = await storage.getDebateMessages(sessionId);
+          const lastContrarianMsg = messages.reverse().find(m => m.agentRole === "CONTRARIAN");
+          agentResponse = await agentService.generateDebateDefenderArgument(
+            proposal.ticker,
+            proposal,
+            lastContrarianMsg?.content || "Concerns raised about valuation and timing."
+          );
+          agentName = "Thesis Defender";
+          messageType = "COUNTERARGUMENT";
+          stance = "BULL";
+          break;
+
+        case "SECRETARY":
+          const allMessages = await storage.getDebateMessages(sessionId);
+          agentResponse = await agentService.generateDebateSecretarySummary({
+            topic: session.topic,
+            ticker: session.ticker,
+            messageCount: session.messageCount || 0,
+            keyPoints: allMessages.slice(-5).map(m => `${m.senderName}: ${m.content.substring(0, 100)}`),
+          });
+          agentName = "Meeting Secretary";
+          messageType = "SUMMARY";
+          stance = "NEUTRAL";
+          break;
+
+        case "LEAD_PM":
+          const recentMessages = await storage.getDebateMessages(sessionId);
+          agentResponse = await agentService.generateDebateLeadQuestion(
+            proposal.ticker,
+            proposal,
+            {
+              recentArguments: recentMessages.slice(-3).map(m => m.content).join("\n"),
+            }
+          );
+          agentName = "Lead Portfolio Manager";
+          messageType = "QUESTION";
+          stance = "NEUTRAL";
+          break;
+
+        default:
+          res.status(400).json({ error: "Invalid agent role" });
+          return;
+      }
+
+      // Create the agent's message
+      const agentMessage = await storage.createDebateMessage({
+        sessionId,
+        senderType: "AI_AGENT",
+        senderId: agentRole,
+        senderName: agentName,
+        agentRole,
+        content: agentResponse,
+        messageType,
+        stance,
+        metadata: { invokedAt: new Date().toISOString(), proposalId: proposal.id },
+      });
+
+      // Update session
+      await storage.updateDebateSession(sessionId, {
+        messageCount: (session.messageCount || 0) + 1,
+        activeAgents: Array.from(new Set([...(session.activeAgents || []), agentRole])),
+      });
+
+      res.json(agentMessage);
+    } catch (error) {
+      console.error("Debate agent invocation error:", error);
+      res.status(500).json({ error: "Failed to invoke debate agent" });
+    }
+  });
+
   // Portfolio Impacts Routes
   app.get("/api/portfolio-impacts", async (req, res) => {
     try {
