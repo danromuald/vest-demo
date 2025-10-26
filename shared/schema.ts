@@ -351,25 +351,102 @@ export const insertFinancialModelSchema = createInsertSchema(financialModels).om
 export type FinancialModel = typeof financialModels.$inferSelect;
 export type InsertFinancialModel = z.infer<typeof insertFinancialModelSchema>;
 
-// Thesis Monitors (tracking alerts)
-export const thesisMonitors = pgTable("thesis_monitors", {
+// Thesis Health Metrics - Track investment thesis health over time
+export const thesisHealthMetrics = pgTable("thesis_health_metrics", {
   id: varchar("id").primaryKey(),
+  workflowId: varchar("workflow_id").notNull(),
+  positionId: varchar("position_id"), // null if not yet executed
   ticker: text("ticker").notNull(),
-  positionId: varchar("position_id").notNull(),
-  healthStatus: text("health_status").notNull(), // HEALTHY, WARNING, ALERT
+  healthStatus: text("health_status").notNull(), // HEALTHY, WARNING, ALERT, CRITICAL
+  healthScore: integer("health_score").notNull(), // 0-100
+  catalystsStatus: jsonb("catalysts_status"), // Status of each catalyst
+  risksStatus: jsonb("risks_status"), // Status of each risk
+  keyMetrics: jsonb("key_metrics"), // Current vs expected metrics
+  deviation: jsonb("deviation"), // How far from thesis
   lastCheck: timestamp("last_check").notNull(),
-  alerts: jsonb("alerts"),
-  recommendations: text("recommendations"),
+  nextCheck: timestamp("next_check"),
+  createdBy: varchar("created_by"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertThesisMonitorSchema = createInsertSchema(thesisMonitors).omit({
+export const insertThesisHealthMetricSchema = createInsertSchema(thesisHealthMetrics).omit({
   id: true,
   createdAt: true,
 });
 
-export type ThesisMonitor = typeof thesisMonitors.$inferSelect;
-export type InsertThesisMonitor = z.infer<typeof insertThesisMonitorSchema>;
+export type ThesisHealthMetric = typeof thesisHealthMetrics.$inferSelect;
+export type InsertThesisHealthMetric = z.infer<typeof insertThesisHealthMetricSchema>;
+
+// Monitoring Events - Track all monitoring events
+export const monitoringEvents = pgTable("monitoring_events", {
+  id: varchar("id").primaryKey(),
+  workflowId: varchar("workflow_id").notNull(),
+  eventType: text("event_type").notNull(), // THESIS_CHECK, MARKET_EVENT, PRICE_ALERT, METRIC_DEVIATION, CATALYST_UPDATE, RISK_MATERIALIZED
+  severity: text("severity").notNull(), // INFO, WARNING, ALERT, CRITICAL
+  ticker: text("ticker"),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  details: jsonb("details"),
+  actionRequired: boolean("action_required").default(false),
+  actionTaken: text("action_taken"),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertMonitoringEventSchema = createInsertSchema(monitoringEvents).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type MonitoringEvent = typeof monitoringEvents.$inferSelect;
+export type InsertMonitoringEvent = z.infer<typeof insertMonitoringEventSchema>;
+
+// Market Alerts - Track market events that may impact positions
+export const marketAlerts = pgTable("market_alerts", {
+  id: varchar("id").primaryKey(),
+  ticker: text("ticker"),
+  sector: text("sector"),
+  alertType: text("alert_type").notNull(), // PRICE_MOVE, EARNINGS, NEWS, ANALYST_RATING, MACRO, COMPETITOR
+  severity: text("severity").notNull(), // LOW, MEDIUM, HIGH, CRITICAL
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  source: text("source"),
+  sourceUrl: text("source_url"),
+  impact: text("impact"), // Assessment of impact
+  affectedWorkflows: text("affected_workflows").array(), // Workflow IDs affected
+  read: boolean("read").default(false),
+  detectedAt: timestamp("detected_at").defaultNow(),
+});
+
+export const insertMarketAlertSchema = createInsertSchema(marketAlerts).omit({
+  id: true,
+  detectedAt: true,
+});
+
+export type MarketAlert = typeof marketAlerts.$inferSelect;
+export type InsertMarketAlert = z.infer<typeof insertMarketAlertSchema>;
+
+// Notification Rules - User-defined rules for alerts
+export const notificationRules = pgTable("notification_rules", {
+  id: varchar("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  workflowId: varchar("workflow_id"), // null for global rules
+  ruleType: text("rule_type").notNull(), // PRICE_CHANGE, THESIS_HEALTH, MARKET_EVENT, CATALYST, RISK
+  condition: jsonb("condition").notNull(), // Rule condition (e.g., price change > 5%)
+  channels: text("channels").array().notNull(), // EMAIL, IN_APP, SLACK
+  enabled: boolean("enabled").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertNotificationRuleSchema = createInsertSchema(notificationRules).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type NotificationRule = typeof notificationRules.$inferSelect;
+export type InsertNotificationRule = z.infer<typeof insertNotificationRuleSchema>;
 
 // Market Events
 export const marketEvents = pgTable("market_events", {
@@ -527,29 +604,6 @@ export const insertDebateSessionSchema = createInsertSchema(debateSessions).omit
 export type DebateSession = typeof debateSessions.$inferSelect;
 export type InsertDebateSession = z.infer<typeof insertDebateSessionSchema>;
 
-// Debate Messages
-export const debateMessages = pgTable("debate_messages", {
-  id: varchar("id").primaryKey(),
-  sessionId: varchar("session_id").notNull(),
-  senderType: text("sender_type").notNull(), // HUMAN, AI_AGENT
-  senderId: varchar("sender_id").notNull(), // user id or agent type
-  senderName: text("sender_name").notNull(),
-  agentRole: text("agent_role"), // CONTRARIAN, DEFENDER, SECRETARY, LEAD_PM, RESEARCH_ANALYST, CIO
-  content: text("content").notNull(),
-  messageType: text("message_type").notNull(), // TEXT, ANALYSIS, QUESTION, RESPONSE, ARGUMENT, COUNTERARGUMENT, SUMMARY, DECISION
-  stance: text("stance"), // BULL, BEAR, NEUTRAL
-  artifact: jsonb("artifact"), // Embedded charts, data, analysis
-  metadata: jsonb("metadata"), // Citations, data sources, confidence scores
-  timestamp: timestamp("timestamp").defaultNow(),
-});
-
-export const insertDebateMessageSchema = createInsertSchema(debateMessages).omit({
-  id: true,
-  timestamp: true,
-});
-
-export type DebateMessage = typeof debateMessages.$inferSelect;
-export type InsertDebateMessage = z.infer<typeof insertDebateMessageSchema>;
 
 // Portfolio Impacts (proposal to position relationships)
 export const portfolioImpacts = pgTable("portfolio_impacts", {
