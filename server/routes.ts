@@ -38,6 +38,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware - Replit Auth integration
   await setupAuth(app);
 
+  // Demo signin route - allows instant access without credentials
+  app.get('/api/demo-signin', async (req: any, res) => {
+    // Create or update demo user
+    const demoUser = {
+      id: "demo-user-" + Date.now(),
+      email: "demo@vest.com",
+      firstName: "Demo",
+      lastName: "User",
+      profileImageUrl: null,
+      role: "ANALYST" as const,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    
+    try {
+      await storage.upsertUser(demoUser);
+      
+      // Set session if available
+      if (req.session) {
+        req.session.userId = demoUser.id;
+        req.session.save((err: any) => {
+          if (err) console.error("Session save error:", err);
+        });
+      }
+      
+      // Redirect to main app
+      res.redirect('/');
+    } catch (error) {
+      console.error("Demo signin error:", error);
+      res.status(500).send("Failed to sign in");
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', async (req: any, res) => {
     // Development mode: return mock user if auth not configured

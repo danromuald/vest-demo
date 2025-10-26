@@ -84,17 +84,20 @@ export default function Landing() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
-            className="pt-4"
+            className="pt-4 space-y-4"
           >
             <Button 
               size="lg" 
               className="text-lg px-8 py-6"
-              onClick={() => window.location.href = '/api/login'}
-              data-testid="button-login"
+              onClick={() => window.location.href = '/api/demo-signin'}
+              data-testid="button-demo-signin"
             >
               <Sparkles className="mr-2 h-5 w-5" />
-              Sign In to Continue
+              Enter Demo
             </Button>
+            <p className="text-sm text-muted-foreground">
+              No credentials required - instant access to full platform
+            </p>
           </motion.div>
 
           {/* Features Grid */}
