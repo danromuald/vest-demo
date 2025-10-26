@@ -82,9 +82,119 @@ export const insertPositionSchema = createInsertSchema(positions).omit({
 export type Position = typeof positions.$inferSelect;
 export type InsertPosition = z.infer<typeof insertPositionSchema>;
 
-// Investment Proposals
+// Workflows - Core workflow tracking entity
+export const workflows = pgTable("workflows", {
+  id: varchar("id").primaryKey(),
+  ticker: text("ticker").notNull(),
+  companyName: text("company_name").notNull(),
+  sector: text("sector"),
+  currentStage: text("current_stage").notNull().default("DISCOVERY"), // DISCOVERY, ANALYSIS, IC_MEETING, EXECUTION, MONITORING
+  status: text("status").notNull().default("ACTIVE"), // ACTIVE, COMPLETED, ARCHIVED
+  owner: varchar("owner").notNull(), // User ID
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertWorkflowSchema = createInsertSchema(workflows).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type Workflow = typeof workflows.$inferSelect;
+export type InsertWorkflow = z.infer<typeof insertWorkflowSchema>;
+
+// Workflow Stages - Track completion and metadata for each stage
+export const workflowStages = pgTable("workflow_stages", {
+  id: varchar("id").primaryKey(),
+  workflowId: varchar("workflow_id").notNull(),
+  stage: text("stage").notNull(), // DISCOVERY, ANALYSIS, IC_MEETING, EXECUTION, MONITORING
+  status: text("status").notNull().default("PENDING"), // PENDING, IN_PROGRESS, COMPLETED, SKIPPED
+  owner: varchar("owner"), // User ID assigned to this stage
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  notes: text("notes"),
+  metadata: jsonb("metadata"), // Stage-specific data
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertWorkflowStageSchema = createInsertSchema(workflowStages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type WorkflowStage = typeof workflowStages.$inferSelect;
+export type InsertWorkflowStage = z.infer<typeof insertWorkflowStageSchema>;
+
+// Workflow Assignments - User roles and assignments per workflow
+export const workflowAssignments = pgTable("workflow_assignments", {
+  id: varchar("id").primaryKey(),
+  workflowId: varchar("workflow_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  role: text("role").notNull(), // ANALYST, PM, COMPLIANCE, ADMIN
+  stage: text("stage"), // Optional: assignment for specific stage
+  assignedAt: timestamp("assigned_at").defaultNow(),
+});
+
+export const insertWorkflowAssignmentSchema = createInsertSchema(workflowAssignments).omit({
+  id: true,
+  assignedAt: true,
+});
+
+export type WorkflowAssignment = typeof workflowAssignments.$inferSelect;
+export type InsertWorkflowAssignment = z.infer<typeof insertWorkflowAssignmentSchema>;
+
+// Workflow Artifacts - Versioned outputs from each stage
+export const workflowArtifacts = pgTable("workflow_artifacts", {
+  id: varchar("id").primaryKey(),
+  workflowId: varchar("workflow_id").notNull(),
+  artifactType: text("artifact_type").notNull(), // RESEARCH_BRIEF, FINANCIAL_MODEL, RISK_ANALYSIS, THESIS, IC_DECK, TRADE_PACKET, MEETING_MINUTES
+  stage: text("stage").notNull(), // Which stage produced this
+  version: integer("version").notNull().default(1),
+  title: text("title").notNull(),
+  content: jsonb("content").notNull(), // Structured content
+  metadata: jsonb("metadata"), // Additional metadata
+  createdBy: varchar("created_by").notNull(),
+  status: text("status").notNull().default("DRAFT"), // DRAFT, REVIEW, APPROVED, ARCHIVED
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertWorkflowArtifactSchema = createInsertSchema(workflowArtifacts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type WorkflowArtifact = typeof workflowArtifacts.$inferSelect;
+export type InsertWorkflowArtifact = z.infer<typeof insertWorkflowArtifactSchema>;
+
+// Artifact Revisions - Track changes to artifacts
+export const artifactRevisions = pgTable("artifact_revisions", {
+  id: varchar("id").primaryKey(),
+  artifactId: varchar("artifact_id").notNull(),
+  version: integer("version").notNull(),
+  content: jsonb("content").notNull(),
+  changeDescription: text("change_description"),
+  createdBy: varchar("created_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertArtifactRevisionSchema = createInsertSchema(artifactRevisions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type ArtifactRevision = typeof artifactRevisions.$inferSelect;
+export type InsertArtifactRevision = z.infer<typeof insertArtifactRevisionSchema>;
+
+// Investment Proposals - Now linked to workflows
 export const proposals = pgTable("proposals", {
   id: varchar("id").primaryKey(),
+  workflowId: varchar("workflow_id"), // Link to workflow
   ticker: text("ticker").notNull(),
   companyName: text("company_name").notNull(),
   analyst: text("analyst").notNull(),
@@ -316,39 +426,6 @@ export const insertResearchRequestSchema = createInsertSchema(researchRequests).
 export type ResearchRequest = typeof researchRequests.$inferSelect;
 export type InsertResearchRequest = z.infer<typeof insertResearchRequestSchema>;
 
-// Workflow Stages (persisted instances)
-export const workflowStages = pgTable("workflow_stages", {
-  id: varchar("id").primaryKey(),
-  entityType: text("entity_type").notNull(), // PROPOSAL, MEETING, RESEARCH
-  entityId: varchar("entity_id").notNull(),
-  currentStage: text("current_stage").notNull(), // DISCOVERY, ANALYSIS, IC_MEETING, EXECUTION, MONITORING
-  discoveryStatus: text("discovery_status").notNull().default('pending'), // PENDING, IN_PROGRESS, COMPLETED
-  discoveryCompletedAt: timestamp("discovery_completed_at"),
-  analysisStatus: text("analysis_status").notNull().default('pending'),
-  analysisCompletedAt: timestamp("analysis_completed_at"),
-  icMeetingStatus: text("ic_meeting_status").notNull().default('pending'),
-  icMeetingCompletedAt: timestamp("ic_meeting_completed_at"),
-  executionStatus: text("execution_status").notNull().default('pending'),
-  executionCompletedAt: timestamp("execution_completed_at"),
-  monitoringStatus: text("monitoring_status").notNull().default('pending'),
-  monitoringCompletedAt: timestamp("monitoring_completed_at"),
-  lastAdvancedBy: varchar("last_advanced_by"), // user id who advanced
-  lastAdvancedAt: timestamp("last_advanced_at"),
-  lastRevertedBy: varchar("last_reverted_by"), // user id who reverted
-  lastRevertedAt: timestamp("last_reverted_at"),
-  revertReason: text("revert_reason"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-export const insertWorkflowStageSchema = createInsertSchema(workflowStages).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export type WorkflowStageRecord = typeof workflowStages.$inferSelect;
-export type InsertWorkflowStage = z.infer<typeof insertWorkflowStageSchema>;
 
 // Meeting Participants
 export const meetingParticipants = pgTable("meeting_participants", {
@@ -473,10 +550,10 @@ export type RiskComplianceAction = typeof riskComplianceActions.$inferSelect;
 export type InsertRiskComplianceAction = z.infer<typeof insertRiskComplianceActionSchema>;
 
 // Workflow Stages Type (for interfaces)
-export type WorkflowStage = 'discovery' | 'analysis' | 'ic_meeting' | 'execution' | 'monitoring';
+export type WorkflowStageName = 'discovery' | 'analysis' | 'ic_meeting' | 'execution' | 'monitoring';
 
 export interface WorkflowProgress {
-  currentStage: WorkflowStage;
+  currentStage: WorkflowStageName;
   stages: {
     discovery: { status: 'completed' | 'in_progress' | 'pending'; completedAt?: string };
     analysis: { status: 'completed' | 'in_progress' | 'pending'; completedAt?: string };
