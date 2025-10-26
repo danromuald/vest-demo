@@ -41,6 +41,7 @@ import DataRetrieval from "@/pages/data-retrieval";
 import VoiceSummaries from "@/pages/voice-summaries";
 import AttributionReports from "@/pages/attribution-reports";
 import RiskRegime from "@/pages/risk-regime";
+import WorkflowWorkspace from "@/pages/workflow-workspace";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -54,6 +55,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      <Route path="/workflows/:id" component={WorkflowWorkspace} />
       <Route path="/workflow-timeline" component={WorkflowTimeline} />
       <Route path="/research" component={Research} />
       <Route path="/proposals" component={Proposals} />

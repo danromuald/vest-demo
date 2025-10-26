@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CheckCircle2, Circle, Clock, ArrowRight, ArrowLeft, Play, Pause, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { WorkflowStageRecord } from "@shared/schema";
+import type { WorkflowStage } from "@shared/schema";
 
 const stages = [
   { 
@@ -55,7 +55,7 @@ export function WorkflowStageNavigator({ proposalId, className }: WorkflowStageN
   const [revertReason, setRevertReason] = useState("");
   const { toast } = useToast();
 
-  const { data: workflowStages = [] } = useQuery<WorkflowStageRecord[]>({
+  const { data: workflowStages = [] } = useQuery<WorkflowStage[]>({
     queryKey: proposalId ? ["/api/workflow-stages", proposalId] : ["/api/workflow-stages"],
   });
 
