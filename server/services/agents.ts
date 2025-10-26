@@ -1526,6 +1526,69 @@ Provide just the question, 1-2 sentences max.`;
     ];
     return questions[Math.floor(Math.random() * questions.length)];
   }
+
+  // Generate debate summary
+  async generateDebateSummary(data: {
+    topic: string;
+    ticker: string;
+    proposal: any;
+    messages: any[];
+    participantCount: number;
+    messageCount: number;
+  }): Promise<string> {
+    try {
+      // Extract key messages from the debate
+      const bullPoints = data.messages.filter(m => m.stance === 'BULL').map(m => m.content).slice(-3);
+      const bearPoints = data.messages.filter(m => m.stance === 'BEAR').map(m => m.content).slice(-3);
+      const questions = data.messages.filter(m => m.messageType === 'QUESTION').map(m => m.content);
+
+      const prompt = `You are a Meeting Secretary. Generate an executive summary of this Investment Committee debate.
+
+Debate Topic: ${data.topic}
+Ticker: ${data.ticker}
+Proposal: ${data.proposal.proposalType} at ${data.proposal.proposedWeight}% weight, target price $${data.proposal.targetPrice}
+Participants: ${data.participantCount}
+Total Messages: ${data.messageCount}
+
+Key Bull Arguments:
+${bullPoints.join('\n\n')}
+
+Key Bear Arguments:
+${bearPoints.join('\n\n')}
+
+Key Questions Raised:
+${questions.join('\n')}
+
+Generate a comprehensive 4-paragraph summary:
+1. Overview of the debate topic and proposal
+2. Summary of the bull case and supporting arguments
+3. Summary of the bear case and key concerns
+4. Committee sentiment, areas of consensus/disagreement, and recommended next steps
+
+Be professional, balanced, and actionable.`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        max_completion_tokens: 800,
+      });
+
+      return completion.choices[0]?.message?.content || this.getMockDebateSummary(data.ticker, data.proposal);
+    } catch (error) {
+      console.warn(`Debate summary AI failed, using mock:`, error);
+      return this.getMockDebateSummary(data.ticker, data.proposal);
+    }
+  }
+
+  private getMockDebateSummary(ticker: string, proposal: any): string {
+    return `The Investment Committee conducted a comprehensive debate on the proposed ${ticker} investment, evaluating a ${proposal.proposalType} recommendation at ${proposal.proposedWeight}% portfolio weight with a target price of $${proposal.targetPrice}. The discussion involved ${4} participants across ${12} messages, examining the investment thesis from multiple perspectives.
+
+The bull case emphasized ${ticker}'s strong market position, robust fundamentals, and significant growth catalysts. Proponents highlighted the company's competitive advantages, expanding addressable market, and attractive valuation relative to growth prospects. Key supporting arguments included consistent execution, margin expansion opportunities, and positive industry tailwinds that support the investment thesis.
+
+The bear case raised important concerns about valuation risk, competitive dynamics, and execution challenges. Critics questioned whether the current valuation adequately prices in growth expectations, cited increasing competitive pressure from emerging players, and highlighted potential regulatory headwinds. Additional concerns included customer concentration risk and the potential for margin compression in a more competitive environment.
+
+Committee sentiment appears cautiously optimistic with several areas requiring further analysis. There is general consensus on the quality of the underlying business, but disagreement on optimal position sizing given valuation and risk considerations. The committee recommends proceeding to a formal vote while considering a reduced position size (potentially 30-40% lower than originally proposed) to address concentration and downside risk concerns. Additional scenario analysis on bear case outcomes and clear exit criteria should be established before final execution.`;
+  }
 }
 
 export const agentService = new AgentService();

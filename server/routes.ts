@@ -1395,6 +1395,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // End debate session
+  app.patch("/api/debate-sessions/:id/end", async (req, res) => {
+    try {
+      const session = await storage.getDebateSession(req.params.id);
+      if (!session) {
+        res.status(404).json({ error: "Debate session not found" });
+        return;
+      }
+
+      const updated = await storage.updateDebateSession(req.params.id, {
+        status: "COMPLETED",
+        currentPhase: "CONCLUDED",
+        endedAt: new Date(),
+      });
+
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to end debate session" });
+    }
+  });
+
+  // Summarize debate session using AI
+  app.post("/api/debate-sessions/:id/summarize", async (req, res) => {
+    try {
+      const session = await storage.getDebateSession(req.params.id);
+      if (!session) {
+        res.status(404).json({ error: "Debate session not found" });
+        return;
+      }
+
+      const messages = await storage.getDebateMessages(req.params.id);
+      const proposal = await storage.getProposal(session.proposalId);
+      
+      if (!proposal) {
+        res.status(404).json({ error: "Proposal not found" });
+        return;
+      }
+
+      // Generate AI summary
+      const summary = await agentService.generateDebateSummary({
+        topic: session.topic,
+        ticker: session.ticker,
+        proposal,
+        messages,
+        participantCount: session.participantCount || 0,
+        messageCount: session.messageCount || 0,
+      });
+
+      // Extract key points (first few sentences or bullet points)
+      const keyPoints = messages
+        .filter(m => m.messageType === "SUMMARY" || m.stance)
+        .slice(-5)
+        .map(m => `${m.senderName}: ${m.content.substring(0, 150)}...`);
+
+      // Update session with summary
+      const updated = await storage.updateDebateSession(req.params.id, {
+        summary,
+        keyPoints,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Debate summarization error:", error);
+      res.status(500).json({ error: "Failed to generate debate summary" });
+    }
+  });
+
+  // Download debate transcript as PDF
+  app.get("/api/debate-sessions/:id/pdf", async (req, res) => {
+    try {
+      const session = await storage.getDebateSession(req.params.id);
+      if (!session) {
+        res.status(404).json({ error: "Debate session not found" });
+        return;
+      }
+
+      const messages = await storage.getDebateMessages(req.params.id);
+      const proposal = await storage.getProposal(session.proposalId);
+      
+      if (!proposal) {
+        res.status(404).json({ error: "Proposal not found" });
+        return;
+      }
+
+      // Set response headers for PDF download
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="debate-${session.ticker}-${new Date().toISOString().split('T')[0]}.pdf"`
+      );
+
+      // Generate PDF
+      await pdfService.generateDebateTranscript(session, messages, proposal, res);
+    } catch (error) {
+      console.error("PDF generation error:", error);
+      res.status(500).json({ error: "Failed to generate debate PDF" });
+    }
+  });
+
   // Portfolio Impacts Routes
   app.get("/api/portfolio-impacts", async (req, res) => {
     try {

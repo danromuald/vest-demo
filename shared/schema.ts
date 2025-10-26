@@ -350,6 +350,8 @@ export const debateSessions = pgTable("debate_sessions", {
   activeAgents: text("active_agents").array().notNull().default(sql`ARRAY[]::text[]`), // Array of active agent types
   decision: text("decision"), // APPROVED, REJECTED, DEFERRED
   voteCount: jsonb("vote_count"), // { approve: number, reject: number, abstain: number }
+  summary: text("summary"), // AI-generated summary of debate
+  keyPoints: text("key_points").array(), // Key points from the debate
   startedAt: timestamp("started_at").defaultNow(),
   endedAt: timestamp("ended_at"),
   participantCount: integer("participant_count").default(0),

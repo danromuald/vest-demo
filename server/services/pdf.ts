@@ -1,6 +1,6 @@
 import PDFDocument from "pdfkit";
 import type { Writable } from "stream";
-import type { Proposal, ICMeeting, Position } from "@shared/schema";
+import type { Proposal, ICMeeting, Position, DebateSession, DebateMessage } from "@shared/schema";
 
 export class PDFService {
   /**
@@ -339,6 +339,169 @@ export class PDFService {
       .font("Helvetica-Oblique")
       .text(
         "This report is for informational purposes only. Past performance does not guarantee future results.",
+        50,
+        doc.page.height - 50,
+        { align: "center", width: doc.page.width - 100 }
+      );
+
+    doc.end();
+  }
+
+  /**
+   * Generate Debate Transcript PDF
+   */
+  async generateDebateTranscript(
+    session: DebateSession,
+    messages: DebateMessage[],
+    proposal: Proposal,
+    stream: Writable
+  ): Promise<void> {
+    const doc = new PDFDocument({ size: "LETTER", margin: 50 });
+    doc.pipe(stream);
+
+    // Header
+    doc
+      .fontSize(24)
+      .font("Helvetica-Bold")
+      .text("Investment Committee Debate Transcript", { align: "center" })
+      .moveDown(0.5);
+
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(session.startedAt ? new Date(session.startedAt).toLocaleDateString() : new Date().toLocaleDateString(), { align: "center" })
+      .moveDown(2);
+
+    // Debate Information
+    doc
+      .fontSize(16)
+      .font("Helvetica-Bold")
+      .text("Debate Overview")
+      .moveDown(0.5);
+
+    doc
+      .fontSize(11)
+      .font("Helvetica")
+      .text(`Topic: ${session.topic}`)
+      .text(`Ticker: ${session.ticker}`)
+      .text(`Company: ${proposal.companyName}`)
+      .text(`Status: ${session.status}`)
+      .text(`Phase: ${session.currentPhase}`)
+      .text(`Participants: ${session.participantCount}`)
+      .text(`Messages: ${session.messageCount}`)
+      .moveDown(0.5);
+
+    if (session.startedAt) {
+      doc.text(`Started: ${new Date(session.startedAt).toLocaleString()}`);
+    }
+    if (session.endedAt && session.startedAt) {
+      doc.text(`Ended: ${new Date(session.endedAt).toLocaleString()}`);
+      const duration = (new Date(session.endedAt).getTime() - new Date(session.startedAt).getTime()) / 1000 / 60;
+      doc.text(`Duration: ${Math.round(duration)} minutes`);
+    }
+
+    doc.moveDown(1);
+
+    // Decision
+    if (session.decision) {
+      doc
+        .fontSize(16)
+        .font("Helvetica-Bold")
+        .text("Decision")
+        .moveDown(0.5);
+
+      doc
+        .fontSize(11)
+        .font("Helvetica")
+        .text(`Outcome: ${session.decision}`)
+        .moveDown(1);
+    }
+
+    // Summary
+    if (session.summary) {
+      doc
+        .fontSize(16)
+        .font("Helvetica-Bold")
+        .text("Executive Summary")
+        .moveDown(0.5);
+
+      doc
+        .fontSize(11)
+        .font("Helvetica")
+        .text(session.summary, { align: "justify" })
+        .moveDown(1);
+    }
+
+    // Key Points
+    if (session.keyPoints && session.keyPoints.length > 0) {
+      doc
+        .fontSize(16)
+        .font("Helvetica-Bold")
+        .text("Key Discussion Points")
+        .moveDown(0.5);
+
+      session.keyPoints.forEach((point, index) => {
+        doc
+          .fontSize(11)
+          .font("Helvetica")
+          .text(`${index + 1}. ${point}`, { indent: 20 });
+      });
+      doc.moveDown(1);
+    }
+
+    // Proposal Context
+    doc
+      .fontSize(16)
+      .font("Helvetica-Bold")
+      .text("Investment Proposal")
+      .moveDown(0.5);
+
+    doc
+      .fontSize(11)
+      .font("Helvetica")
+      .text(`Type: ${proposal.proposalType}`)
+      .text(`Proposed Weight: ${proposal.proposedWeight}%`)
+      .text(`Target Price: $${proposal.targetPrice || "N/A"}`)
+      .text(`Analyst: ${proposal.analyst}`)
+      .moveDown(1);
+
+    // Transcript
+    doc
+      .fontSize(16)
+      .font("Helvetica-Bold")
+      .text("Debate Transcript")
+      .moveDown(0.5);
+
+    messages.forEach((message, index) => {
+      // Add page break if needed
+      if (index > 0 && index % 8 === 0) {
+        doc.addPage();
+      }
+
+      // Message header
+      const timestamp = message.timestamp ? new Date(message.timestamp).toLocaleTimeString() : '';
+      const stance = message.stance ? ` [${message.stance}]` : '';
+      
+      doc
+        .fontSize(10)
+        .font("Helvetica-Bold")
+        .text(`${message.senderName}${stance} - ${timestamp}`)
+        .moveDown(0.2);
+
+      // Message content
+      doc
+        .fontSize(10)
+        .font("Helvetica")
+        .text(message.content, { indent: 20, align: "justify" })
+        .moveDown(0.8);
+    });
+
+    // Footer
+    doc
+      .fontSize(9)
+      .font("Helvetica-Oblique")
+      .text(
+        "This debate transcript is confidential and for internal committee use only.",
         50,
         doc.page.height - 50,
         { align: "center", width: doc.page.width - 100 }
