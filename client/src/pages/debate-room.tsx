@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useTextToSpeech, useSpeechToText } from "@/hooks/use-voice";
 import {
   Send,
   Users,
@@ -25,6 +26,11 @@ import {
   Clock,
   Sparkles,
   BarChart3,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  Phone,
 } from "lucide-react";
 import type { DebateSession, DebateMessage, Proposal } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -74,8 +80,21 @@ export default function DebateRoom() {
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [messages, setMessages] = useState<DebateMessage[]>([]);
   const [activePhase, setActivePhase] = useState("PRESENTATION");
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [autoSpeak, setAutoSpeak] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  
+  // Voice features
+  const { speak, stop: stopSpeaking, isSpeaking, isSupported: ttsSupported, voices } = useTextToSpeech();
+  const { 
+    isListening, 
+    transcript, 
+    startListening, 
+    stopListening, 
+    resetTranscript,
+    isSupported: sttSupported 
+  } = useSpeechToText();
 
   const { data: sessions = [] } = useQuery<DebateSession[]>({
     queryKey: ["/api/debate-sessions"],
@@ -150,9 +169,31 @@ export default function DebateRoom() {
     };
   }, [selectedSession, toast]);
 
+  // Auto-speak new agent messages
+  useEffect(() => {
+    if (messages.length === 0 || !autoSpeak || !voiceEnabled || !ttsSupported) return;
+    
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.senderType === "AI_AGENT") {
+      // Get agent-specific voice settings
+      const agentInfo = getAgentInfo(lastMessage.agentRole);
+      const voiceSettings = getAgentVoiceSettings(lastMessage.agentRole);
+      
+      // Speak the message with appropriate voice
+      speak(lastMessage.content, voiceSettings);
+    }
+  }, [messages, autoSpeak, voiceEnabled, ttsSupported, speak]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+  
+  // Handle speech-to-text transcript
+  useEffect(() => {
+    if (transcript) {
+      setMessageInput(transcript);
+    }
+  }, [transcript]);
 
   const sendMessage = () => {
     if (!messageInput.trim() || !ws || !selectedSession) return;
@@ -204,6 +245,27 @@ export default function DebateRoom() {
 
   const getAgentInfo = (agentRole: string | null): AgentInfo | null => {
     return agentRole ? DEBATE_AGENTS[agentRole] || null : null;
+  };
+  
+  const getAgentVoiceSettings = (agentRole: string | null) => {
+    // Different voice characteristics for each agent
+    const settings: Record<string, { pitch: number; rate: number }> = {
+      CONTRARIAN: { pitch: 0.9, rate: 1.1 }, // Lower, faster - urgent bear case
+      DEFENDER: { pitch: 1.1, rate: 0.95 }, // Higher, slower - confident bull case
+      SECRETARY: { pitch: 1.0, rate: 1.0 }, // Neutral - balanced moderator
+      LEAD_PM: { pitch: 1.05, rate: 0.9 }, // Slightly higher, measured - thoughtful questions
+    };
+    
+    return agentRole ? settings[agentRole] || {} : {};
+  };
+  
+  const toggleVoiceInput = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      resetTranscript();
+      startListening();
+    }
   };
 
   const renderAgentAvatar = (message: DebateMessage) => {
@@ -355,11 +417,13 @@ export default function DebateRoom() {
                   {messages.map((message, index) => {
                     const isAgent = message.senderType === "AI_AGENT";
                     const agentInfo = getAgentInfo(message.agentRole);
+                    const isLastMessage = index === messages.length - 1;
+                    const isSpeakingThis = isLastMessage && isSpeaking && isAgent;
                     
                     return (
                       <div
                         key={index}
-                        className={`flex gap-3 ${isAgent ? "bg-muted/30 -mx-6 px-6 py-4 rounded-lg" : ""}`}
+                        className={`flex gap-3 ${isAgent ? "bg-muted/30 -mx-6 px-6 py-4 rounded-lg" : ""} ${isSpeakingThis ? "ring-2 ring-primary/50" : ""}`}
                         data-testid={`message-${index}`}
                       >
                         {renderAgentAvatar(message)}
@@ -375,6 +439,12 @@ export default function DebateRoom() {
                             {message.messageType !== "TEXT" && (
                               <Badge variant="secondary" className="text-xs">
                                 {message.messageType}
+                              </Badge>
+                            )}
+                            {isSpeakingThis && (
+                              <Badge variant="default" className="text-xs animate-pulse gap-1">
+                                <Volume2 className="h-3 w-3" />
+                                Speaking
                               </Badge>
                             )}
                             <span className="text-xs text-muted-foreground ml-auto">
@@ -394,6 +464,38 @@ export default function DebateRoom() {
             </CardContent>
 
             <div className="border-t p-4">
+              <div className="flex gap-2 mb-3">
+                <div className="flex gap-2 flex-1 items-center">
+                  <Button
+                    variant={voiceEnabled ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setVoiceEnabled(!voiceEnabled)}
+                    disabled={!ttsSupported}
+                    data-testid="button-toggle-voice"
+                    className="gap-2"
+                  >
+                    {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                    <span className="text-xs">Voice</span>
+                  </Button>
+                  <Button
+                    variant={autoSpeak ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setAutoSpeak(!autoSpeak)}
+                    disabled={!ttsSupported || !voiceEnabled}
+                    data-testid="button-auto-speak"
+                    className="gap-2"
+                  >
+                    <Phone className="h-4 w-4" />
+                    <span className="text-xs">Auto-speak</span>
+                  </Button>
+                  {isSpeaking && (
+                    <Badge variant="default" className="animate-pulse gap-2">
+                      <Volume2 className="h-3 w-3" />
+                      Speaking...
+                    </Badge>
+                  )}
+                </div>
+              </div>
               <div className="flex gap-2">
                 <Input
                   value={messageInput}
@@ -404,9 +506,20 @@ export default function DebateRoom() {
                       sendMessage();
                     }
                   }}
-                  placeholder="Share your thoughts on this proposal..."
+                  placeholder={isListening ? "Listening..." : "Share your thoughts on this proposal..."}
                   data-testid="input-message"
+                  className={isListening ? "border-primary" : ""}
                 />
+                {sttSupported && (
+                  <Button
+                    variant={isListening ? "default" : "outline"}
+                    onClick={toggleVoiceInput}
+                    data-testid="button-voice-input"
+                    className={isListening ? "animate-pulse" : ""}
+                  >
+                    {isListening ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+                  </Button>
+                )}
                 <Button onClick={sendMessage} disabled={!messageInput.trim()} data-testid="button-send">
                   <Send className="h-4 w-4" />
                 </Button>

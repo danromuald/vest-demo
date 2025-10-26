@@ -1,7 +1,7 @@
 import { db } from "./db";
 import {
   companies, positions, proposals, icMeetings, votes, marketEvents, thesisMonitors, notifications,
-  researchRequests, agentResponses, financialModels, meetingParticipants
+  researchRequests, agentResponses, financialModels, meetingParticipants, debateSessions, debateMessages
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -9,6 +9,8 @@ async function seed() {
   console.log("🌱 Seeding database...");
 
   // Clear existing data
+  await db.delete(debateMessages);
+  await db.delete(debateSessions);
   await db.delete(notifications);
   await db.delete(votes);
   await db.delete(meetingParticipants);
@@ -164,7 +166,7 @@ async function seed() {
 
   // Seed IC Meeting
   const meetingId = randomUUID();
-  await db.insert(icMeetings).values({
+  const meetingData = await db.insert(icMeetings).values({
     id: meetingId,
     meetingDate: new Date("2025-10-25T14:00:00Z"),
     status: "SCHEDULED",
@@ -173,7 +175,7 @@ async function seed() {
       proposals: ["TSLA New Position", "GOOGL Trim"],
       presentations: ["Q3 Portfolio Review", "Macro Outlook"],
     },
-  });
+  }).returning();
 
   console.log("✅ Seeded IC meeting");
 
@@ -1306,6 +1308,173 @@ async function seed() {
   ]);
 
   console.log("✅ Seeded notifications");
+
+  // Seed Debate Sessions
+  const debateSessionData = await db.insert(debateSessions).values([
+    {
+      id: randomUUID(),
+      meetingId: meetingId,
+      proposalId: proposalData[0].id,
+      ticker: "NVDA",
+      topic: "NVDA Investment Thesis: AI Infrastructure Leadership",
+      status: "ACTIVE",
+      currentPhase: "DEBATE",
+      activeAgents: ["LEAD_PM", "DEFENDER", "CONTRARIAN", "SECRETARY"],
+      participantCount: 5,
+      messageCount: 12,
+      startedAt: new Date("2025-10-26T14:30:00"),
+    },
+  ]).returning();
+
+  console.log("✅ Seeded debate sessions");
+
+  // Seed compelling debate messages
+  const debateMessageData = await db.insert(debateMessages).values([
+    {
+      id: randomUUID(),
+      sessionId: debateSessionData[0].id,
+      senderType: "AI_AGENT",
+      senderId: "LEAD_PM",
+      senderName: "Lead Portfolio Manager",
+      agentRole: "LEAD_PM",
+      content: "Good afternoon, committee. Let's discuss the NVDA proposal. Michael is recommending a BUY at $875 with a 12.5% portfolio weight. Before we proceed, I'd like to stress-test this thesis. What happens if AI infrastructure spending decelerates faster than expected? We've seen similar buildout cycles end abruptly before—cloud capex in 2019, telco in 2001. How confident are we this time is different?",
+      messageType: "TEXT",
+      stance: "NEUTRAL",
+      timestamp: new Date("2025-10-26T14:31:00"),
+    },
+    {
+      id: randomUUID(),
+      sessionId: debateSessionData[0].id,
+      senderType: "AI_AGENT",
+      senderId: "DEFENDER",
+      senderName: "Thesis Defender",
+      agentRole: "DEFENDER",
+      content: "Excellent question. This IS different for three structural reasons. First, AI workloads are exponentially more compute-intensive than traditional cloud—training GPT-5 requires 10x the GPU hours of GPT-4. Second, NVIDIA's CUDA moat creates 90%+ switching costs—enterprises can't easily migrate. Third, hyperscalers have $200B+ in committed capex through 2027, with contractual obligations. Even if growth slows, we're looking at $80B TAM floor vs $60B today. The downside is protected.",
+      messageType: "TEXT",
+      stance: "BULL",
+      timestamp: new Date("2025-10-26T14:32:30"),
+    },
+    {
+      id: randomUUID(),
+      sessionId: debateSessionData[0].id,
+      senderType: "AI_AGENT",
+      senderId: "CONTRARIAN",
+      senderName: "Contrarian Analyst",
+      agentRole: "CONTRARIAN",
+      content: "I respectfully disagree. The bull case ignores three critical risks. First, AMD's MI300X is gaining real traction—Meta just disclosed 600K GPU orders, 40% AMD. NVIDIA's market share dropped from 98% to 92% in six months. Second, hyperscaler capex IS already decelerating—look at Microsoft's Q3 commentary about 'rationalization and efficiency.' Third, at 32x forward earnings with 85% gross margins, there's zero room for disappointment. If AI monetization stumbles, this reprices to 20x overnight—that's a 40% drawside.",
+      messageType: "TEXT",
+      stance: "BEAR",
+      timestamp: new Date("2025-10-26T14:34:00"),
+    },
+    {
+      id: randomUUID(),
+      sessionId: debateSessionData[0].id,
+      senderType: "HUMAN",
+      senderId: "user-1",
+      senderName: "Committee Member",
+      content: "What about the Blackwell ramp? I heard there are supply constraints that could delay revenue recognition into Q2 2026. How does that affect the near-term thesis?",
+      messageType: "TEXT",
+      stance: null,
+      timestamp: new Date("2025-10-26T14:35:15"),
+    },
+    {
+      id: randomUUID(),
+      sessionId: debateSessionData[0].id,
+      senderType: "AI_AGENT",
+      senderId: "DEFENDER",
+      senderName: "Thesis Defender",
+      agentRole: "DEFENDER",
+      content: "The Blackwell constraints are actually validating demand strength. NVIDIA has $18B in Blackwell backlog already—that's pre-production. TSMC is adding CoWoS capacity specifically for NVIDIA, bringing us to 150K wafers/month by Q1. Yes, there's a one-quarter delay, but it de-risks 2026 revenue visibility. Management guided to Blackwell revenue starting in Q1 2026 at scale, with 'several billion' in revenue. The delay is a timing issue, not a demand issue.",
+      messageType: "TEXT",
+      stance: "BULL",
+      timestamp: new Date("2025-10-26T14:36:30"),
+    },
+    {
+      id: randomUUID(),
+      sessionId: debateSessionData[0].id,
+      senderType: "AI_AGENT",
+      senderId: "CONTRARIAN",
+      senderName: "Contrarian Analyst",
+      agentRole: "CONTRARIAN",
+      content: "But that backlog argument cuts both ways. If customers are pre-ordering 12-18 months out, it suggests they're already locked in. New incremental demand for 2026-2027 is uncertain. Plus, we're seeing concerning signs: OpenAI's losses widening to $5B/year, Anthropic burning $2B annually, and neither has shown profitable unit economics yet. If the foundation model companies can't monetize, who funds the next wave of GPU purchases?",
+      messageType: "TEXT",
+      stance: "BEAR",
+      timestamp: new Date("2025-10-26T14:38:00"),
+    },
+    {
+      id: randomUUID(),
+      sessionId: debateSessionData[0].id,
+      senderType: "AI_AGENT",
+      senderId: "LEAD_PM",
+      senderName: "Lead Portfolio Manager",
+      agentRole: "LEAD_PM",
+      content: "This is the key question. Let me reframe it: what's our edge in NVIDIA? Every hedge fund and mutual fund owns this name. Consensus EPS is $3.92 for FY26—what gives us conviction that number is achievable or even conservative? What do we know that the street doesn't?",
+      messageType: "TEXT",
+      stance: "NEUTRAL",
+      timestamp: new Date("2025-10-26T14:39:30"),
+    },
+    {
+      id: randomUUID(),
+      sessionId: debateSessionData[0].id,
+      senderType: "HUMAN",
+      senderId: "user-1",
+      senderName: "Committee Member",
+      content: "Our edge is timing and position sizing discipline. Street is modeling linear growth, but inference workloads are the next catalyst—they're 5x more profitable than training and still only 20% of NVIDIA's mix. As ChatGPT Enterprise, GitHub Copilot, and enterprise AI agents scale, inference revenue accelerates through 2026. That's not in consensus yet.",
+      messageType: "TEXT",
+      stance: "BULL",
+      timestamp: new Date("2025-10-26T14:41:00"),
+    },
+    {
+      id: randomUUID(),
+      sessionId: debateSessionData[0].id,
+      senderType: "AI_AGENT",
+      senderId: "DEFENDER",
+      senderName: "Thesis Defender",
+      agentRole: "DEFENDER",
+      content: "Exactly. And here's the asymmetry: if we're right about inference, NVIDIA does $175B revenue in FY27 (vs $145B consensus) and earns $5.20/share on Blackwell margins. That's $1,040 price target—19% upside. If we're wrong and AI slows, we still have $60B data center floor, $2.80/share earnings, and 22x multiple = $615 downside. 19% up, 30% down, but the probability distribution favors the upside given hyperscaler commitments.",
+      messageType: "TEXT",
+      stance: "BULL",
+      timestamp: new Date("2025-10-26T14:42:30"),
+    },
+    {
+      id: randomUUID(),
+      sessionId: debateSessionData[0].id,
+      senderType: "AI_AGENT",
+      senderId: "CONTRARIAN",
+      senderName: "Contrarian Analyst",
+      agentRole: "CONTRARIAN",
+      content: "I'd argue the downside case is worse. In a true AI winter scenario, NVIDIA doesn't hold at $615. We saw the stock drop from $480 to $108 in 2022 when crypto mining collapsed—that's 77% down. If enterprise AI adoption stalls and hyperscalers cut capex 40% like they did in 2023, NVIDIA could retrace to 15x on $2.50 earnings = $375. That's 57% downside. At 12.5% portfolio weight, that's a 7% portfolio hit. Too much single-name risk.",
+      messageType: "TEXT",
+      stance: "BEAR",
+      timestamp: new Date("2025-10-26T14:44:00"),
+    },
+    {
+      id: randomUUID(),
+      sessionId: debateSessionData[0].id,
+      senderType: "AI_AGENT",
+      senderId: "SECRETARY",
+      senderName: "Meeting Secretary",
+      agentRole: "SECRETARY",
+      content: "Let me summarize the key debate points:\n\nBULL CASE:\n• Structural AI demand with 90%+ CUDA lock-in\n• $200B+ hyperscaler commitments through 2027\n• Inference workloads emerging as next growth driver\n• Blackwell backlog validates demand strength\n• Downside protected by $60B TAM floor\n\nBEAR CASE:\n• AMD gaining share (92% from 98%)\n• Foundation models not yet profitable\n• Valuation at 32x leaves no room for error\n• 57% downside in AI winter scenario\n• Capex 'rationalization' commentary from hyperscalers\n\nThe committee should weigh: Is the 19% upside vs 30-57% downside risk/reward acceptable at 12.5% portfolio weight?",
+      messageType: "TEXT",
+      stance: "NEUTRAL",
+      timestamp: new Date("2025-10-26T14:45:30"),
+    },
+    {
+      id: randomUUID(),
+      sessionId: debateSessionData[0].id,
+      senderType: "AI_AGENT",
+      senderId: "LEAD_PM",
+      senderName: "Lead Portfolio Manager",
+      agentRole: "LEAD_PM",
+      content: "Excellent summary. Here's my synthesis: I'm comfortable with NVIDIA as a core position, but 12.5% is too concentrated given the binary nature of AI adoption. I'd propose: APPROVE the thesis, but at 8% initial weight with 10% hard stop-loss. If NVDA breaks above $950 on Blackwell success, we can add to 10%. If it breaks $790 on negative AI monetization data, we trim to 5%. This gives us upside participation with defined downside protection. What say the committee?",
+      messageType: "TEXT",
+      stance: "NEUTRAL",
+      timestamp: new Date("2025-10-26T14:47:00"),
+    },
+  ]);
+
+  console.log("✅ Seeded debate messages");
   console.log("🎉 Database seeding complete!");
 }
 
