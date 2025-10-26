@@ -336,7 +336,7 @@ export default function ICMeeting() {
   // Create debate session mutation
   const startDebateMutation = useMutation({
     mutationFn: async (proposal: Proposal) => {
-      return await apiRequest("POST", "/api/debate-sessions", {
+      const response = await apiRequest("POST", "/api/debate-sessions", {
         ticker: proposal.ticker,
         companyName: proposal.companyName,
         topic: `IC Meeting Debate: ${proposal.ticker} ${proposal.proposalType} Recommendation`,
@@ -348,12 +348,13 @@ export default function ICMeeting() {
         participantCount: 0,
         messageCount: 0,
       });
+      return response as DebateSession;
     },
     onSuccess: (data: DebateSession) => {
       queryClient.invalidateQueries({ queryKey: ["/api/debate-sessions"] });
       toast({ 
         title: "Debate Started", 
-        description: `Opening debate room for ${data.ticker}`,
+        description: data.ticker ? `Opening debate room for ${data.ticker}` : "Opening debate room",
       });
       // Navigate to debate room
       navigate("/debate-room");

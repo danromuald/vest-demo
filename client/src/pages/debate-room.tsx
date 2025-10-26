@@ -178,9 +178,10 @@ export default function DebateRoom() {
       });
     },
     onSuccess: (data: any) => {
-      if (data && data.id) {
-        setMessages(prev => [...prev, data as DebateMessage]);
-        queryClient.invalidateQueries({ queryKey: ["/api/debate-sessions", selectedSession, "messages"] });
+      // Invalidate queries to refetch messages
+      queryClient.invalidateQueries({ queryKey: ["/api/debate-sessions", selectedSession, "messages"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/debate-sessions"] });
+      if (data && data.senderName) {
         toast({
           title: "Agent Response",
           description: `${data.senderName} has contributed`,
