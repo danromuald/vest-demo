@@ -1,128 +1,41 @@
 # Vest - AI-Powered Investment Committee Platform
 
 ## Overview
-
-Vest is an AI-powered investment committee workflow system designed to automate and enhance the investment decision-making process. The platform streamlines workflows from initial research through execution and ongoing portfolio monitoring, leveraging a complete 16-agent AI system to reduce analyst workload, enhance meeting quality, ensure compliance, and maintain institutional knowledge. Vest provides capabilities for automated research synthesis, AI-assisted investment committee meetings with real-time contrarian analysis, portfolio monitoring with thesis health tracking, document generation, scenario simulation, compliance checks, trade order generation, and risk assessment. The project is a production-ready enterprise MVP with comprehensive workflow automation.
+Vest is an AI-powered investment committee workflow system designed to automate and enhance the investment decision-making process. The platform streamlines workflows from initial research through execution and ongoing portfolio monitoring, leveraging a 16-agent AI system. Its purpose is to reduce analyst workload, enhance meeting quality, ensure compliance, and maintain institutional knowledge. Vest offers capabilities for automated research synthesis, AI-assisted investment committee meetings with real-time contrarian analysis, portfolio monitoring with thesis health tracking, document generation, scenario simulation, compliance checks, trade order generation, and risk assessment. The project is a production-ready enterprise MVP with comprehensive workflow automation.
 
 ## User Preferences
-
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
 ### UI/UX Decisions
-
-The frontend is built with React 18+ and TypeScript, utilizing Shadcn/ui with Radix UI primitives for a professional, data-intensive enterprise financial aesthetic, inspired by IBM Carbon Design and Linear. Styling is managed with Tailwind CSS, prioritizing dark mode, a custom financial services color palette, and the Inter Variable and JetBrains Mono typefaces. Key design principles include information clarity, professional trust, efficient workflows, and data-first visualization.
+The frontend is built with React 18+ and TypeScript, utilizing Shadcn/ui with Radix UI primitives for a professional, data-intensive enterprise financial aesthetic, inspired by IBM Carbon Design and Linear. Styling is managed with Tailwind CSS, prioritizing dark mode, a custom financial services color palette, and the Inter Variable and JetBrains Mono typefaces. Key design principles include information clarity, professional trust, efficient workflows, and data-first visualization. The sidebar uses a collapsible hierarchical structure for efficient navigation, organized into "Workflow," "AI Agents" (with Pre-Work, IC & Execution, and Monitoring & Analytics sub-groups), and "Resources." A reusable BreadcrumbNav component provides context-aware navigation.
 
 ### Technical Implementations
-
-The backend uses Node.js with TypeScript and Express.js, serving RESTful APIs and static assets. Real-time features, such as collaborative IC meetings and voting, are powered by a WebSocket server. Data persistence is handled by PostgreSQL via Neon, with Drizzle ORM. The system includes a robust notification system for thesis monitoring and market events, and a PDF generation service for compliance documentation like investment memos and meeting minutes. Authentication is session-based using `express-session`, and all API endpoints feature Zod for input validation.
+The backend uses Node.js with TypeScript and Express.js, serving RESTful APIs and static assets. Real-time features, such as collaborative IC meetings and voting, are powered by a WebSocket server. Data persistence is handled by PostgreSQL via Neon, with Drizzle ORM. The system includes a robust notification system for thesis monitoring and market events, and a PDF generation service. Authentication uses Replit Auth (OpenID Connect) for production and falls back to a mock user in development. All API endpoints use Zod for input validation. The system supports four user roles with distinct permissions: ANALYST, PM, COMPLIANCE, and ADMIN.
 
 ### Feature Specifications
+Vest supports a comprehensive workflow from `DISCOVERY` to `MONITORING`, with automated progression. Key features include:
 
-Vest supports a comprehensive workflow from `DISCOVERY` to `MONITORING`, including automated progression based on task completion (e.g., research completion advances to `ANALYSIS`, proposal creation to `IC_MEETING`). Critical features include:
-
-#### Core Workflow Features
-- **Proposals Page** (`/proposals`): Comprehensive proposal management with grid view, filtering by status (DRAFT/PENDING/APPROVED/REJECTED) and type (BUY/SELL/HOLD), search by ticker/company/analyst, and standalone proposal creation dialog. Users can create proposals directly without requiring a research request. Includes navigation to detail pages and helpful empty states.
-- **Proposal Creation Workflow**: Links research to IC meetings, guiding users through thesis, catalysts, risks, and target price definition.
-- **Proposal Detail Page**: Standalone page (`/proposals/:id`) displaying comprehensive proposal information including thesis, catalysts, risks, voting results with comments, timeline, and metadata. Accessible from IC Meeting page via "View Details" button and from Proposals page grid.
-- **Workflow Timeline**: Visual timeline showing all 5 workflow stages (Discovery → Analysis → IC Meeting → Execution → Monitoring) with entity counts, status indicators, and deep links to detail pages.
-- **WorkflowStageNavigator**: Dashboard component for tracking workflow progression.
-- **IC Meeting Page**: Real-time collaborative meetings with WebSocket-powered voting, live agent responses, proposal navigation, and rich agent data integration. Features dedicated "Research" tab displaying research briefs (executive summary, key metrics, strengths, recommendation) and enhanced "Valuation" tab showing DCF models with Bull/Base/Bear scenarios, target prices, IRRs, key assumptions, WACC, and terminal growth rates. Automatically fetches and displays agent responses for selected proposal's ticker with graceful empty states directing users to generate missing data.
+#### Core Workflow
+- **Proposals Page**: Management of investment proposals with filtering, search, and creation.
+- **Proposal Creation Workflow**: Guides users through defining thesis, catalysts, risks, and target price.
+- **Proposal Detail Page**: Displays comprehensive proposal information, including voting results and timeline.
+- **Workflow Timeline**: Visualizes the 5 workflow stages (Discovery → Analysis → IC Meeting → Execution → Monitoring).
+- **IC Meeting Page**: Real-time collaborative meetings with WebSocket-powered voting, live AI responses, and integrated research briefs and valuation models.
 
 #### AI Agent Specialized Pages
-- **Research Brief** (`/research-brief`): Browse all research briefs generated by RESEARCH_SYNTHESIZER agent. In-page artifact generation with ticker input dialog.
-- **Financial Model** (`/financial-model`): DCF valuation models with bull/base/bear scenarios from DCF_MODELER agent. In-page generation dialog for creating new models on demand.
-- **Risk Analysis** (`/risk-analysis`): Contrarian analysis and bear case arguments from CONTRARIAN agent. In-page generation for new risk assessments.
-- **Scenario Simulator** (`/scenario-simulator`): Portfolio impact analysis comparing current vs projected portfolio metrics (tracking error, concentration, factor exposures). Shows risk warnings and validates portfolio limits. In-page generation with ticker + proposed weight inputs.
-- **Thesis Monitor** (`/thesis-monitor`): Investment thesis health tracking with drift scores (0-100%), status badges (HEALTHY/WARNING/ALERT), key concerns, and recommendations (HOLD/REVIEW/SELL). Visual drift progress bars with color-coded thresholds.
+Dedicated pages for 16 specialized AI agents, categorized by workflow phase:
+- **Pre-Work Agents (Research & Analysis)**: Research Brief, Financial Model, Quant Analysis, Risk Analysis, Scenario Simulator.
+- **IC & Execution Agents**: Investment Memos, Meeting Minutes, Compliance Reports, Risk Reports, Trade Orders.
+- **Monitoring & Analytics Agents**: Thesis Monitor, Market Events, Data Retrieval, Voice Summaries, Attribution Reports, Risk Regime.
+These pages enable in-page artifact generation, historical browsing, master-detail layouts, and robust error handling.
 
 #### Additional Features
-- **Historical Meetings**: Page to review past meetings, decisions, and voting.
-- **Agent Output Review**: Dedicated page for filtering and browsing AI agent responses.
-- **Monitoring Hub**: Comprehensive tracking of positions, thesis health, and market events.
-- **Debate Room**: Real-time AI-human collaboration via WebSocket.
-- **Document Export**: PDF generation for investment memos, meeting minutes, and portfolio summaries.
-- **Notification System**: Real-time alerts for thesis health, market events, and IC votes.
-
-#### AI Agent Integration
-Sixteen specialized agents organized by workflow phase provide comprehensive analysis and automation:
-
-**Pre-Work Agents (Research & Analysis)**:
-1. **Research Synthesizer**: Comprehensive company research briefs with executive summaries, key metrics, strengths, and recommendations
-2. **DCF Modeler**: Three-scenario financial valuation models (Bull/Base/Bear) with target prices, IRRs, WACC, and terminal growth rates
-3. **Quant Analyst**: Statistical factor analysis with exposures (growth, value, momentum, quality, size, volatility), Sharpe ratio, beta, alpha, portfolio correlation, and quant scores
-4. **Contrarian Analyst**: Bear case analysis and risk identification with counterarguments to investment thesis
-5. **Scenario Simulator**: Portfolio impact analysis with risk metrics comparing current vs. projected portfolio characteristics
-
-**In-Session Agents (IC Meeting Support)**:
-6. **Document Generator**: Investment memo generation with formatted executive summaries, thesis, valuation analysis, risk factors, and recommendations
-
-**Post-Session Agents (Execution)**:
-7. **Minutes Scribe**: Automated IC meeting minutes with attendees, decisions, vote tallies, discussion points, and action items
-8. **Compliance Monitor**: Regulatory checks covering position limits, sector concentration, conflicts of interest, with violation tracking and remediation steps
-9. **Risk Reporter**: Pre-trade risk analysis with portfolio impact, VaR, beta contribution, limit breach detection, and risk ratings
-10. **Trade Order Generator**: Execution ticket generation with order type, shares, strategy (MARKET/LIMIT/TWAP/VWAP), risk parameters, and detailed instructions
-
-**Sleeper Agents (Ongoing Monitoring)**:
-11. **Market Event Monitor**: Real-time market event tracking with price movements, news events, analyst changes, technical alerts, and severity assessment (LOW/MEDIUM/HIGH/CRITICAL)
-12. **Thesis Monitor**: Investment thesis health tracking with drift scores (0-100%), status badges (HEALTHY/WARNING/ALERT), key concerns, and recommendations (HOLD/REVIEW/SELL)
-
-**Supporting Agents (Data & Analysis)**:
-13. **Data Retrieval Specialist**: Historical precedent transactions, comparable deals, and historical data with relevance scoring and insights
-14. **Voice Synthesizer**: Audio summaries of IC decisions with transcript summaries and key points
-15. **Attribution Analyst**: Performance attribution analysis with asset allocation, stock selection, top contributors/detractors
-16. **Risk Regime Monitor**: Continuous risk regime tracking (LOW/MODERATE/HIGH/CRISIS volatility) with market indicators and portfolio adjustments
-
-All 16 agent types now have dedicated pages, organized in the sidebar by workflow phase:
-
-**Pre-Work Agents (Research & Analysis)**:
-- **Research Brief** (`/research-brief`): Company research with metrics, strengths, and recommendations
-- **Financial Model** (`/financial-model`): DCF valuation with Bull/Base/Bear scenarios  
-- **Quant Analysis** (`/quant-analysis`): Factor exposures and statistical metrics
-- **Risk Analysis** (`/risk-analysis`): Contrarian bear case analysis
-- **Scenario Simulator** (`/scenario-simulator`): Portfolio impact analysis
-
-**IC & Execution Agents**:
-- **Investment Memos** (`/investment-memos`): Formatted investment memorandums
-- **Meeting Minutes** (`/meeting-minutes`): Automated IC meeting documentation
-- **Compliance Reports** (`/compliance-reports`): Regulatory compliance checks and violation tracking
-- **Risk Reports** (`/risk-reports`): Pre-trade risk assessments
-- **Trade Orders** (`/trade-orders`): Execution ticket generation
-
-**Monitoring & Analytics Agents**:
-- **Thesis Monitor** (`/thesis-monitor`): Thesis health tracking with drift scores
-- **Market Events** (`/market-events`): Real-time price alerts and news monitoring
-- **Data Retrieval** (`/data-retrieval`): Historical precedents and comparables
-- **Voice Summaries** (`/voice-summaries`): Meeting audio summaries
-- **Attribution Reports** (`/attribution-reports`): Performance attribution
-- **Risk Regime** (`/risk-regime`): Market risk regime assessment
-- **All Agent Outputs** (`/agent-outputs`): Complete agent archive with filtering and search
-
-Common features across all agent pages:
-- In-page artifact generation via dialog forms
-- Historical browsing of all generated analyses
-- Master-detail layout with list/detail views
-- Loading states, error handling with retry functionality
-- Defensive data parsing for dates and numbers
-- Data testids for automated testing
-
-### Navigation & User Experience
-
-**Sidebar Organization**: The sidebar is organized into logical sections for efficient navigation:
-- **Workflow**: Core workflow pages (Dashboard, Workflow Timeline, Research, Proposals, IC Meeting, Portfolio, Monitoring)
-- **Pre-Work Agents**: Research and analysis agents (5 pages)
-- **IC & Execution**: Meeting support and post-session agents (5 pages)
-- **Monitoring & Analytics**: Ongoing monitoring and supporting agents (7 pages)
-- **Resources**: Documents and Monitoring Hub
-
-**Breadcrumb Navigation**: A reusable BreadcrumbNav component provides context-aware navigation breadcrumbs on detail pages, showing the navigation path from Home through intermediate pages to the current page.
-
-**Proposal Detail Page**: Features comprehensive proposal information with breadcrumb navigation (Home > Proposals > [Ticker - Company]), back button, and tabbed interface showing Overview, Research, Valuation, Voting, and Timeline.
+- Historical Meetings, Agent Output Review, Monitoring Hub, Debate Room, Document Export, and a Notification System.
 
 ### System Design Choices
-
-The architecture emphasizes modularity with a clear separation of concerns between frontend and backend. Data integrity is maintained through Zod schemas and Drizzle ORM, ensuring consistent validation across the stack. The AI agent system follows a service-based pattern, allowing for specialized, independently functioning agents. All 16 agent types are now fully accessible through dedicated pages organized by workflow phase in the sidebar. A robust error handling and validation strategy is implemented across the platform to prevent data corruption and enhance user experience.
+The architecture emphasizes modularity with a clear separation of concerns between frontend and backend. Data integrity is maintained through Zod schemas and Drizzle ORM. The AI agent system follows a service-based pattern, allowing for specialized, independently functioning agents. A robust error handling and validation strategy is implemented across the platform.
 
 ## External Dependencies
 
