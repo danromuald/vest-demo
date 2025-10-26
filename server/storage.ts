@@ -18,17 +18,23 @@ import {
   type DebateMessage, type InsertDebateMessage,
   type PortfolioImpact, type InsertPortfolioImpact,
   type RiskComplianceAction, type InsertRiskComplianceAction,
+  type User, type UpsertUser,
   companies, positions, proposals, icMeetings, votes,
   agentResponses, financialModels, thesisMonitors, marketEvents, notifications,
   userProfiles, rolePermissions, researchRequests, workflowStages,
   meetingParticipants, debateSessions, debateMessages,
-  portfolioImpacts, riskComplianceActions,
+  portfolioImpacts, riskComplianceActions, users,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
+  // User operations (IMPORTANT: Mandatory for Replit Auth)
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
+  updateUserRole(id: string, role: string): Promise<User | undefined>;
+  
   // Companies
   getCompanies(): Promise<Company[]>;
   getCompany(id: string): Promise<Company | undefined>;
@@ -137,6 +143,36 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // User operations (IMPORTANT: Mandatory for Replit Auth)
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  async updateUserRole(id: string, role: string): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ role, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user || undefined;
+  }
+
   // Companies
   async getCompanies(): Promise<Company[]> {
     return await db.select().from(companies);

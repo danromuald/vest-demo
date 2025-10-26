@@ -7,6 +7,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
@@ -14,9 +17,11 @@ import {
   LayoutDashboard, GitBranch, Search, FileText, Users, TrendingUp, 
   Bell, FolderOpen, Bot, Brain, Calculator, AlertTriangle, BarChart3,
   Sparkles, Activity, Target, Shield, DollarSign, FileCheck, Database,
-  Volume2, PieChart, Gauge, MessageCircle, Archive
+  Volume2, PieChart, Gauge, MessageCircle, Archive, ChevronRight
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { UserMenu } from "@/components/user-menu";
 
 const workflowItems = [
   {
@@ -143,67 +148,98 @@ export function AppSidebar() {
         </SidebarGroup>
         
         <SidebarGroup>
-          <SidebarGroupLabel>Pre-Work Agents</SidebarGroupLabel>
+          <SidebarGroupLabel>AI Agents</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {preWorkAgents.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location === item.url}
-                    data-testid={`link-${item.title.toLowerCase().replace(/ /g, '-')}`}
-                  >
-                    <Link href={item.url}>
-                      <item.icon className="h-4 w-4" />
-                      <span className="text-xs">{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
+              <Collapsible defaultOpen={false} className="group/collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton data-testid="toggle-prework-agents">
+                      <Brain className="h-4 w-4" />
+                      <span>Pre-Work Agents</span>
+                      <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {preWorkAgents.map((item) => (
+                        <SidebarMenuSubItem key={item.title}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={location === item.url}
+                            data-testid={`link-${item.title.toLowerCase().replace(/ /g, '-')}`}
+                          >
+                            <Link href={item.url}>
+                              <item.icon className="h-3.5 w-3.5" />
+                              <span className="text-xs">{item.title}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
                 </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+              </Collapsible>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>IC & Execution</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {[...meetingAgents, ...executionAgents].map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location === item.url}
-                    data-testid={`link-${item.title.toLowerCase().replace(/ /g, '-')}`}
-                  >
-                    <Link href={item.url}>
-                      <item.icon className="h-4 w-4" />
-                      <span className="text-xs">{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
+              <Collapsible defaultOpen={false} className="group/collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton data-testid="toggle-ic-execution-agents">
+                      <Users className="h-4 w-4" />
+                      <span>IC & Execution</span>
+                      <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {[...meetingAgents, ...executionAgents].map((item) => (
+                        <SidebarMenuSubItem key={item.title}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={location === item.url}
+                            data-testid={`link-${item.title.toLowerCase().replace(/ /g, '-')}`}
+                          >
+                            <Link href={item.url}>
+                              <item.icon className="h-3.5 w-3.5" />
+                              <span className="text-xs">{item.title}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
                 </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+              </Collapsible>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Monitoring & Analytics</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {[...monitoringAgents, ...supportingAgents].map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location === item.url}
-                    data-testid={`link-${item.title.toLowerCase().replace(/ /g, '-')}`}
-                  >
-                    <Link href={item.url}>
-                      <item.icon className="h-4 w-4" />
-                      <span className="text-xs">{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
+              <Collapsible defaultOpen={false} className="group/collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton data-testid="toggle-monitoring-agents">
+                      <Activity className="h-4 w-4" />
+                      <span>Monitoring & Analytics</span>
+                      <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {[...monitoringAgents, ...supportingAgents].map((item) => (
+                        <SidebarMenuSubItem key={item.title}>
+                          <SidebarMenuSubButton
+                            asChild
+                            isActive={location === item.url}
+                            data-testid={`link-${item.title.toLowerCase().replace(/ /g, '-')}`}
+                          >
+                            <Link href={item.url}>
+                              <item.icon className="h-3.5 w-3.5" />
+                              <span className="text-xs">{item.title}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
                 </SidebarMenuItem>
-              ))}
+              </Collapsible>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -231,15 +267,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border p-4">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar-accent">
-            <span className="text-xs font-medium text-sidebar-accent-foreground">SC</span>
-          </div>
-          <div className="flex-1 text-sm">
-            <p className="font-medium text-sidebar-foreground">Sarah Chen</p>
-            <p className="text-xs text-muted-foreground">Technology Analyst</p>
-          </div>
-        </div>
+        <UserMenu />
       </SidebarFooter>
     </Sidebar>
   );

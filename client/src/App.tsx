@@ -8,6 +8,8 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { NotificationBell } from "@/components/notification-bell";
+import { useAuth } from "@/hooks/useAuth";
+import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import Research from "@/pages/research";
 import ICMeeting from "@/pages/ic-meeting";
@@ -42,6 +44,13 @@ import RiskRegime from "@/pages/risk-regime";
 import NotFound from "@/pages/not-found";
 
 function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Show landing page while loading or not authenticated
+  if (isLoading || !isAuthenticated) {
+    return <Landing />;
+  }
+
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
@@ -90,27 +99,42 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
-          <SidebarProvider style={style as React.CSSProperties}>
-            <div className="flex h-screen w-full">
-              <AppSidebar />
-              <div className="flex flex-1 flex-col">
-                <header className="flex items-center justify-between border-b border-border p-3">
-                  <SidebarTrigger data-testid="button-sidebar-toggle" />
-                  <div className="flex items-center gap-2">
-                    <NotificationBell />
-                    <ThemeToggle />
-                  </div>
-                </header>
-                <main className="flex-1 overflow-auto">
-                  <Router />
-                </main>
-              </div>
-            </div>
-          </SidebarProvider>
+          <AuthenticatedLayout style={style as React.CSSProperties}>
+            <Router />
+          </AuthenticatedLayout>
           <Toaster />
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
+  );
+}
+
+function AuthenticatedLayout({ style, children }: { style: React.CSSProperties, children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Don't show sidebar/header for landing page
+  if (isLoading || !isAuthenticated) {
+    return <>{children}</>;
+  }
+
+  return (
+    <SidebarProvider style={style}>
+      <div className="flex h-screen w-full">
+        <AppSidebar />
+        <div className="flex flex-1 flex-col">
+          <header className="flex items-center justify-between border-b border-border p-3">
+            <SidebarTrigger data-testid="button-sidebar-toggle" />
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+              <ThemeToggle />
+            </div>
+          </header>
+          <main className="flex-1 overflow-auto">
+            {children}
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
   );
 }
 

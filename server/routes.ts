@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer } from "ws";
 import { storage } from "./storage";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 import { agentService } from "./services/agents";
 import { pdfService } from "./services/pdf";
 import { notificationService } from "./services/notifications";
@@ -34,6 +35,39 @@ const scenarioSchema = z.object({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Auth middleware - Replit Auth integration
+  await setupAuth(app);
+
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  app.patch('/api/auth/user/role', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { role } = req.body;
+      
+      if (!['ANALYST', 'PM', 'COMPLIANCE', 'ADMIN'].includes(role)) {
+        res.status(400).json({ message: "Invalid role" });
+        return;
+      }
+
+      const user = await storage.updateUserRole(userId, role);
+      res.json(user);
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ message: "Failed to update role" });
+    }
+  });
+
   // Positions
   app.get("/api/positions", async (_req, res) => {
     try {
