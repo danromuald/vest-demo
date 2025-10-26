@@ -31,10 +31,6 @@ export default function ICMeetingDetailPage() {
     queryKey: ['/api/proposals'],
   });
 
-  const { data: votes = [] } = useQuery<Vote[]>({
-    queryKey: ['/api/votes'],
-  });
-
   const { data: agentResponses = [] } = useQuery<AgentResponse[]>({
     queryKey: ['/api/agent-responses'],
   });
@@ -42,6 +38,19 @@ export default function ICMeetingDetailPage() {
   const meeting = meetings.find(m => m.id === meetingId);
   const meetingProposals = allProposals.filter(p => p.icMeetingId === meetingId);
   const selectedProposal = meetingProposals.find(p => p.id === selectedProposalId);
+  
+  // Fetch votes for selected proposal
+  const { data: votes = [] } = useQuery<Vote[]>({
+    queryKey: ['/api/votes', selectedProposalId],
+    queryFn: selectedProposalId 
+      ? async () => {
+          const res = await fetch(`/api/votes/${selectedProposalId}`);
+          if (!res.ok) throw new Error('Failed to fetch votes');
+          return res.json();
+        }
+      : undefined,
+    enabled: !!selectedProposalId,
+  });
 
   const updateMeetingMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<ICMeeting> }) => {
@@ -79,7 +88,7 @@ export default function ICMeetingDetailPage() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/votes'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/votes', selectedProposalId] });
       toast({
         title: "Vote cast successfully",
         description: "Your vote has been recorded.",

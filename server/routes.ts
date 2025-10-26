@@ -308,6 +308,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/agents/thesis-generator", async (req, res) => {
+    try {
+      const { ticker, companyName, researchData, dcfData } = req.body;
+      
+      if (!ticker || !companyName) {
+        res.status(400).json({ error: "Ticker and company name are required" });
+        return;
+      }
+
+      const thesis = await agentService.generateInvestmentThesis(ticker, companyName, researchData, dcfData);
+      
+      // Store the agent response
+      await storage.createAgentResponse({
+        agentType: "THESIS_GENERATOR",
+        ticker,
+        prompt: `Generate investment thesis for ${companyName} (${ticker})`,
+        response: thesis,
+        metadata: { researchData, dcfData },
+      });
+
+      res.json(thesis);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      console.error("Thesis generator error:", error);
+      res.status(500).json({ error: "Failed to generate investment thesis" });
+    }
+  });
+
   app.post("/api/agents/scenario-simulator", async (req, res) => {
     try {
       const { ticker, proposedWeight } = scenarioSchema.parse(req.body);
