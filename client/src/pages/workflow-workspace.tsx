@@ -759,23 +759,302 @@ function AnalysisSection({
   );
 }
 
-// IC Meeting Tab (Placeholder)
+// IC Meeting Tab - Real-time collaborative meeting room
 function ICMeetingTab({ workflowId }: { workflowId: string }) {
+  const [selectedVote, setSelectedVote] = useState<"APPROVE" | "REJECT" | "ABSTAIN" | null>(null);
+  const [debateMessage, setDebateMessage] = useState("");
+
+  // Fetch IC meetings for this workflow
+  const { data: meetings, isLoading: meetingsLoading } = useQuery<any[]>({
+    queryKey: [`/api/workflows/${workflowId}/ic-meetings`],
+    enabled: !!workflowId,
+  });
+
+  const activeMeeting = meetings?.find(m => m.status === "IN_PROGRESS") || meetings?.[0];
+
+  // Mock vote data (would come from WebSocket in production)
+  const mockVotes = {
+    APPROVE: 3,
+    REJECT: 1,
+    ABSTAIN: 0
+  };
+
   return (
     <div className="space-y-6">
-      <Card>
+      {/* Meeting Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold" data-testid="title-ic-meeting">
+            IC Meeting Room
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {activeMeeting ? `Meeting #${activeMeeting.id}` : "No active meeting"}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {activeMeeting?.status === "IN_PROGRESS" ? (
+            <Badge variant="default" className="gap-2" data-testid="badge-meeting-live">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              Live
+            </Badge>
+          ) : (
+            <Button data-testid="button-start-meeting">
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Start Meeting
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Dual Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Column: Defender View (Bull Case) */}
+        <Card data-testid="card-bull-case">
+          <CardHeader className="bg-green-500/10 border-b border-green-500/20">
+            <CardTitle className="flex items-center gap-2 text-green-600 dark:text-green-400">
+              <TrendingUp className="h-5 w-5" />
+              Bull Case
+            </CardTitle>
+            <CardDescription>Investment thesis and supporting arguments</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-4">
+            <div>
+              <h4 className="font-medium mb-2">Investment Thesis</h4>
+              <p className="text-sm text-muted-foreground">
+                Strong secular growth in AI infrastructure spending driven by increasing enterprise adoption.
+                Best-in-class margins and market position provide durable competitive moat.
+              </p>
+            </div>
+            <Separator />
+            <div>
+              <h4 className="font-medium mb-2">Key Catalysts</h4>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Next-gen product cycle launching Q2 with 40% performance improvement</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Expanding TAM in automotive and edge computing markets</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span>Strong pricing power with 65%+ gross margins sustainable</span>
+                </li>
+              </ul>
+            </div>
+            <Separator />
+            <div>
+              <h4 className="font-medium mb-2">Valuation</h4>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Price Target</p>
+                  <p className="text-lg font-mono font-semibold text-green-600 dark:text-green-400">$145</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Upside</p>
+                  <p className="text-lg font-mono font-semibold text-green-600 dark:text-green-400">+22%</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Right Column: Contrarian View (Bear Case) */}
+        <Card data-testid="card-bear-case">
+          <CardHeader className="bg-red-500/10 border-b border-red-500/20">
+            <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
+              <TrendingDown className="h-5 w-5" />
+              Bear Case
+            </CardTitle>
+            <CardDescription>AI-generated contrarian analysis and risks</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-4">
+            <div>
+              <h4 className="font-medium mb-2 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-yellow-500" />
+                AI Contrarian View
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                While growth narrative is compelling, valuation already reflects near-perfect execution.
+                Competition intensifying from hyperscalers developing in-house solutions. Cyclical risks understated.
+              </p>
+            </div>
+            <Separator />
+            <div>
+              <h4 className="font-medium mb-2">Key Risks</h4>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                  <span>Customer concentration: Top 3 customers represent 45% of revenue</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                  <span>Geopolitical headwinds: Export restrictions to China impact 25% of TAM</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                  <span>Valuation: Trading at 35x NTM P/E vs 5-year avg of 22x</span>
+                </li>
+              </ul>
+            </div>
+            <Separator />
+            <div>
+              <h4 className="font-medium mb-2">Alternative Scenario</h4>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Downside Target</p>
+                  <p className="text-lg font-mono font-semibold text-red-600 dark:text-red-400">$95</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Risk</p>
+                  <p className="text-lg font-mono font-semibold text-red-600 dark:text-red-400">-20%</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Voting Section */}
+      <Card data-testid="card-voting">
         <CardHeader>
-          <CardTitle>IC Meeting Room</CardTitle>
+          <CardTitle>Committee Vote</CardTitle>
           <CardDescription>
-            Real-time collaborative investment committee meeting
+            Cast your vote and view committee consensus
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            IC Meeting Room implementation coming in next task...
-          </p>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-3 gap-4">
+            <Button
+              variant={selectedVote === "APPROVE" ? "default" : "outline"}
+              className={selectedVote === "APPROVE" ? "bg-green-600 hover:bg-green-700" : ""}
+              onClick={() => setSelectedVote("APPROVE")}
+              data-testid="button-vote-approve"
+            >
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+              Approve ({mockVotes.APPROVE})
+            </Button>
+            <Button
+              variant={selectedVote === "REJECT" ? "default" : "outline"}
+              className={selectedVote === "REJECT" ? "bg-red-600 hover:bg-red-700" : ""}
+              onClick={() => setSelectedVote("REJECT")}
+              data-testid="button-vote-reject"
+            >
+              <AlertCircle className="h-4 w-4 mr-2" />
+              Reject ({mockVotes.REJECT})
+            </Button>
+            <Button
+              variant={selectedVote === "ABSTAIN" ? "default" : "outline"}
+              onClick={() => setSelectedVote("ABSTAIN")}
+              data-testid="button-vote-abstain"
+            >
+              Abstain ({mockVotes.ABSTAIN})
+            </Button>
+          </div>
+
+          {/* Vote Tally */}
+          <div className="p-4 rounded-md bg-muted">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Vote Tally</span>
+              <span className="text-sm text-muted-foreground">4 of 5 members voted</span>
+            </div>
+            <div className="flex gap-2">
+              <div className="flex-1 h-8 rounded bg-green-600 flex items-center justify-center text-white text-sm font-medium">
+                {mockVotes.APPROVE}
+              </div>
+              <div className="flex-1 h-8 rounded bg-red-600 flex items-center justify-center text-white text-sm font-medium">
+                {mockVotes.REJECT}
+              </div>
+              <div className="flex-1 h-8 rounded bg-muted-foreground flex items-center justify-center text-white text-sm font-medium">
+                {mockVotes.ABSTAIN}
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Debate & Discussion */}
+      <Card data-testid="card-debate">
+        <CardHeader>
+          <CardTitle>Discussion</CardTitle>
+          <CardDescription>
+            Live debate and Q&A with real-time updates
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Mock Debate Messages */}
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            <DebateMessage
+              author="Sarah Chen (PM)"
+              timestamp="2 min ago"
+              message="The customer concentration risk is valid, but worth noting they have multi-year contracts with committed capacity. Sticky relationships."
+              type="comment"
+            />
+            <DebateMessage
+              author="AI Analyst"
+              timestamp="1 min ago"
+              message="Counter-point: Those same contracts could become liabilities if demand softens. Historical precedent shows hardware cycles can turn quickly."
+              type="ai"
+            />
+            <DebateMessage
+              author="Mike Rodriguez (Analyst)"
+              timestamp="30 sec ago"
+              message="Agree with PM. Also, their software moat is underappreciated - CUDA ecosystem creates significant switching costs."
+              type="comment"
+            />
+          </div>
+
+          {/* Message Input */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Add to discussion..."
+              className="flex-1 px-3 py-2 rounded-md border border-border bg-background text-sm"
+              value={debateMessage}
+              onChange={(e) => setDebateMessage(e.target.value)}
+              data-testid="input-debate-message"
+            />
+            <Button data-testid="button-send-message">
+              <MessageSquare className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Debate Message Component
+function DebateMessage({ 
+  author, 
+  timestamp, 
+  message, 
+  type 
+}: { 
+  author: string; 
+  timestamp: string; 
+  message: string; 
+  type: "comment" | "ai";
+}) {
+  return (
+    <div 
+      className={`p-3 rounded-md ${type === "ai" ? "bg-yellow-500/10 border border-yellow-500/20" : "bg-muted"}`}
+      data-testid={`debate-message-${type}`}
+    >
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">{author}</span>
+          {type === "ai" && (
+            <Badge variant="outline" className="text-xs">
+              <Sparkles className="h-3 w-3 mr-1" />
+              AI
+            </Badge>
+          )}
+        </div>
+        <span className="text-xs text-muted-foreground">{timestamp}</span>
+      </div>
+      <p className="text-sm">{message}</p>
     </div>
   );
 }
