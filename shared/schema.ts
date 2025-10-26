@@ -628,31 +628,97 @@ export const insertPortfolioImpactSchema = createInsertSchema(portfolioImpacts).
 export type PortfolioImpact = typeof portfolioImpacts.$inferSelect;
 export type InsertPortfolioImpact = z.infer<typeof insertPortfolioImpactSchema>;
 
-// Risk and Compliance Actions
-export const riskComplianceActions = pgTable("risk_compliance_actions", {
+// Trade Orders - Execution stage trade preparation
+export const tradeOrders = pgTable("trade_orders", {
   id: varchar("id").primaryKey(),
-  entityType: text("entity_type").notNull(), // PROPOSAL, POSITION, MEETING
-  entityId: varchar("entity_id").notNull(),
-  actionType: text("action_type").notNull(), // RISK_REVIEW, COMPLIANCE_CHECK, LIMIT_MONITORING, APPROVAL
-  status: text("status").notNull(), // PENDING, IN_REVIEW, APPROVED, REJECTED, FLAGGED
-  assignedTo: varchar("assigned_to"), // risk officer or compliance user id
-  findings: text("findings"),
-  recommendation: text("recommendation"),
-  priority: text("priority").notNull(), // LOW, MEDIUM, HIGH, CRITICAL
-  dueDate: timestamp("due_date"),
-  completedAt: timestamp("completed_at"),
+  workflowId: varchar("workflow_id").notNull(),
+  proposalId: varchar("proposal_id"),
+  ticker: text("ticker").notNull(),
+  orderType: text("order_type").notNull(), // MARKET, LIMIT, STOP_LOSS, ICEBERG
+  side: text("side").notNull(), // BUY, SELL
+  quantity: integer("quantity").notNull(),
+  limitPrice: decimal("limit_price", { precision: 10, scale: 2 }),
+  estimatedCost: decimal("estimated_cost", { precision: 20, scale: 2 }),
+  transactionCost: decimal("transaction_cost", { precision: 20, scale: 2 }), // TCA estimate
+  urgency: text("urgency").notNull(), // LOW, NORMAL, HIGH, IMMEDIATE
+  status: text("status").notNull(), // DRAFT, PENDING_APPROVAL, APPROVED, SENT, FILLED, PARTIALLY_FILLED, CANCELLED, REJECTED
+  brokerOrderId: text("broker_order_id"),
+  executionDetails: jsonb("execution_details"),
+  createdBy: varchar("created_by").notNull(),
+  approvedBy: varchar("approved_by"),
+  approvedAt: timestamp("approved_at"),
+  sentAt: timestamp("sent_at"),
+  filledAt: timestamp("filled_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const insertRiskComplianceActionSchema = createInsertSchema(riskComplianceActions).omit({
+export const insertTradeOrderSchema = createInsertSchema(tradeOrders).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
 });
 
-export type RiskComplianceAction = typeof riskComplianceActions.$inferSelect;
-export type InsertRiskComplianceAction = z.infer<typeof insertRiskComplianceActionSchema>;
+export type TradeOrder = typeof tradeOrders.$inferSelect;
+export type InsertTradeOrder = z.infer<typeof insertTradeOrderSchema>;
+
+// Compliance Checks - Pre-trade and post-trade compliance
+export const complianceChecks = pgTable("compliance_checks", {
+  id: varchar("id").primaryKey(),
+  workflowId: varchar("workflow_id"),
+  tradeOrderId: varchar("trade_order_id"),
+  proposalId: varchar("proposal_id"),
+  checkType: text("check_type").notNull(), // PRE_TRADE, POST_TRADE, POSITION_LIMIT, CONCENTRATION, RESTRICTED_LIST, WASH_SALE
+  status: text("status").notNull(), // PENDING, PASSED, FAILED, WARNING, OVERRIDE
+  ticker: text("ticker"),
+  findings: jsonb("findings"), // Detailed check results
+  violations: text("violations").array(),
+  warnings: text("warnings").array(),
+  recommendation: text("recommendation"),
+  assignedTo: varchar("assigned_to"), // Compliance officer
+  overrideReason: text("override_reason"),
+  overrideBy: varchar("override_by"),
+  overrideAt: timestamp("override_at"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertComplianceCheckSchema = createInsertSchema(complianceChecks).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type ComplianceCheck = typeof complianceChecks.$inferSelect;
+export type InsertComplianceCheck = z.infer<typeof insertComplianceCheckSchema>;
+
+// Risk Assessments - Portfolio risk analysis
+export const riskAssessments = pgTable("risk_assessments", {
+  id: varchar("id").primaryKey(),
+  workflowId: varchar("workflow_id").notNull(),
+  proposalId: varchar("proposal_id"),
+  assessmentType: text("assessment_type").notNull(), // PRE_IC, PRE_EXECUTION, POST_EXECUTION, PERIODIC
+  ticker: text("ticker"),
+  riskMetrics: jsonb("risk_metrics").notNull(), // VaR, beta, correlation, etc.
+  concentration: jsonb("concentration"), // Sector, single name concentration
+  stressTests: jsonb("stress_tests"), // Scenario analysis results
+  riskScore: integer("risk_score"), // 0-100
+  riskRating: text("risk_rating"), // LOW, MEDIUM, HIGH, EXTREME
+  recommendations: text("recommendations").array(),
+  limitBreaches: text("limit_breaches").array(),
+  approvalRequired: boolean("approval_required").default(false),
+  assessedBy: varchar("assessed_by").notNull(),
+  reviewedBy: varchar("reviewed_by"),
+  reviewedAt: timestamp("reviewed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertRiskAssessmentSchema = createInsertSchema(riskAssessments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type RiskAssessment = typeof riskAssessments.$inferSelect;
+export type InsertRiskAssessment = z.infer<typeof insertRiskAssessmentSchema>;
 
 // Workflow Stages Type (for interfaces)
 export type WorkflowStageName = 'discovery' | 'analysis' | 'ic_meeting' | 'execution' | 'monitoring';
@@ -827,22 +893,6 @@ export interface MeetingMinutes {
   nextMeetingDate: string;
 }
 
-export interface TradeOrder {
-  ticker: string;
-  proposalId: string;
-  orderType: 'BUY' | 'SELL';
-  shares: number;
-  targetPrice: number;
-  orderStrategy: 'MARKET' | 'LIMIT' | 'TWAP' | 'VWAP';
-  timeframe: string;
-  estimatedCost: number;
-  riskParameters: {
-    maxSlippage: number;
-    stopLoss: number;
-  };
-  executionInstructions: string[];
-  generatedAt: string;
-}
 
 export interface PreTradeRiskReport {
   ticker: string;
