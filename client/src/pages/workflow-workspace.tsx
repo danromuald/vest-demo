@@ -20,8 +20,20 @@ import {
   CheckCircle2,
   Activity,
   AlertCircle,
-  Clock
+  Clock,
+  ChevronDown,
+  ChevronRight,
+  Plus,
+  Download,
+  Eye,
+  Sparkles,
+  Target,
+  TrendingDown,
+  Shield,
+  GitBranch
 } from "lucide-react";
+import { useState } from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { Workflow } from "@shared/schema";
 
 export default function WorkflowWorkspace() {
@@ -446,24 +458,304 @@ function OverviewTab({ workflow, stages, artifacts }: {
   );
 }
 
-// Analysis Hub Tab (Placeholder - will be implemented in next task)
+// Analysis Hub Tab - Comprehensive research and analysis workspace
 function AnalysisHubTab({ workflowId, artifacts }: { workflowId: string; artifacts: any[] | undefined }) {
+  // Group artifacts by type
+  const artifactsByType = artifacts?.reduce((acc: Record<string, any[]>, artifact) => {
+    const type = artifact.artifactType || "OTHER";
+    if (!acc[type]) acc[type] = [];
+    acc[type].push(artifact);
+    return acc;
+  }, {}) || {};
+
+  // Sort artifacts by creation date (newest first)
+  Object.keys(artifactsByType).forEach(type => {
+    artifactsByType[type].sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  });
+
+  const sections = [
+    {
+      id: "fundamental",
+      title: "Fundamental Analysis",
+      description: "Core business research and valuation",
+      icon: Target,
+      color: "text-blue-500",
+      artifacts: [
+        { type: "RESEARCH_BRIEF", label: "Research Brief", icon: FileText },
+        { type: "FINANCIAL_MODEL", label: "Financial Model", icon: BarChart3 },
+        { type: "INVESTMENT_THESIS", label: "Investment Thesis", icon: Sparkles },
+      ]
+    },
+    {
+      id: "quantitative",
+      title: "Quantitative & Technical",
+      description: "Data-driven analysis and quant models",
+      icon: TrendingUp,
+      color: "text-green-500",
+      artifacts: [
+        { type: "QUANT_ANALYSIS", label: "Quant Analysis", icon: BarChart3 },
+        { type: "TECHNICAL_ANALYSIS", label: "Technical Analysis", icon: TrendingDown },
+      ]
+    },
+    {
+      id: "risk",
+      title: "Risk Assessment",
+      description: "Risk factors and mitigation strategies",
+      icon: Shield,
+      color: "text-red-500",
+      artifacts: [
+        { type: "RISK_ANALYSIS", label: "Risk Analysis", icon: AlertCircle },
+        { type: "SCENARIO_ANALYSIS", label: "Scenario Simulator", icon: GitBranch },
+      ]
+    }
+  ];
+
   return (
     <div className="space-y-6">
-      <Card>
+      {/* Header Actions */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold" data-testid="title-analysis-hub">Analysis Hub</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Comprehensive research outputs and analysis tools
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" data-testid="button-export-all">
+            <Download className="h-4 w-4 mr-2" />
+            Export All
+          </Button>
+        </div>
+      </div>
+
+      {/* Analysis Sections */}
+      <div className="space-y-4">
+        {sections.map(section => (
+          <AnalysisSection
+            key={section.id}
+            section={section}
+            artifacts={artifactsByType}
+            workflowId={workflowId}
+          />
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+      <Card data-testid="card-quick-actions">
         <CardHeader>
-          <CardTitle>Analysis Hub</CardTitle>
+          <CardTitle className="text-lg">Quick Actions</CardTitle>
           <CardDescription>
-            Comprehensive analysis tools and research outputs
+            Generate new research outputs or refresh existing analysis
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Analysis Hub implementation coming in next task...
-          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Button variant="outline" className="justify-start" data-testid="button-generate-brief">
+              <Plus className="h-4 w-4 mr-2" />
+              Research Brief
+            </Button>
+            <Button variant="outline" className="justify-start" data-testid="button-generate-model">
+              <Plus className="h-4 w-4 mr-2" />
+              Financial Model
+            </Button>
+            <Button variant="outline" className="justify-start" data-testid="button-generate-quant">
+              <Plus className="h-4 w-4 mr-2" />
+              Quant Analysis
+            </Button>
+            <Button variant="outline" className="justify-start" data-testid="button-generate-risk">
+              <Plus className="h-4 w-4 mr-2" />
+              Risk Analysis
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+// Analysis Section Component with collapsible artifact list
+function AnalysisSection({ 
+  section, 
+  artifacts,
+  workflowId 
+}: { 
+  section: any; 
+  artifacts: Record<string, any[]>;
+  workflowId: string;
+}) {
+  const [isOpen, setIsOpen] = useState(true);
+  const SectionIcon = section.icon;
+
+  // Count total artifacts in this section
+  const totalCount = section.artifacts.reduce((sum: number, art: any) => {
+    return sum + (artifacts[art.type]?.length || 0);
+  }, 0);
+
+  return (
+    <Card data-testid={`section-${section.id}`}>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger asChild>
+          <CardHeader className="cursor-pointer hover-elevate active-elevate-2">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-md bg-muted ${section.color}`}>
+                  <SectionIcon className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <CardTitle className="text-lg">{section.title}</CardTitle>
+                  <CardDescription>{section.description}</CardDescription>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Badge variant="secondary" data-testid={`badge-count-${section.id}`}>
+                  {totalCount} {totalCount === 1 ? "artifact" : "artifacts"}
+                </Badge>
+                {isOpen ? (
+                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                )}
+              </div>
+            </div>
+          </CardHeader>
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent>
+          <CardContent className="pt-0 space-y-4">
+            {section.artifacts.map((artifactDef: any) => {
+              const artifactList = artifacts[artifactDef.type] || [];
+              const ArtifactIcon = artifactDef.icon;
+              const latestArtifact = artifactList[0];
+
+              return (
+                <div 
+                  key={artifactDef.type} 
+                  className="border border-border rounded-md p-4 space-y-3"
+                  data-testid={`artifact-group-${artifactDef.type}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ArtifactIcon className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium text-sm">{artifactDef.label}</span>
+                      {artifactList.length > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          {artifactList.length} version{artifactList.length !== 1 ? "s" : ""}
+                        </Badge>
+                      )}
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      data-testid={`button-generate-${artifactDef.type}`}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Generate
+                    </Button>
+                  </div>
+
+                  {artifactList.length > 0 ? (
+                    <div className="space-y-2">
+                      {/* Latest Artifact */}
+                      <div 
+                        className="p-3 rounded-md bg-muted/50 border border-border"
+                        data-testid={`latest-${artifactDef.type}`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge variant="default" className="text-xs">Latest</Badge>
+                              <span className="text-xs text-muted-foreground">
+                                v{latestArtifact.version}
+                              </span>
+                            </div>
+                            {latestArtifact.summary && (
+                              <p className="text-sm line-clamp-2">{latestArtifact.summary}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {new Date(latestArtifact.createdAt).toLocaleDateString()} • 
+                              {latestArtifact.generatedBy && ` Generated by ${latestArtifact.generatedBy}`}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="h-8 w-8"
+                              data-testid={`button-view-${latestArtifact.id}`}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              className="h-8 w-8"
+                              data-testid={`button-download-${latestArtifact.id}`}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Version History (collapsed) */}
+                      {artifactList.length > 1 && (
+                        <details className="text-sm">
+                          <summary className="cursor-pointer text-muted-foreground hover:text-foreground px-2">
+                            View {artifactList.length - 1} older version{artifactList.length > 2 ? "s" : ""}
+                          </summary>
+                          <div className="mt-2 space-y-1">
+                            {artifactList.slice(1).map((artifact: any) => (
+                              <div 
+                                key={artifact.id}
+                                className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50"
+                                data-testid={`artifact-${artifact.id}`}
+                              >
+                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                  <span className="text-xs font-mono text-muted-foreground">
+                                    v{artifact.version}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground truncate">
+                                    {new Date(artifact.createdAt).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    className="h-6 w-6"
+                                  >
+                                    <Eye className="h-3 w-3" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    className="h-6 w-6"
+                                  >
+                                    <Download className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </details>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No {artifactDef.label.toLowerCase()} generated yet</p>
+                      <p className="text-xs mt-1">Click Generate to create one</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
   );
 }
 
