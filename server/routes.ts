@@ -20,7 +20,6 @@ import {
   insertDebateSessionSchema,
   insertDebateMessageSchema,
   insertPortfolioImpactSchema,
-  insertRiskComplianceActionSchema,
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -843,28 +842,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Thesis Monitors
-  app.get("/api/thesis-monitors", async (_req, res) => {
-    try {
-      const monitors = await storage.getThesisMonitors();
-      res.json(monitors);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch thesis monitors" });
-    }
-  });
+  // Thesis Monitors - DEPRECATED
+  // These routes were replaced with workflow-centric thesis health metrics
+  // Use /api/workflows/:workflowId/thesis-health instead
+  // app.get("/api/thesis-monitors", async (_req, res) => {
+  //   try {
+  //     const monitors = await storage.getThesisMonitors();
+  //     res.json(monitors);
+  //   } catch (error) {
+  //     res.status(500).json({ error: "Failed to fetch thesis monitors" });
+  //   }
+  // });
 
-  app.get("/api/thesis-monitors/:ticker", async (req, res) => {
-    try {
-      const monitor = await storage.getThesisMonitor(req.params.ticker);
-      if (!monitor) {
-        res.status(404).json({ error: "Thesis monitor not found" });
-        return;
-      }
-      res.json(monitor);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch thesis monitor" });
-    }
-  });
+  // app.get("/api/thesis-monitors/:ticker", async (req, res) => {
+  //   try {
+  //     const monitor = await storage.getThesisMonitor(req.params.ticker);
+  //     if (!monitor) {
+  //       res.status(404).json({ error: "Thesis monitor not found" });
+  //       return;
+  //     }
+  //     res.json(monitor);
+  //   } catch (error) {
+  //     res.status(500).json({ error: "Failed to fetch thesis monitor" });
+  //   }
+  // });
 
   // Financial Models
   app.get("/api/financial-models", async (req, res) => {
@@ -1094,13 +1095,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validated = insertResearchRequestSchema.parse(req.body);
       const request = await storage.createResearchRequest(validated);
       
-      // Create workflow stage for research request
-      await storage.createWorkflowStage({
-        entityType: "RESEARCH",
-        entityId: request.id,
-        currentStage: "DISCOVERY",
-        discoveryStatus: "in_progress",
-      });
+      // NOTE: Workflow stage creation removed - now handled at workflow level
+      // Research requests are no longer directly linked to workflow stages
+      // Create a workflow first, then link research requests to it
       
       res.json(request);
     } catch (error) {
@@ -1121,18 +1118,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
-      // Auto-advance workflow to ANALYSIS when research is marked COMPLETED
-      if (validated.status === "COMPLETED") {
-        try {
-          const workflowStage = await storage.getWorkflowStageByEntity("RESEARCH", req.params.id);
-          if (workflowStage && workflowStage.currentStage === "DISCOVERY") {
-            await workflowService.advanceStage("RESEARCH", req.params.id, "system");
-          }
-        } catch (error) {
-          // Log but don't fail the request update
-          console.warn("Failed to advance workflow stage:", error);
-        }
-      }
+      // NOTE: Auto-advance workflow removed - now handled at workflow level
+      // Research requests are no longer directly linked to workflow stages
+      // Workflow advancement should be managed through the workflow entity itself
 
       res.json(request);
     } catch (error) {
@@ -1154,42 +1142,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Workflow Stages Routes
+  // NOTE: These routes now use workflowId-based queries instead of entity-based
   app.get("/api/workflow-stages", async (req, res) => {
     try {
-      const entityType = req.query.entityType as string | undefined;
-      const entityId = req.query.entityId as string | undefined;
-      const stages = await storage.getWorkflowStages(entityType, entityId);
+      const workflowId = req.query.workflowId as string | undefined;
+      if (!workflowId) {
+        res.status(400).json({ error: "workflowId query parameter is required" });
+        return;
+      }
+      const stages = await storage.getWorkflowStages(workflowId);
       res.json(stages);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch workflow stages" });
     }
   });
 
-  app.get("/api/workflow-stages/:id", async (req, res) => {
-    try {
-      const stage = await storage.getWorkflowStage(req.params.id);
-      if (!stage) {
-        res.status(404).json({ error: "Workflow stage not found" });
-        return;
-      }
-      res.json(stage);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch workflow stage" });
-    }
-  });
+  // DEPRECATED: Use /api/workflows/:workflowId/current-stage instead
+  // app.get("/api/workflow-stages/:id", async (req, res) => {
+  //   try {
+  //     const stage = await storage.getWorkflowStage(req.params.id);
+  //     if (!stage) {
+  //       res.status(404).json({ error: "Workflow stage not found" });
+  //       return;
+  //     }
+  //     res.json(stage);
+  //   } catch (error) {
+  //     res.status(500).json({ error: "Failed to fetch workflow stage" });
+  //   }
+  // });
 
-  app.get("/api/workflow-stages/entity/:entityType/:entityId", async (req, res) => {
-    try {
-      const stage = await storage.getWorkflowStageByEntity(req.params.entityType, req.params.entityId);
-      if (!stage) {
-        res.status(404).json({ error: "Workflow stage not found" });
-        return;
-      }
-      res.json(stage);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch workflow stage" });
-    }
-  });
+  // DEPRECATED: Entity-based workflow tracking removed
+  // Use /api/workflows/:workflowId/stages instead
+  // app.get("/api/workflow-stages/entity/:entityType/:entityId", async (req, res) => {
+  //   try {
+  //     const stage = await storage.getWorkflowStageByEntity(req.params.entityType, req.params.entityId);
+  //     if (!stage) {
+  //       res.status(404).json({ error: "Workflow stage not found" });
+  //       return;
+  //     }
+  //     res.json(stage);
+  //   } catch (error) {
+  //     res.status(500).json({ error: "Failed to fetch workflow stage" });
+  //   }
+  // });
 
   app.post("/api/workflow-stages", async (req, res) => {
     try {
@@ -1424,7 +1419,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         case "DEFENDER":
           // Get the contrarian's last argument for context
           const messages = await storage.getDebateMessages(sessionId);
-          const lastContrarianMsg = messages.reverse().find(m => m.agentRole === "CONTRARIAN");
+          // NOTE: agentRole removed from DebateMessage schema - using senderRole and metadata instead
+          const lastContrarianMsg = messages.reverse().find(m => 
+            m.senderRole === "AI_AGENT" && m.metadata && (m.metadata as any).agentRole === "CONTRARIAN"
+          );
           agentResponse = await agentService.generateDebateDefenderArgument(
             proposal.ticker,
             proposal,
@@ -1468,16 +1466,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create the agent's message
+      // NOTE: sessionId replaced with meetingId, agentRole and stance moved to metadata
       const agentMessage = await storage.createDebateMessage({
-        sessionId,
-        senderType: "AI_AGENT",
-        senderId: agentRole,
+        meetingId: sessionId,
+        debateSessionId: sessionId,
+        senderRole: "AI_AGENT",
+        userId: null,
         senderName: agentName,
-        agentRole,
         content: agentResponse,
         messageType,
-        stance,
-        metadata: { invokedAt: new Date().toISOString(), proposalId: proposal.id },
+        metadata: { 
+          invokedAt: new Date().toISOString(), 
+          proposalId: proposal.id,
+          agentRole,
+          stance
+        },
       });
 
       // Update session
@@ -1542,8 +1545,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Extract key points (first few sentences or bullet points)
+      // NOTE: stance field removed from DebateMessage - now in metadata
       const keyPoints = messages
-        .filter(m => m.messageType === "SUMMARY" || m.stance)
+        .filter(m => m.messageType === "SUMMARY" || (m.metadata && (m.metadata as any).stance))
         .slice(-5)
         .map(m => `${m.senderName}: ${m.content.substring(0, 150)}...`);
 
@@ -1635,65 +1639,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Risk/Compliance Actions Routes
-  app.get("/api/risk-compliance-actions", async (req, res) => {
-    try {
-      const filters: any = {};
-      if (req.query.entityType) filters.entityType = req.query.entityType as string;
-      if (req.query.entityId) filters.entityId = req.query.entityId as string;
-      if (req.query.status) filters.status = req.query.status as string;
-      
-      const actions = await storage.getRiskComplianceActions(filters);
-      res.json(actions);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch risk/compliance actions" });
-    }
-  });
+  // Risk/Compliance Actions Routes - DEPRECATED
+  // These routes were replaced with workflow-centric compliance and risk systems
+  // Use /api/workflows/:workflowId/compliance-checks and /api/workflows/:workflowId/risk-assessments instead
+  // app.get("/api/risk-compliance-actions", async (req, res) => {
+  //   try {
+  //     const filters: any = {};
+  //     if (req.query.entityType) filters.entityType = req.query.entityType as string;
+  //     if (req.query.entityId) filters.entityId = req.query.entityId as string;
+  //     if (req.query.status) filters.status = req.query.status as string;
+  //     
+  //     const actions = await storage.getRiskComplianceActions(filters);
+  //     res.json(actions);
+  //   } catch (error) {
+  //     res.status(500).json({ error: "Failed to fetch risk/compliance actions" });
+  //   }
+  // });
 
-  app.get("/api/risk-compliance-actions/:id", async (req, res) => {
-    try {
-      const action = await storage.getRiskComplianceAction(req.params.id);
-      if (!action) {
-        res.status(404).json({ error: "Risk/compliance action not found" });
-        return;
-      }
-      res.json(action);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch risk/compliance action" });
-    }
-  });
+  // app.get("/api/risk-compliance-actions/:id", async (req, res) => {
+  //   try {
+  //     const action = await storage.getRiskComplianceAction(req.params.id);
+  //     if (!action) {
+  //       res.status(404).json({ error: "Risk/compliance action not found" });
+  //       return;
+  //     }
+  //     res.json(action);
+  //   } catch (error) {
+  //     res.status(500).json({ error: "Failed to fetch risk/compliance action" });
+  //   }
+  // });
 
-  app.post("/api/risk-compliance-actions", async (req, res) => {
-    try {
-      const validated = insertRiskComplianceActionSchema.parse(req.body);
-      const action = await storage.createRiskComplianceAction(validated);
-      res.json(action);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: "Validation failed", details: error.errors });
-        return;
-      }
-      res.status(500).json({ error: "Failed to create risk/compliance action" });
-    }
-  });
+  // app.post("/api/risk-compliance-actions", async (req, res) => {
+  //   try {
+  //     const validated = insertRiskComplianceActionSchema.parse(req.body);
+  //     const action = await storage.createRiskComplianceAction(validated);
+  //     res.json(action);
+  //   } catch (error) {
+  //     if (error instanceof z.ZodError) {
+  //       res.status(400).json({ error: "Validation failed", details: error.errors });
+  //       return;
+  //     }
+  //     res.status(500).json({ error: "Failed to create risk/compliance action" });
+  //   }
+  // });
 
-  app.patch("/api/risk-compliance-actions/:id", async (req, res) => {
-    try {
-      const validated = insertRiskComplianceActionSchema.partial().parse(req.body);
-      const action = await storage.updateRiskComplianceAction(req.params.id, validated);
-      if (!action) {
-        res.status(404).json({ error: "Risk/compliance action not found" });
-        return;
-      }
-      res.json(action);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: "Validation failed", details: error.errors });
-        return;
-      }
-      res.status(500).json({ error: "Failed to update risk/compliance action" });
-    }
-  });
+  // app.patch("/api/risk-compliance-actions/:id", async (req, res) => {
+  //   try {
+  //     const validated = insertRiskComplianceActionSchema.partial().parse(req.body);
+  //     const action = await storage.updateRiskComplianceAction(req.params.id, validated);
+  //     if (!action) {
+  //       res.status(404).json({ error: "Risk/compliance action not found" });
+  //       return;
+  //     }
+  //     res.json(action);
+  //   } catch (error) {
+  //     if (error instanceof z.ZodError) {
+  //       res.status(400).json({ error: "Validation failed", details: error.errors });
+  //       return;
+  //     }
+  //     res.status(500).json({ error: "Failed to update risk/compliance action" });
+  //   }
+  // });
 
   const httpServer = createServer(app);
 
@@ -1853,10 +1859,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           case "send_debate_message":
             // Save and broadcast debate message
+            // NOTE: sessionId replaced with meetingId
             const newMessage = await storage.createDebateMessage({
-              sessionId: message.sessionId,
-              senderType: message.senderType || "USER",
-              senderId: message.senderId,
+              meetingId: message.sessionId,
+              debateSessionId: message.sessionId,
+              senderRole: message.senderType || "USER",
+              userId: message.senderId,
               senderName: message.senderName,
               content: message.content,
               messageType: message.messageType || "TEXT",
@@ -1910,10 +1918,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
 
             // Save agent message to debate
+            // NOTE: sessionId replaced with meetingId
             const agentMessage = await storage.createDebateMessage({
-              sessionId: message.sessionId,
-              senderType: "AGENT",
-              senderId: message.agentType,
+              meetingId: message.sessionId,
+              debateSessionId: message.sessionId,
+              senderRole: "AGENT",
+              userId: null,
               senderName: `${message.agentType} Agent`,
               content: JSON.stringify(agentResult),
               messageType: "ANALYSIS",

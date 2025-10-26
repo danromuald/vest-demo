@@ -6,35 +6,124 @@ import {
   type Vote, type InsertVote,
   type AgentResponse, type InsertAgentResponse,
   type FinancialModel, type InsertFinancialModel,
-  type ThesisMonitor, type InsertThesisMonitor,
+  type ThesisHealthMetric, type InsertThesisHealthMetric,
   type MarketEvent, type InsertMarketEvent,
+  type MonitoringEvent, type InsertMonitoringEvent,
+  type MarketAlert, type InsertMarketAlert,
   type Notification, type InsertNotification,
   type UserProfile, type InsertUserProfile,
   type RolePermission, type InsertRolePermission,
   type ResearchRequest, type InsertResearchRequest,
-  type WorkflowStageRecord, type InsertWorkflowStage,
+  type WorkflowStage, type InsertWorkflowStage,
   type MeetingParticipant, type InsertMeetingParticipant,
   type DebateSession, type InsertDebateSession,
   type DebateMessage, type InsertDebateMessage,
   type PortfolioImpact, type InsertPortfolioImpact,
-  type RiskComplianceAction, type InsertRiskComplianceAction,
   type User, type UpsertUser,
+  type Workflow, type InsertWorkflow,
+  type WorkflowArtifact, type InsertWorkflowArtifact,
+  type TradeOrder, type InsertTradeOrder,
+  type ComplianceCheck, type InsertComplianceCheck,
+  type RiskAssessment, type InsertRiskAssessment,
   companies, positions, proposals, icMeetings, votes,
-  agentResponses, financialModels, thesisMonitors, marketEvents, notifications,
+  agentResponses, financialModels, thesisHealthMetrics, monitoringEvents, marketAlerts, marketEvents, notifications,
   userProfiles, rolePermissions, researchRequests, workflowStages,
   meetingParticipants, debateSessions, debateMessages,
-  portfolioImpacts, riskComplianceActions, users,
+  portfolioImpacts, users,
+  workflows, workflowArtifacts, tradeOrders, complianceChecks, riskAssessments,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
-  // User operations (IMPORTANT: Mandatory for Replit Auth)
+  // ============= USER OPERATIONS (Required for Replit Auth) =============
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserRole(id: string, role: string): Promise<User | undefined>;
   
+  // ============= WORKFLOW CORE =============
+  // Workflows - Central workflow management
+  getWorkflows(filters?: { stage?: string, owner?: string, ticker?: string }): Promise<Workflow[]>;
+  getWorkflow(id: string): Promise<Workflow | undefined>;
+  createWorkflow(workflow: InsertWorkflow): Promise<Workflow>;
+  updateWorkflow(id: string, workflow: Partial<Workflow>): Promise<Workflow | undefined>;
+  deleteWorkflow(id: string): Promise<void>;
+  
+  // Workflow Stages - Stage tracking per workflow
+  getWorkflowStages(workflowId: string): Promise<WorkflowStage[]>;
+  getCurrentStage(workflowId: string): Promise<WorkflowStage | undefined>;
+  createWorkflowStage(stage: InsertWorkflowStage): Promise<WorkflowStage>;
+  updateWorkflowStage(id: string, stage: Partial<WorkflowStage>): Promise<WorkflowStage | undefined>;
+  transitionStage(workflowId: string, toStage: string, transitionedBy: string): Promise<WorkflowStage>;
+  
+  // Workflow Artifacts - Versioned artifacts (research, models, decks)
+  getWorkflowArtifacts(workflowId: string, artifactType?: string): Promise<WorkflowArtifact[]>;
+  getWorkflowArtifact(id: string): Promise<WorkflowArtifact | undefined>;
+  createWorkflowArtifact(artifact: InsertWorkflowArtifact): Promise<WorkflowArtifact>;
+  updateWorkflowArtifact(id: string, artifact: Partial<WorkflowArtifact>): Promise<WorkflowArtifact | undefined>;
+  
+  // ============= IC MEETING COLLABORATION =============
+  // IC Meetings
+  getICMeetings(): Promise<ICMeeting[]>;
+  getICMeeting(id: string): Promise<ICMeeting | undefined>;
+  getICMeetingByWorkflow(workflowId: string): Promise<ICMeeting | undefined>;
+  createICMeeting(meeting: InsertICMeeting): Promise<ICMeeting>;
+  updateICMeeting(id: string, meeting: Partial<ICMeeting>): Promise<ICMeeting | undefined>;
+  deleteICMeeting(id: string): Promise<void>;
+  
+  // Debate Sessions
+  getDebateSessions(meetingId: string): Promise<DebateSession[]>;
+  getDebateSession(id: string): Promise<DebateSession | undefined>;
+  createDebateSession(session: InsertDebateSession): Promise<DebateSession>;
+  updateDebateSession(id: string, session: Partial<DebateSession>): Promise<DebateSession | undefined>;
+  
+  // Debate Messages
+  getDebateMessages(meetingId: string): Promise<DebateMessage[]>;
+  createDebateMessage(message: InsertDebateMessage): Promise<DebateMessage>;
+  
+  // Votes
+  getVotes(proposalId: string): Promise<Vote[]>;
+  createVote(vote: InsertVote): Promise<Vote>;
+  
+  // Meeting Participants
+  getMeetingParticipants(meetingId: string): Promise<MeetingParticipant[]>;
+  createMeetingParticipant(participant: InsertMeetingParticipant): Promise<MeetingParticipant>;
+  updateMeetingParticipant(id: string, participant: Partial<MeetingParticipant>): Promise<MeetingParticipant | undefined>;
+  
+  // ============= MONITORING =============
+  // Thesis Health Metrics
+  getThesisHealthMetrics(workflowId: string): Promise<ThesisHealthMetric[]>;
+  getLatestThesisHealth(workflowId: string): Promise<ThesisHealthMetric | undefined>;
+  createThesisHealthMetric(metric: InsertThesisHealthMetric): Promise<ThesisHealthMetric>;
+  
+  // Monitoring Events
+  getMonitoringEvents(workflowId: string): Promise<MonitoringEvent[]>;
+  createMonitoringEvent(event: InsertMonitoringEvent): Promise<MonitoringEvent>;
+  resolveMonitoringEvent(id: string, actionTaken: string): Promise<MonitoringEvent | undefined>;
+  
+  // Market Alerts
+  getMarketAlerts(filters?: { ticker?: string, read?: boolean }): Promise<MarketAlert[]>;
+  createMarketAlert(alert: InsertMarketAlert): Promise<MarketAlert>;
+  markAlertRead(id: string): Promise<MarketAlert | undefined>;
+  
+  // ============= EXECUTION =============
+  // Trade Orders
+  getTradeOrders(workflowId: string): Promise<TradeOrder[]>;
+  getTradeOrder(id: string): Promise<TradeOrder | undefined>;
+  createTradeOrder(order: InsertTradeOrder): Promise<TradeOrder>;
+  updateTradeOrder(id: string, order: Partial<TradeOrder>): Promise<TradeOrder | undefined>;
+  
+  // Compliance Checks
+  getComplianceChecks(workflowId: string): Promise<ComplianceCheck[]>;
+  createComplianceCheck(check: InsertComplianceCheck): Promise<ComplianceCheck>;
+  updateComplianceCheck(id: string, check: Partial<ComplianceCheck>): Promise<ComplianceCheck | undefined>;
+  
+  // Risk Assessments
+  getRiskAssessments(workflowId: string): Promise<RiskAssessment[]>;
+  createRiskAssessment(assessment: InsertRiskAssessment): Promise<RiskAssessment>;
+  
+  // ============= LEGACY ENTITIES (Preserved for existing routes) =============
   // Companies
   getCompanies(): Promise<Company[]>;
   getCompany(id: string): Promise<Company | undefined>;
@@ -53,17 +142,6 @@ export interface IStorage {
   createProposal(proposal: InsertProposal): Promise<Proposal>;
   updateProposal(id: string, proposal: Partial<Proposal>): Promise<Proposal | undefined>;
   
-  // IC Meetings
-  getICMeetings(): Promise<ICMeeting[]>;
-  getICMeeting(id: string): Promise<ICMeeting | undefined>;
-  createICMeeting(meeting: InsertICMeeting): Promise<ICMeeting>;
-  updateICMeeting(id: string, meeting: Partial<ICMeeting>): Promise<ICMeeting | undefined>;
-  deleteICMeeting(id: string): Promise<void>;
-  
-  // Votes
-  getVotes(proposalId: string): Promise<Vote[]>;
-  createVote(vote: InsertVote): Promise<Vote>;
-  
   // Agent Responses
   getAgentResponses(ticker?: string): Promise<AgentResponse[]>;
   createAgentResponse(response: InsertAgentResponse): Promise<AgentResponse>;
@@ -71,12 +149,6 @@ export interface IStorage {
   // Financial Models
   getFinancialModels(ticker?: string): Promise<FinancialModel[]>;
   createFinancialModel(model: InsertFinancialModel): Promise<FinancialModel>;
-  
-  // Thesis Monitors
-  getThesisMonitors(): Promise<ThesisMonitor[]>;
-  getThesisMonitor(ticker: string): Promise<ThesisMonitor | undefined>;
-  createThesisMonitor(monitor: InsertThesisMonitor): Promise<ThesisMonitor>;
-  updateThesisMonitor(id: string, monitor: Partial<ThesisMonitor>): Promise<ThesisMonitor | undefined>;
   
   // Market Events
   getMarketEvents(limit?: number): Promise<MarketEvent[]>;
@@ -108,38 +180,10 @@ export interface IStorage {
   updateResearchRequest(id: string, request: Partial<ResearchRequest>): Promise<ResearchRequest | undefined>;
   deleteResearchRequest(id: string): Promise<void>;
   
-  // Workflow Stages
-  getWorkflowStages(entityType?: string, entityId?: string): Promise<WorkflowStageRecord[]>;
-  getWorkflowStage(id: string): Promise<WorkflowStageRecord | undefined>;
-  getWorkflowStageByEntity(entityType: string, entityId: string): Promise<WorkflowStageRecord | undefined>;
-  createWorkflowStage(stage: InsertWorkflowStage): Promise<WorkflowStageRecord>;
-  updateWorkflowStage(id: string, stage: Partial<WorkflowStageRecord>): Promise<WorkflowStageRecord | undefined>;
-  
-  // Meeting Participants
-  getMeetingParticipants(meetingId: string): Promise<MeetingParticipant[]>;
-  createMeetingParticipant(participant: InsertMeetingParticipant): Promise<MeetingParticipant>;
-  updateMeetingParticipant(id: string, participant: Partial<MeetingParticipant>): Promise<MeetingParticipant | undefined>;
-  
-  // Debate Sessions
-  getDebateSessions(meetingId?: string): Promise<DebateSession[]>;
-  getDebateSession(id: string): Promise<DebateSession | undefined>;
-  createDebateSession(session: InsertDebateSession): Promise<DebateSession>;
-  updateDebateSession(id: string, session: Partial<DebateSession>): Promise<DebateSession | undefined>;
-  
-  // Debate Messages
-  getDebateMessages(sessionId: string): Promise<DebateMessage[]>;
-  createDebateMessage(message: InsertDebateMessage): Promise<DebateMessage>;
-  
   // Portfolio Impacts
   getPortfolioImpacts(proposalId?: string): Promise<PortfolioImpact[]>;
   createPortfolioImpact(impact: InsertPortfolioImpact): Promise<PortfolioImpact>;
   updatePortfolioImpact(id: string, impact: Partial<PortfolioImpact>): Promise<PortfolioImpact | undefined>;
-  
-  // Risk Compliance Actions
-  getRiskComplianceActions(filters?: { entityType?: string, entityId?: string, status?: string }): Promise<RiskComplianceAction[]>;
-  getRiskComplianceAction(id: string): Promise<RiskComplianceAction | undefined>;
-  createRiskComplianceAction(action: InsertRiskComplianceAction): Promise<RiskComplianceAction>;
-  updateRiskComplianceAction(id: string, action: Partial<RiskComplianceAction>): Promise<RiskComplianceAction | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -173,6 +217,310 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  // ============= WORKFLOW CORE METHODS =============
+  
+  // Workflows
+  async getWorkflows(filters?: { stage?: string, owner?: string, ticker?: string }): Promise<Workflow[]> {
+    const conditions = [];
+    
+    if (filters?.stage) {
+      conditions.push(eq(workflows.currentStage, filters.stage));
+    }
+    if (filters?.owner) {
+      conditions.push(eq(workflows.owner, filters.owner));
+    }
+    if (filters?.ticker) {
+      conditions.push(eq(workflows.ticker, filters.ticker));
+    }
+    
+    let query = db.select().from(workflows);
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+    
+    return await query.orderBy(desc(workflows.createdAt));
+  }
+
+  async getWorkflow(id: string): Promise<Workflow | undefined> {
+    const [workflow] = await db.select().from(workflows).where(eq(workflows.id, id));
+    return workflow || undefined;
+  }
+
+  async createWorkflow(insertWorkflow: InsertWorkflow): Promise<Workflow> {
+    const [workflow] = await db
+      .insert(workflows)
+      .values({ ...insertWorkflow, id: randomUUID() })
+      .returning();
+    return workflow;
+  }
+
+  async updateWorkflow(id: string, updateData: Partial<Workflow>): Promise<Workflow | undefined> {
+    const [workflow] = await db
+      .update(workflows)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(workflows.id, id))
+      .returning();
+    return workflow || undefined;
+  }
+
+  async deleteWorkflow(id: string): Promise<void> {
+    await db.delete(workflows).where(eq(workflows.id, id));
+  }
+
+  // Workflow Stages
+  async getWorkflowStages(workflowId: string): Promise<WorkflowStage[]> {
+    return await db.select().from(workflowStages)
+      .where(eq(workflowStages.workflowId, workflowId))
+      .orderBy(desc(workflowStages.createdAt));
+  }
+
+  async getCurrentStage(workflowId: string): Promise<WorkflowStage | undefined> {
+    const workflow = await this.getWorkflow(workflowId);
+    if (!workflow) return undefined;
+    
+    const stages = await db.select().from(workflowStages)
+      .where(and(
+        eq(workflowStages.workflowId, workflowId),
+        eq(workflowStages.stage, workflow.currentStage)
+      ))
+      .orderBy(desc(workflowStages.createdAt))
+      .limit(1);
+    
+    return stages[0] || undefined;
+  }
+
+  async createWorkflowStage(insertStage: InsertWorkflowStage): Promise<WorkflowStage> {
+    const [stage] = await db
+      .insert(workflowStages)
+      .values({ ...insertStage, id: randomUUID() })
+      .returning();
+    return stage;
+  }
+
+  async updateWorkflowStage(id: string, updateData: Partial<WorkflowStage>): Promise<WorkflowStage | undefined> {
+    const [stage] = await db
+      .update(workflowStages)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(workflowStages.id, id))
+      .returning();
+    return stage || undefined;
+  }
+
+  async transitionStage(workflowId: string, toStage: string, transitionedBy: string): Promise<WorkflowStage> {
+    // Update workflow's current stage
+    await this.updateWorkflow(workflowId, { currentStage: toStage });
+    
+    // Create new workflow stage record
+    const newStage = await this.createWorkflowStage({
+      workflowId,
+      stage: toStage,
+      status: 'IN_PROGRESS',
+      owner: transitionedBy,
+      startedAt: new Date(),
+    });
+    
+    return newStage;
+  }
+
+  // Workflow Artifacts
+  async getWorkflowArtifacts(workflowId: string, artifactType?: string): Promise<WorkflowArtifact[]> {
+    const conditions = [eq(workflowArtifacts.workflowId, workflowId)];
+    
+    if (artifactType) {
+      conditions.push(eq(workflowArtifacts.artifactType, artifactType));
+    }
+    
+    return await db.select().from(workflowArtifacts)
+      .where(and(...conditions))
+      .orderBy(desc(workflowArtifacts.createdAt));
+  }
+
+  async getWorkflowArtifact(id: string): Promise<WorkflowArtifact | undefined> {
+    const [artifact] = await db.select().from(workflowArtifacts).where(eq(workflowArtifacts.id, id));
+    return artifact || undefined;
+  }
+
+  async createWorkflowArtifact(insertArtifact: InsertWorkflowArtifact): Promise<WorkflowArtifact> {
+    const [artifact] = await db
+      .insert(workflowArtifacts)
+      .values({ ...insertArtifact, id: randomUUID() })
+      .returning();
+    return artifact;
+  }
+
+  async updateWorkflowArtifact(id: string, updateData: Partial<WorkflowArtifact>): Promise<WorkflowArtifact | undefined> {
+    const [artifact] = await db
+      .update(workflowArtifacts)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(workflowArtifacts.id, id))
+      .returning();
+    return artifact || undefined;
+  }
+
+  // ============= IC MEETING COLLABORATION METHODS =============
+  
+  async getICMeetingByWorkflow(workflowId: string): Promise<ICMeeting | undefined> {
+    const [meeting] = await db.select().from(icMeetings)
+      .where(eq(icMeetings.workflowId, workflowId))
+      .orderBy(desc(icMeetings.meetingDate))
+      .limit(1);
+    return meeting || undefined;
+  }
+
+  // ============= MONITORING METHODS =============
+  
+  async getThesisHealthMetrics(workflowId: string): Promise<ThesisHealthMetric[]> {
+    return await db.select().from(thesisHealthMetrics)
+      .where(eq(thesisHealthMetrics.workflowId, workflowId))
+      .orderBy(desc(thesisHealthMetrics.lastCheck));
+  }
+
+  async getLatestThesisHealth(workflowId: string): Promise<ThesisHealthMetric | undefined> {
+    const [metric] = await db.select().from(thesisHealthMetrics)
+      .where(eq(thesisHealthMetrics.workflowId, workflowId))
+      .orderBy(desc(thesisHealthMetrics.lastCheck))
+      .limit(1);
+    return metric || undefined;
+  }
+
+  async createThesisHealthMetric(insertMetric: InsertThesisHealthMetric): Promise<ThesisHealthMetric> {
+    const [metric] = await db
+      .insert(thesisHealthMetrics)
+      .values({ ...insertMetric, id: randomUUID() })
+      .returning();
+    return metric;
+  }
+
+  async getMonitoringEvents(workflowId: string): Promise<MonitoringEvent[]> {
+    return await db.select().from(monitoringEvents)
+      .where(eq(monitoringEvents.workflowId, workflowId))
+      .orderBy(desc(monitoringEvents.createdAt));
+  }
+
+  async createMonitoringEvent(insertEvent: InsertMonitoringEvent): Promise<MonitoringEvent> {
+    const [event] = await db
+      .insert(monitoringEvents)
+      .values({ ...insertEvent, id: randomUUID() })
+      .returning();
+    return event;
+  }
+
+  async resolveMonitoringEvent(id: string, actionTaken: string): Promise<MonitoringEvent | undefined> {
+    const [event] = await db
+      .update(monitoringEvents)
+      .set({ 
+        actionTaken,
+        resolvedAt: new Date()
+      })
+      .where(eq(monitoringEvents.id, id))
+      .returning();
+    return event || undefined;
+  }
+
+  async getMarketAlerts(filters?: { ticker?: string, read?: boolean }): Promise<MarketAlert[]> {
+    const conditions = [];
+    
+    if (filters?.ticker) {
+      conditions.push(eq(marketAlerts.ticker, filters.ticker));
+    }
+    if (filters?.read !== undefined) {
+      conditions.push(eq(marketAlerts.read, filters.read));
+    }
+    
+    let query = db.select().from(marketAlerts);
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+    
+    return await query.orderBy(desc(marketAlerts.detectedAt));
+  }
+
+  async createMarketAlert(insertAlert: InsertMarketAlert): Promise<MarketAlert> {
+    const [alert] = await db
+      .insert(marketAlerts)
+      .values({ ...insertAlert, id: randomUUID() })
+      .returning();
+    return alert;
+  }
+
+  async markAlertRead(id: string): Promise<MarketAlert | undefined> {
+    const [alert] = await db
+      .update(marketAlerts)
+      .set({ read: true })
+      .where(eq(marketAlerts.id, id))
+      .returning();
+    return alert || undefined;
+  }
+
+  // ============= EXECUTION METHODS =============
+  
+  async getTradeOrders(workflowId: string): Promise<TradeOrder[]> {
+    return await db.select().from(tradeOrders)
+      .where(eq(tradeOrders.workflowId, workflowId))
+      .orderBy(desc(tradeOrders.createdAt));
+  }
+
+  async getTradeOrder(id: string): Promise<TradeOrder | undefined> {
+    const [order] = await db.select().from(tradeOrders).where(eq(tradeOrders.id, id));
+    return order || undefined;
+  }
+
+  async createTradeOrder(insertOrder: InsertTradeOrder): Promise<TradeOrder> {
+    const [order] = await db
+      .insert(tradeOrders)
+      .values({ ...insertOrder, id: randomUUID() })
+      .returning();
+    return order;
+  }
+
+  async updateTradeOrder(id: string, updateData: Partial<TradeOrder>): Promise<TradeOrder | undefined> {
+    const [order] = await db
+      .update(tradeOrders)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(tradeOrders.id, id))
+      .returning();
+    return order || undefined;
+  }
+
+  async getComplianceChecks(workflowId: string): Promise<ComplianceCheck[]> {
+    return await db.select().from(complianceChecks)
+      .where(eq(complianceChecks.workflowId, workflowId))
+      .orderBy(desc(complianceChecks.createdAt));
+  }
+
+  async createComplianceCheck(insertCheck: InsertComplianceCheck): Promise<ComplianceCheck> {
+    const [check] = await db
+      .insert(complianceChecks)
+      .values({ ...insertCheck, id: randomUUID() })
+      .returning();
+    return check;
+  }
+
+  async updateComplianceCheck(id: string, updateData: Partial<ComplianceCheck>): Promise<ComplianceCheck | undefined> {
+    const [check] = await db
+      .update(complianceChecks)
+      .set(updateData)
+      .where(eq(complianceChecks.id, id))
+      .returning();
+    return check || undefined;
+  }
+
+  async getRiskAssessments(workflowId: string): Promise<RiskAssessment[]> {
+    return await db.select().from(riskAssessments)
+      .where(eq(riskAssessments.workflowId, workflowId))
+      .orderBy(desc(riskAssessments.createdAt));
+  }
+
+  async createRiskAssessment(insertAssessment: InsertRiskAssessment): Promise<RiskAssessment> {
+    const [assessment] = await db
+      .insert(riskAssessments)
+      .values({ ...insertAssessment, id: randomUUID() })
+      .returning();
+    return assessment;
+  }
+
+  // ============= LEGACY METHODS (Preserved) =============
+  
   // Companies
   async getCompanies(): Promise<Company[]> {
     return await db.select().from(companies);
@@ -330,32 +678,32 @@ export class DatabaseStorage implements IStorage {
     return model;
   }
 
-  // Thesis Monitors
-  async getThesisMonitors(): Promise<ThesisMonitor[]> {
-    return await db.select().from(thesisMonitors);
-  }
+  // LEGACY: Thesis Monitors - REMOVED (replaced by thesisHealthMetrics)
+  // async getThesisMonitors(): Promise<ThesisMonitor[]> {
+  //   return await db.select().from(thesisMonitors);
+  // }
 
-  async getThesisMonitor(ticker: string): Promise<ThesisMonitor | undefined> {
-    const [monitor] = await db.select().from(thesisMonitors).where(eq(thesisMonitors.ticker, ticker));
-    return monitor || undefined;
-  }
+  // async getThesisMonitor(ticker: string): Promise<ThesisMonitor | undefined> {
+  //   const [monitor] = await db.select().from(thesisMonitors).where(eq(thesisMonitors.ticker, ticker));
+  //   return monitor || undefined;
+  // }
 
-  async createThesisMonitor(insertMonitor: InsertThesisMonitor): Promise<ThesisMonitor> {
-    const [monitor] = await db
-      .insert(thesisMonitors)
-      .values({ ...insertMonitor, id: randomUUID() })
-      .returning();
-    return monitor;
-  }
+  // async createThesisMonitor(insertMonitor: InsertThesisMonitor): Promise<ThesisMonitor> {
+  //   const [monitor] = await db
+  //     .insert(thesisMonitors)
+  //     .values({ ...insertMonitor, id: randomUUID() })
+  //     .returning();
+  //   return monitor;
+  // }
 
-  async updateThesisMonitor(id: string, updateData: Partial<ThesisMonitor>): Promise<ThesisMonitor | undefined> {
-    const [monitor] = await db
-      .update(thesisMonitors)
-      .set(updateData)
-      .where(eq(thesisMonitors.id, id))
-      .returning();
-    return monitor || undefined;
-  }
+  // async updateThesisMonitor(id: string, updateData: Partial<ThesisMonitor>): Promise<ThesisMonitor | undefined> {
+  //   const [monitor] = await db
+  //     .update(thesisMonitors)
+  //     .set(updateData)
+  //     .where(eq(thesisMonitors.id, id))
+  //     .returning();
+  //   return monitor || undefined;
+  // }
 
   // Market Events
   async getMarketEvents(limit: number = 50): Promise<MarketEvent[]> {
@@ -506,55 +854,55 @@ export class DatabaseStorage implements IStorage {
     await db.delete(researchRequests).where(eq(researchRequests.id, id));
   }
 
-  // Workflow Stages
-  async getWorkflowStages(entityType?: string, entityId?: string): Promise<WorkflowStageRecord[]> {
-    const conditions = [];
-    
-    if (entityType) {
-      conditions.push(eq(workflowStages.entityType, entityType));
-    }
-    if (entityId) {
-      conditions.push(eq(workflowStages.entityId, entityId));
-    }
-    
-    let query = db.select().from(workflowStages);
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions)) as any;
-    }
-    
-    return await query;
-  }
+  // LEGACY: Old Workflow Stages implementation - REMOVED (replaced by new workflow-centric methods)
+  // async getWorkflowStages(entityType?: string, entityId?: string): Promise<WorkflowStageRecord[]> {
+  //   const conditions = [];
+  //   
+  //   if (entityType) {
+  //     conditions.push(eq(workflowStages.entityType, entityType));
+  //   }
+  //   if (entityId) {
+  //     conditions.push(eq(workflowStages.entityId, entityId));
+  //   }
+  //   
+  //   let query = db.select().from(workflowStages);
+  //   if (conditions.length > 0) {
+  //     query = query.where(and(...conditions)) as any;
+  //   }
+  //   
+  //   return await query;
+  // }
 
-  async getWorkflowStage(id: string): Promise<WorkflowStageRecord | undefined> {
-    const [stage] = await db.select().from(workflowStages).where(eq(workflowStages.id, id));
-    return stage || undefined;
-  }
+  // async getWorkflowStage(id: string): Promise<WorkflowStageRecord | undefined> {
+  //   const [stage] = await db.select().from(workflowStages).where(eq(workflowStages.id, id));
+  //   return stage || undefined;
+  // }
 
-  async getWorkflowStageByEntity(entityType: string, entityId: string): Promise<WorkflowStageRecord | undefined> {
-    const stages = await db.select().from(workflowStages)
-      .where(and(
-        eq(workflowStages.entityType, entityType),
-        eq(workflowStages.entityId, entityId)
-      ));
-    return stages[0] || undefined;
-  }
+  // async getWorkflowStageByEntity(entityType: string, entityId: string): Promise<WorkflowStageRecord | undefined> {
+  //   const stages = await db.select().from(workflowStages)
+  //     .where(and(
+  //       eq(workflowStages.entityType, entityType),
+  //       eq(workflowStages.entityId, entityId)
+  //     ));
+  //   return stages[0] || undefined;
+  // }
 
-  async createWorkflowStage(insertStage: InsertWorkflowStage): Promise<WorkflowStageRecord> {
-    const [stage] = await db
-      .insert(workflowStages)
-      .values({ ...insertStage, id: randomUUID() })
-      .returning();
-    return stage;
-  }
+  // async createWorkflowStage(insertStage: InsertWorkflowStage): Promise<WorkflowStageRecord> {
+  //   const [stage] = await db
+  //     .insert(workflowStages)
+  //     .values({ ...insertStage, id: randomUUID() })
+  //     .returning();
+  //   return stage;
+  // }
 
-  async updateWorkflowStage(id: string, updateData: Partial<WorkflowStageRecord>): Promise<WorkflowStageRecord | undefined> {
-    const [stage] = await db
-      .update(workflowStages)
-      .set({ ...updateData, updatedAt: new Date() })
-      .where(eq(workflowStages.id, id))
-      .returning();
-    return stage || undefined;
-  }
+  // async updateWorkflowStage(id: string, updateData: Partial<WorkflowStageRecord>): Promise<WorkflowStageRecord | undefined> {
+  //   const [stage] = await db
+  //     .update(workflowStages)
+  //     .set({ ...updateData, updatedAt: new Date() })
+  //     .where(eq(workflowStages.id, id))
+  //     .returning();
+  //   return stage || undefined;
+  // }
 
   // Meeting Participants
   async getMeetingParticipants(meetingId: string): Promise<MeetingParticipant[]> {
@@ -611,10 +959,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Debate Messages
-  async getDebateMessages(sessionId: string): Promise<DebateMessage[]> {
+  async getDebateMessages(meetingId: string): Promise<DebateMessage[]> {
     return await db.select().from(debateMessages)
-      .where(eq(debateMessages.sessionId, sessionId))
-      .orderBy(debateMessages.timestamp);
+      .where(eq(debateMessages.meetingId, meetingId))
+      .orderBy(debateMessages.createdAt);
   }
 
   async createDebateMessage(insertMessage: InsertDebateMessage): Promise<DebateMessage> {
@@ -650,49 +998,49 @@ export class DatabaseStorage implements IStorage {
     return impact || undefined;
   }
 
-  // Risk Compliance Actions
-  async getRiskComplianceActions(filters?: { entityType?: string, entityId?: string, status?: string }): Promise<RiskComplianceAction[]> {
-    const conditions = [];
-    
-    if (filters?.entityType) {
-      conditions.push(eq(riskComplianceActions.entityType, filters.entityType));
-    }
-    if (filters?.entityId) {
-      conditions.push(eq(riskComplianceActions.entityId, filters.entityId));
-    }
-    if (filters?.status) {
-      conditions.push(eq(riskComplianceActions.status, filters.status));
-    }
-    
-    let query = db.select().from(riskComplianceActions);
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions)) as any;
-    }
-    
-    return await query.orderBy(desc(riskComplianceActions.createdAt));
-  }
+  // LEGACY: Risk Compliance Actions - REMOVED (replaced by complianceChecks and riskAssessments)
+  // async getRiskComplianceActions(filters?: { entityType?: string, entityId?: string, status?: string }): Promise<RiskComplianceAction[]> {
+  //   const conditions = [];
+  //   
+  //   if (filters?.entityType) {
+  //     conditions.push(eq(riskComplianceActions.entityType, filters.entityType));
+  //   }
+  //   if (filters?.entityId) {
+  //     conditions.push(eq(riskComplianceActions.entityId, filters.entityId));
+  //   }
+  //   if (filters?.status) {
+  //     conditions.push(eq(riskComplianceActions.status, filters.status));
+  //   }
+  //   
+  //   let query = db.select().from(riskComplianceActions);
+  //   if (conditions.length > 0) {
+  //     query = query.where(and(...conditions)) as any;
+  //   }
+  //   
+  //   return await query.orderBy(desc(riskComplianceActions.createdAt));
+  // }
 
-  async getRiskComplianceAction(id: string): Promise<RiskComplianceAction | undefined> {
-    const [action] = await db.select().from(riskComplianceActions).where(eq(riskComplianceActions.id, id));
-    return action || undefined;
-  }
+  // async getRiskComplianceAction(id: string): Promise<RiskComplianceAction | undefined> {
+  //   const [action] = await db.select().from(riskComplianceActions).where(eq(riskComplianceActions.id, id));
+  //   return action || undefined;
+  // }
 
-  async createRiskComplianceAction(insertAction: InsertRiskComplianceAction): Promise<RiskComplianceAction> {
-    const [action] = await db
-      .insert(riskComplianceActions)
-      .values({ ...insertAction, id: randomUUID() })
-      .returning();
-    return action;
-  }
+  // async createRiskComplianceAction(insertAction: InsertRiskComplianceAction): Promise<RiskComplianceAction> {
+  //   const [action] = await db
+  //     .insert(riskComplianceActions)
+  //     .values({ ...insertAction, id: randomUUID() })
+  //     .returning();
+  //   return action;
+  // }
 
-  async updateRiskComplianceAction(id: string, updateData: Partial<RiskComplianceAction>): Promise<RiskComplianceAction | undefined> {
-    const [action] = await db
-      .update(riskComplianceActions)
-      .set({ ...updateData, updatedAt: new Date() })
-      .where(eq(riskComplianceActions.id, id))
-      .returning();
-    return action || undefined;
-  }
+  // async updateRiskComplianceAction(id: string, updateData: Partial<RiskComplianceAction>): Promise<RiskComplianceAction | undefined> {
+  //   const [action] = await db
+  //     .update(riskComplianceActions)
+  //     .set({ ...updateData, updatedAt: new Date() })
+  //     .where(eq(riskComplianceActions.id, id))
+  //     .returning();
+  //   return action || undefined;
+  // }
 }
 
 export const storage = new DatabaseStorage();
