@@ -166,6 +166,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const updated = await storage.updateICMeeting(meetingId, updates);
+      
+      // If meeting is being completed, update proposal statuses based on votes
+      if (updates.status === 'COMPLETED') {
+        const allProposals = await storage.getProposals();
+        const meetingProposals = allProposals.filter(p => p.icMeetingId === meetingId);
+        
+        for (const proposal of meetingProposals) {
+          const proposalVotes = await storage.getVotes(proposal.id);
+          
+          // Tally votes
+          const approveCount = proposalVotes.filter(v => v.vote === 'APPROVE').length;
+          const rejectCount = proposalVotes.filter(v => v.vote === 'REJECT').length;
+          const abstainCount = proposalVotes.filter(v => v.vote === 'ABSTAIN').length;
+          
+          // Determine outcome (simple majority of non-abstain votes)
+          let newStatus: 'APPROVED' | 'REJECTED' | 'PENDING' = 'PENDING';
+          if (approveCount + rejectCount > 0) {
+            if (approveCount > rejectCount) {
+              newStatus = 'APPROVED';
+            } else if (rejectCount > approveCount) {
+              newStatus = 'REJECTED';
+            }
+            // If tie (approveCount === rejectCount), stays PENDING
+          }
+          
+          // Update proposal status
+          await storage.updateProposal(proposal.id, { status: newStatus });
+        }
+      }
+      
       res.json(updated);
     } catch (error) {
       console.error("IC Meeting update error:", error);

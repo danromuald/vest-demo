@@ -62,8 +62,12 @@ export default function ICMeetingDetailPage() {
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/ic-meetings'] });
+      // If meeting is completed, invalidate proposals to show updated statuses
+      if (variables.updates.status === 'COMPLETED') {
+        queryClient.invalidateQueries({ queryKey: ['/api/proposals'] });
+      }
       toast({
         title: "Meeting updated",
         description: "IC meeting status has been updated successfully.",
