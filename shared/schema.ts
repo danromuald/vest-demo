@@ -219,27 +219,78 @@ export const insertProposalSchema = createInsertSchema(proposals).omit({
 export type Proposal = typeof proposals.$inferSelect;
 export type InsertProposal = z.infer<typeof insertProposalSchema>;
 
-// IC Meetings
+// IC Meetings - Extended for real-time collaboration
 export const icMeetings = pgTable("ic_meetings", {
   id: varchar("id").primaryKey(),
+  workflowId: varchar("workflow_id"), // Link to workflow
   meetingDate: timestamp("meeting_date").notNull(),
-  status: text("status").notNull(), // SCHEDULED, IN_PROGRESS, COMPLETED
+  status: text("status").notNull(), // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
+  title: text("title").notNull(),
+  description: text("description"),
   attendees: text("attendees").array(),
   agenda: jsonb("agenda"),
   decisions: jsonb("decisions"),
   minutes: text("minutes"),
+  recordingUrl: text("recording_url"),
+  createdBy: varchar("created_by").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertICMeetingSchema = createInsertSchema(icMeetings).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
 }).extend({
   meetingDate: z.coerce.date(), // Accept string or Date and coerce to Date
 });
 
 export type ICMeeting = typeof icMeetings.$inferSelect;
 export type InsertICMeeting = z.infer<typeof insertICMeetingSchema>;
+
+// Meeting Sessions - Track real-time session state
+export const meetingSessions = pgTable("meeting_sessions", {
+  id: varchar("id").primaryKey(),
+  meetingId: varchar("meeting_id").notNull(),
+  status: text("status").notNull().default("ACTIVE"), // ACTIVE, PAUSED, ENDED
+  currentPhase: text("current_phase").notNull().default("PRESENTATION"), // PRESENTATION, QUESTIONING, DELIBERATION, VOTING, CONCLUDED
+  activeParticipants: integer("active_participants").default(0),
+  startedAt: timestamp("started_at").defaultNow(),
+  endedAt: timestamp("ended_at"),
+  metadata: jsonb("metadata"), // Session state data
+});
+
+export const insertMeetingSessionSchema = createInsertSchema(meetingSessions).omit({
+  id: true,
+  startedAt: true,
+});
+
+export type MeetingSession = typeof meetingSessions.$inferSelect;
+export type InsertMeetingSession = z.infer<typeof insertMeetingSessionSchema>;
+
+// Debate Messages - Real-time chat/discussion during IC meetings
+export const debateMessages = pgTable("debate_messages", {
+  id: varchar("id").primaryKey(),
+  meetingId: varchar("meeting_id").notNull(),
+  debateSessionId: varchar("debate_session_id"),
+  userId: varchar("user_id"), // null for AI agents
+  senderName: text("sender_name").notNull(),
+  senderRole: text("sender_role").notNull(), // ANALYST, PM, COMPLIANCE, BULL_AGENT, BEAR_AGENT, MODERATOR
+  messageType: text("message_type").notNull().default("COMMENT"), // COMMENT, QUESTION, ANSWER, VOTE_CALL, DECISION
+  content: text("content").notNull(),
+  replyTo: varchar("reply_to"), // ID of message being replied to
+  reactions: jsonb("reactions"), // Emoji reactions {emoji: count}
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertDebateMessageSchema = createInsertSchema(debateMessages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type DebateMessage = typeof debateMessages.$inferSelect;
+export type InsertDebateMessage = z.infer<typeof insertDebateMessageSchema>;
 
 // Votes
 export const votes = pgTable("votes", {
