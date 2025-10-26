@@ -4,14 +4,19 @@ async function seed() {
   console.log("🌱 Starting database seeding...");
 
   try {
-    // Check if already seeded
-    const existingCompany = await storage.getCompanyByTicker("NVDA");
-    if (existingCompany) {
-      console.log("✅ Database already seeded - skipping");
-      return;
+    // Check if already seeded by looking for NVDA workflow with monitoring events
+    const existingWorkflows = await storage.getWorkflows({ ticker: "NVDA" });
+    if (existingWorkflows.length > 0) {
+      const existingNvdaWorkflow = existingWorkflows[0];
+      const monitoringEvents = await storage.getMonitoringEvents(existingNvdaWorkflow.id);
+      if (monitoringEvents.length > 0) {
+        console.log("✅ Database already seeded - skipping");
+        return;
+      }
+      console.log("NVDA workflow exists but incomplete - proceeding with seed...");
+    } else {
+      console.log("Database not seeded yet - proceeding with seed...");
     }
-
-    console.log("Database not seeded yet - proceeding with seed...");
 
     // Create demo users with different roles
     console.log("Creating demo users...");
@@ -82,7 +87,15 @@ async function seed() {
     ];
 
     for (const company of companies) {
-      await storage.createCompany(company);
+      try {
+        await storage.createCompany(company);
+      } catch (error: any) {
+        // Ignore duplicate key errors (company already exists)
+        if (error.code !== '23505') {
+          throw error;
+        }
+        console.log(`  - ${company.ticker} already exists, skipping`);
+      }
     }
 
     // Create NVDA proposal (starting point)
@@ -90,14 +103,12 @@ async function seed() {
     const nvdaProposal = await storage.createProposal({
       ticker: "NVDA",
       companyName: "NVIDIA Corporation",
+      analyst: "user-analyst-1",
       proposalType: "BUY",
+      proposedWeight: "5.00",
+      targetPrice: "145.00",
       status: "PENDING",
-      proposedBy: "user-analyst-1",
-      targetPrice: 145.00,
-      currentPrice: 119.50,
-      upside: 21.3,
-      shares: 5000,
-      thesis: "AI infrastructure leader with dominant market share and strong secular growth tailwinds from enterprise AI adoption.",
+      thesis: "AI infrastructure leader with dominant market share and strong secular growth tailwinds from enterprise AI adoption. Target price $145 represents 21% upside from current $119.50.",
       catalysts: [
         "Blackwell architecture launch Q2 with 40% performance improvement",
         "Expanding TAM in automotive and edge computing",
@@ -108,19 +119,18 @@ async function seed() {
         "Geopolitical headwinds: Export restrictions to China impact 25% of TAM",
         "Valuation: Trading at 35x NTM P/E vs 5-year avg of 22x"
       ],
-      conviction: 8,
-      timeHorizon: 24,
     });
 
     // Create comprehensive NVDA workflow
     console.log("Creating NVDA workflow...");
     const nvdaWorkflow = await storage.createWorkflow({
-      proposalId: nvdaProposal.id,
       ticker: "NVDA",
+      companyName: "NVIDIA Corporation",
+      sector: "Technology",
       currentStage: "MONITORING", // Advanced stage to show full functionality
       status: "ACTIVE",
-      priority: "HIGH",
-      assignedTo: "user-analyst-1",
+      owner: "user-analyst-1",
+      description: "NVDA investment workflow from discovery through monitoring",
     });
 
     // Create workflow stages
@@ -155,40 +165,64 @@ async function seed() {
         artifactType: "RESEARCH_BRIEF",
         title: "NVIDIA Deep Dive: AI Infrastructure Dominance",
         version: 1,
-        summary: "Comprehensive analysis of NVIDIA's market position, competitive moat, and growth drivers in AI infrastructure.",
-        content: "Executive Summary: NVIDIA maintains 80%+ market share in AI accelerators...",
-        generatedBy: "AI Research Agent",
+        content: {
+          summary: "Comprehensive analysis of NVIDIA's market position, competitive moat, and growth drivers in AI infrastructure.",
+          sections: [
+            { title: "Executive Summary", body: "NVIDIA maintains 80%+ market share in AI accelerators..." },
+            { title: "Market Position", body: "Dominant player in GPU technology with commanding share in gaming, data centers, and AI computing" },
+            { title: "Competitive Moat", body: "CUDA ecosystem with 4M+ developers creates significant switching costs" }
+          ]
+        },
+        createdBy: "user-analyst-1",
         stage: "ANALYSIS",
+        status: "APPROVED",
       },
       {
         workflowId: nvdaWorkflow.id,
         artifactType: "FINANCIAL_MODEL",
         title: "NVIDIA DCF Valuation Model",
         version: 1,
-        summary: "3-scenario DCF model with bull case $165, base $145, bear $110 price targets.",
-        content: "Base Case Assumptions: Revenue CAGR 22%, Operating Margin 48%, WACC 9.2%...",
-        generatedBy: "DCF Modeler Agent",
+        content: {
+          summary: "3-scenario DCF model with bull case $165, base $145, bear $110 price targets.",
+          baseCase: { revenue_cagr: 0.22, operating_margin: 0.48, wacc: 0.092, target_price: 145 },
+          bullCase: { revenue_cagr: 0.28, operating_margin: 0.52, wacc: 0.085, target_price: 165 },
+          bearCase: { revenue_cagr: 0.15, operating_margin: 0.42, wacc: 0.105, target_price: 110 }
+        },
+        createdBy: "user-analyst-1",
         stage: "ANALYSIS",
+        status: "APPROVED",
       },
       {
         workflowId: nvdaWorkflow.id,
         artifactType: "RISK_ANALYSIS",
         title: "NVIDIA Risk Assessment",
         version: 1,
-        summary: "Key risks include customer concentration, geopolitical exposure, and valuation premium.",
-        content: "Risk Factor Analysis: 1. Customer Concentration (HIGH)...",
-        generatedBy: "Risk Analyst Agent",
+        content: {
+          summary: "Key risks include customer concentration, geopolitical exposure, and valuation premium.",
+          risks: [
+            { factor: "Customer Concentration", severity: "HIGH", description: "Top 3 customers represent 45% of revenue" },
+            { factor: "Geopolitical", severity: "HIGH", description: "Export restrictions to China impact 25% of TAM" },
+            { factor: "Valuation", severity: "MEDIUM", description: "Trading at 35x NTM P/E vs 5-year avg of 22x" }
+          ]
+        },
+        createdBy: "user-analyst-1",
         stage: "ANALYSIS",
+        status: "APPROVED",
       },
       {
         workflowId: nvdaWorkflow.id,
-        artifactType: "INVESTMENT_THESIS",
+        artifactType: "THESIS",
         title: "NVIDIA Investment Thesis",
-        version: 2,
-        summary: "Long NVDA: AI infrastructure leader with durable competitive moat and strong secular tailwinds.",
-        content: "Investment Thesis: We recommend a BUY rating on NVIDIA...",
-        generatedBy: "user-analyst-1",
+        version: 1,
+        content: {
+          summary: "Long NVDA: AI infrastructure leader with durable competitive moat and strong secular tailwinds.",
+          recommendation: "BUY",
+          targetPrice: 145,
+          thesis: "We recommend a BUY rating on NVIDIA with a $145 price target, representing 21% upside. The company is well-positioned to capitalize on AI infrastructure growth with sustainable competitive advantages."
+        },
+        createdBy: "user-analyst-1",
         stage: "IC_MEETING",
+        status: "APPROVED",
       },
     ];
 
@@ -201,10 +235,17 @@ async function seed() {
     const icMeeting = await storage.createICMeeting({
       workflowId: nvdaWorkflow.id,
       title: "NVDA Investment Committee Meeting",
-      scheduledAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      meetingDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
       status: "COMPLETED",
-      decision: "APPROVED",
-      agenda: ["NVDA investment proposal review", "Risk assessment discussion", "Vote on recommendation"],
+      description: "Investment Committee review of NVDA BUY proposal",
+      agenda: {
+        items: ["NVDA investment proposal review", "Risk assessment discussion", "Vote on recommendation"]
+      },
+      decisions: {
+        decision: "APPROVED",
+        rationale: "Unanimous approval based on strong thesis and compelling risk/reward profile"
+      },
+      createdBy: "user-pm-1",
     });
 
     // Add meeting participants
@@ -228,9 +269,9 @@ async function seed() {
 
     // Create votes
     const votes = [
-      { meetingId: icMeeting.id, userId: "user-analyst-1", voteType: "APPROVE", rationale: "Strong thesis with compelling risk/reward" },
-      { meetingId: icMeeting.id, userId: "user-pm-1", voteType: "APPROVE", rationale: "Fits portfolio strategy, good entry point" },
-      { meetingId: icMeeting.id, userId: "user-compliance-1", voteType: "APPROVE", rationale: "No compliance concerns" },
+      { proposalId: nvdaProposal.id, voterName: "Sarah Chen", voterRole: "ANALYST", vote: "APPROVE", comment: "Strong thesis with compelling risk/reward" },
+      { proposalId: nvdaProposal.id, voterName: "Mike Rodriguez", voterRole: "PM", vote: "APPROVE", comment: "Fits portfolio strategy, good entry point" },
+      { proposalId: nvdaProposal.id, voterName: "Jane Smith", voterRole: "COMPLIANCE", vote: "APPROVE", comment: "No compliance concerns" },
     ];
 
     for (const vote of votes) {
@@ -242,13 +283,17 @@ async function seed() {
       {
         meetingId: icMeeting.id,
         userId: "user-pm-1",
-        message: "The customer concentration risk is valid, but worth noting they have multi-year contracts with committed capacity. Sticky relationships.",
+        senderName: "Mike Rodriguez",
+        senderRole: "PM",
+        content: "The customer concentration risk is valid, but worth noting they have multi-year contracts with committed capacity. Sticky relationships.",
         messageType: "COMMENT",
       },
       {
         meetingId: icMeeting.id,
         userId: "user-analyst-1",
-        message: "Agree. Also, their software moat is underappreciated - CUDA ecosystem creates significant switching costs.",
+        senderName: "Sarah Chen",
+        senderRole: "ANALYST",
+        content: "Agree. Also, their software moat is underappreciated - CUDA ecosystem creates significant switching costs.",
         messageType: "COMMENT",
       },
     ];
@@ -259,15 +304,27 @@ async function seed() {
 
     // Create position (after IC approval)
     console.log("Creating NVDA position...");
+    const avgCost = 119.50;
+    const currentPrice = 132.00;
+    const shares = 5000;
+    const marketValue = currentPrice * shares;
+    const gainLoss = (currentPrice - avgCost) * shares;
+    const gainLossPercent = ((currentPrice - avgCost) / avgCost) * 100;
+    
     await storage.createPosition({
       ticker: "NVDA",
-      shares: 5000,
-      avgCost: 119.50,
-      currentPrice: 132.00,
+      companyName: "NVIDIA Corporation",
+      shares,
+      avgCost: avgCost.toString(),
+      currentPrice: currentPrice.toString(),
+      marketValue: marketValue.toString(),
+      portfolioWeight: "5.00", // 5% of portfolio
+      gainLoss: gainLoss.toString(),
+      gainLossPercent: gainLossPercent.toFixed(2),
       sector: "Technology",
-      thesis: "AI infrastructure leader with dominant market share",
-      status: "ACTIVE",
-      entryDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      analyst: "user-analyst-1",
+      thesisHealth: "HEALTHY",
+      purchaseDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
     });
 
     // Create monitoring events
@@ -378,7 +435,8 @@ async function seed() {
     await storage.createAgentResponse({
       ticker: "NVDA",
       agentType: "RESEARCH_SYNTHESIZER",
-      data: {
+      prompt: "Analyze NVDA investment opportunity including market position, competitive moat, growth drivers, and key risks",
+      response: {
         ticker: "NVDA",
         companyName: "NVIDIA Corporation",
         executiveSummary: "NVIDIA is the dominant player in GPU technology with commanding market share in gaming, data centers, and AI computing.",
