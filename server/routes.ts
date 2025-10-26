@@ -39,35 +39,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
   // Demo signin route - allows instant access without credentials
+  // In development mode, just set session and redirect - user will be created on first /api/auth/user call
   app.get('/api/demo-signin', async (req: any, res) => {
-    // Create or update demo user
-    const demoUser = {
-      id: "demo-user-" + Date.now(),
-      email: "demo@vest.com",
-      firstName: "Demo",
-      lastName: "User",
-      profileImageUrl: null,
-      role: "ANALYST" as const,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    console.log("Demo signin requested");
     
     try {
-      await storage.upsertUser(demoUser);
-      
-      // Set session if available
-      if (req.session) {
-        req.session.userId = demoUser.id;
-        req.session.save((err: any) => {
-          if (err) console.error("Session save error:", err);
-        });
+      // In development mode, just redirect and let /api/auth/user handle user creation
+      if (!process.env.REPLIT_DOMAINS || !process.env.REPL_ID) {
+        console.log("Development mode - redirecting to app");
+        res.redirect('/');
+        return;
       }
       
-      // Redirect to main app
-      res.redirect('/');
+      // In production (shouldn't happen), fall back to regular auth
+      console.log("Production mode - redirecting to /api/login");
+      res.redirect('/api/login');
     } catch (error) {
       console.error("Demo signin error:", error);
-      res.status(500).send("Failed to sign in");
+      res.status(500).send("Failed to sign in. Please try again.");
     }
   });
 
