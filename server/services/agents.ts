@@ -1349,6 +1349,183 @@ Return ONLY valid JSON matching this exact structure:
       };
     }
   }
+
+  // ========== DEBATE ROOM AGENTS ==========
+
+  // Debate Contrarian (Bear Case Defender)
+  async generateDebateContrarianArgument(ticker: string, proposal: any, context: any): Promise<string> {
+    try {
+      const prompt = `You are the Contrarian Analyst in an Investment Committee debate for ${ticker}.
+
+Your role: Present the compelling bear case and challenge the investment thesis.
+
+Proposal Summary:
+- Thesis: ${proposal.thesis?.substring(0, 200)}
+- Target Price: $${proposal.targetPrice}
+- Proposed Weight: ${proposal.proposedWeight}%
+
+Context from prior analysis:
+${context.researchBrief ? `- Research: ${JSON.stringify(context.researchBrief).substring(0, 300)}` : ''}
+${context.dcfModel ? `- Valuation: Base case $${context.dcfModel.scenarios?.base?.price}` : ''}
+
+Your task: Present 2-3 strong counterarguments to the thesis. Be professional but direct. Focus on:
+1. Valuation concerns or overoptimistic assumptions
+2. Execution risks or competitive threats
+3. Market timing or macro headwinds
+
+Respond in 3-4 concise paragraphs. Be persuasive but respectful.`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        max_completion_tokens: 800,
+      });
+
+      return completion.choices[0]?.message?.content || this.getMockContrarianArgument(ticker);
+    } catch (error) {
+      console.warn(`Debate contrarian AI failed for ${ticker}, using mock:`, error);
+      return this.getMockContrarianArgument(ticker);
+    }
+  }
+
+  private getMockContrarianArgument(ticker: string): string {
+    return `I must raise several concerns about the ${ticker} proposal. While the fundamental story is compelling, the valuation appears stretched relative to historical precedents. The market is pricing in perfection, leaving little room for execution missteps.
+
+First, the revenue growth assumptions of 25-30% seem aggressive given intensifying competition and potential market saturation in core segments. We've seen this pattern before with high-flying growth stocks that eventually disappoint. Second, the proposed entry timing concerns me - we're near 52-week highs, suggesting limited near-term upside and significant downside risk if sentiment shifts.
+
+Finally, the concentration risk cannot be ignored. Adding ${ticker} at the proposed weight increases our sector exposure beyond prudent limits. I recommend we either scale down the position significantly or wait for a better entry point after the next earnings cycle provides more visibility. The risk-reward at current levels does not justify the allocation.`;
+  }
+
+  // Debate Defender (Bull Case Champion)
+  async generateDebateDefenderArgument(ticker: string, proposal: any, contrarianPoints: string): Promise<string> {
+    try {
+      const prompt = `You are the Thesis Defender in an Investment Committee debate for ${ticker}.
+
+Your role: Champion the bull case and address the Contrarian's objections.
+
+Proposal:
+- Thesis: ${proposal.thesis?.substring(0, 200)}
+- Target Price: $${proposal.targetPrice}
+- Catalysts: ${proposal.catalysts?.slice(0, 3).join(', ')}
+
+Contrarian's objections:
+${contrarianPoints.substring(0, 500)}
+
+Your task: Rebut the Contrarian's points with data and conviction. Show why:
+1. The valuation is justified by fundamentals and growth trajectory
+2. Execution risks are manageable and priced in
+3. The timing and opportunity are compelling NOW
+
+Be confident but professional. Use 3-4 paragraphs. Reference specific catalysts and data points.`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        max_completion_tokens: 800,
+      });
+
+      return completion.choices[0]?.message?.content || this.getMockDefenderArgument(ticker);
+    } catch (error) {
+      console.warn(`Debate defender AI failed for ${ticker}, using mock:`, error);
+      return this.getMockDefenderArgument(ticker);
+    }
+  }
+
+  private getMockDefenderArgument(ticker: string): string {
+    return `I respectfully disagree with the bearish assessment. While the Contrarian raises valid points about valuation, they overlook the structural advantages and inflection points that justify a premium multiple.
+
+Regarding growth assumptions: Our 25-30% revenue CAGR is actually conservative compared to management's guided range of 30-35%. The company has consistently exceeded guidance for six consecutive quarters, demonstrating a track record of under-promising and over-delivering. The TAM expansion alone supports our growth thesis, as they're penetrating new verticals that weren't even modeled in last year's analysis.
+
+On timing: Yes, we're near 52-week highs, but that reflects fundamental strength, not speculation. The upcoming product launch in Q2 represents a $2B+ revenue opportunity that isn't fully reflected in consensus estimates. Waiting for a pullback means potentially missing the entire next leg up. Our research indicates institutional accumulation, not retail froth.
+
+The concentration concern is noted, but our portfolio construction analysis shows ${ticker} actually reduces overall portfolio risk due to low correlation with existing holdings. The Sharpe ratio improvement justifies the allocation. This is a rare opportunity to add a generational compounder at a reasonable price.`;
+  }
+
+  // Debate Secretary (Moderator & Summarizer)
+  async generateDebateSecretarySummary(sessionData: any): Promise<string> {
+    try {
+      const prompt = `You are the Meeting Secretary summarizing an Investment Committee debate.
+
+Debate Topic: ${sessionData.topic}
+Ticker: ${sessionData.ticker}
+Duration: ${sessionData.messageCount} messages exchanged
+
+Key Arguments Made:
+${sessionData.keyPoints?.join('\n') || 'Bull case: Strong fundamentals and growth. Bear case: Valuation concerns and timing risks.'}
+
+Your task: Provide a concise executive summary (3 paragraphs):
+1. Overview of the debate and key question
+2. Main arguments from both bull and bear perspectives
+3. Committee sentiment and recommended next steps (vote, defer, request more analysis)
+
+Be neutral and balanced. Highlight areas of consensus and remaining disagreement.`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        max_completion_tokens: 600,
+      });
+
+      return completion.choices[0]?.message?.content || this.getMockSecretarySummary(sessionData.ticker);
+    } catch (error) {
+      console.warn(`Debate secretary AI failed, using mock:`, error);
+      return this.getMockSecretarySummary(sessionData.ticker);
+    }
+  }
+
+  private getMockSecretarySummary(ticker: string): string {
+    return `The committee engaged in a thorough debate regarding the proposed ${ticker} investment. The central question: Does the growth opportunity justify the valuation premium and portfolio concentration?
+
+The bull case emphasized strong fundamental momentum, upcoming catalysts, and structural competitive advantages. Proponents highlighted consistent execution, expanding TAM, and attractive risk-adjusted returns. The bear case raised legitimate concerns about valuation multiples near historical peaks, execution risks in new product categories, and portfolio concentration limits.
+
+Committee sentiment appears cautiously optimistic, with several members requesting additional scenario analysis on downside cases. Recommendation: Proceed to formal vote, with consideration of reducing the proposed position size by 30-40% to address concentration concerns while still capturing the opportunity.`;
+  }
+
+  // Debate Lead PM/CIO (Question Poser)
+  async generateDebateLeadQuestion(ticker: string, proposal: any, debateContext: any): Promise<string> {
+    try {
+      const prompt = `You are the Lead Portfolio Manager/CIO in an Investment Committee debate for ${ticker}.
+
+Your role: Ask a penetrating question that tests the investment thesis and drives toward a decision.
+
+Proposal: ${proposal.proposedWeight}% position at $${proposal.targetPrice} target
+Recent debate points: ${debateContext.recentArguments?.substring(0, 300) || 'Bull and bear cases presented'}
+
+Your task: Pose ONE sharp, specific question that:
+- Tests a key assumption or weak point in the thesis
+- Forces clarity on downside scenarios
+- Helps the committee reach a decision
+- Is answerable with data/analysis
+
+Examples of good questions:
+- "What's our exit trigger if the Q2 product launch underperforms?"
+- "How does this position perform in a 10% market correction?"
+- "What's the IRR if revenue growth is only 15% instead of 25%?"
+
+Provide just the question, 1-2 sentences max.`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages: [{ role: "user", content: prompt }],
+        max_completion_tokens: 200,
+      });
+
+      return completion.choices[0]?.message?.content || this.getMockLeadQuestion(ticker);
+    } catch (error) {
+      console.warn(`Debate lead PM AI failed for ${ticker}, using mock:`, error);
+      return this.getMockLeadQuestion(ticker);
+    }
+  }
+
+  private getMockLeadQuestion(ticker: string): string {
+    const questions = [
+      `Given the elevated valuation, what specific price level would trigger a stop-loss, and how do we size the position to limit downside to 50 bps of portfolio NAV?`,
+      `If the upcoming product cycle disappoints and revenue growth decelerates to mid-teens, what's our updated fair value and does the thesis still hold?`,
+      `How correlated is ${ticker} to our existing Tech/Growth positions, and what's the marginal portfolio risk contribution at the proposed 5% weight?`,
+      `What are the 2-3 early warning indicators we'll monitor post-purchase to validate the thesis, and what's our exit plan if they deteriorate?`,
+    ];
+    return questions[Math.floor(Math.random() * questions.length)];
+  }
 }
 
 export const agentService = new AgentService();

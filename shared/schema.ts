@@ -342,12 +342,19 @@ export const debateSessions = pgTable("debate_sessions", {
   id: varchar("id").primaryKey(),
   meetingId: varchar("meeting_id").notNull(),
   proposalId: varchar("proposal_id").notNull(),
+  ticker: text("ticker").notNull(),
   topic: text("topic").notNull(),
   status: text("status").notNull(), // ACTIVE, PAUSED, COMPLETED
+  currentPhase: text("current_phase").notNull().default("PRESENTATION"), // PRESENTATION, QUESTIONING, DELIBERATION, VOTING, CONCLUDED
+  leadModerator: text("lead_moderator").notNull().default("Meeting Secretary"),
+  activeAgents: text("active_agents").array().notNull().default(sql`ARRAY[]::text[]`), // Array of active agent types
+  decision: text("decision"), // APPROVED, REJECTED, DEFERRED
+  voteCount: jsonb("vote_count"), // { approve: number, reject: number, abstain: number }
   startedAt: timestamp("started_at").defaultNow(),
   endedAt: timestamp("ended_at"),
   participantCount: integer("participant_count").default(0),
   messageCount: integer("message_count").default(0),
+  artifacts: jsonb("artifacts"), // Research briefs, DCF models, charts displayed
   metadata: jsonb("metadata"),
 });
 
@@ -366,9 +373,12 @@ export const debateMessages = pgTable("debate_messages", {
   senderType: text("sender_type").notNull(), // HUMAN, AI_AGENT
   senderId: varchar("sender_id").notNull(), // user id or agent type
   senderName: text("sender_name").notNull(),
+  agentRole: text("agent_role"), // CONTRARIAN, DEFENDER, SECRETARY, LEAD_PM, RESEARCH_ANALYST, CIO
   content: text("content").notNull(),
-  messageType: text("message_type").notNull(), // TEXT, VOICE_COMMENTARY, ANALYSIS, QUESTION, RESPONSE
-  metadata: jsonb("metadata"), // voice file references, citations, data
+  messageType: text("message_type").notNull(), // TEXT, ANALYSIS, QUESTION, RESPONSE, ARGUMENT, COUNTERARGUMENT, SUMMARY, DECISION
+  stance: text("stance"), // BULL, BEAR, NEUTRAL
+  artifact: jsonb("artifact"), // Embedded charts, data, analysis
+  metadata: jsonb("metadata"), // Citations, data sources, confidence scores
   timestamp: timestamp("timestamp").defaultNow(),
 });
 
