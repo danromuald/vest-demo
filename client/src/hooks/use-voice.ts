@@ -30,6 +30,7 @@ export function useTextToSpeech(settings: VoiceSettings = {}) {
     return () => {
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
+        window.speechSynthesis.onvoiceschanged = null;
       }
     };
   }, []);
@@ -94,6 +95,7 @@ export function useSpeechToText() {
   const [transcript, setTranscript] = useState("");
   const [isSupported, setIsSupported] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const finalTextRef = useRef("");
 
   useEffect(() => {
     // Check for browser support
@@ -107,19 +109,22 @@ export function useSpeechToText() {
       recognition.lang = "en-US";
 
       recognition.onresult = (event: any) => {
-        let finalTranscript = "";
         let interimTranscript = "";
 
+        // Only process new results starting from resultIndex (prevents duplication)
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscript += transcript + " ";
+            // Append new finalized text to the ref (only happens once per phrase)
+            finalTextRef.current += transcript + " ";
           } else {
+            // Accumulate interim (non-final) text for current phrase
             interimTranscript += transcript;
           }
         }
 
-        setTranscript((prev) => prev + finalTranscript + interimTranscript);
+        // Set state to accumulated final text plus current interim text
+        setTranscript(finalTextRef.current + interimTranscript);
       };
 
       recognition.onerror = (event: any) => {
@@ -144,6 +149,7 @@ export function useSpeechToText() {
   const startListening = useCallback(() => {
     if (!isSupported || !recognitionRef.current) return;
     
+    finalTextRef.current = "";
     setTranscript("");
     setIsListening(true);
     recognitionRef.current.start();
@@ -157,6 +163,7 @@ export function useSpeechToText() {
   }, [isSupported]);
 
   const resetTranscript = useCallback(() => {
+    finalTextRef.current = "";
     setTranscript("");
   }, []);
 
