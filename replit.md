@@ -3,6 +3,15 @@
 ## Overview
 Vest is an AI-powered investment committee workflow system designed to automate and enhance the investment decision-making process. The platform streamlines workflows from initial research through execution and ongoing portfolio monitoring, leveraging a 16-agent AI system. Its purpose is to reduce analyst workload, enhance meeting quality, ensure compliance, and maintain institutional knowledge. Vest offers capabilities for automated research synthesis, AI-assisted investment committee meetings with real-time contrarian analysis, portfolio monitoring with thesis health tracking, document generation, scenario simulation, compliance checks, trade order generation, and risk assessment. The project is a production-ready enterprise MVP with comprehensive workflow automation.
 
+## Recent Changes (October 26, 2025)
+- **Backend Infrastructure**: Completed comprehensive database schema with 17 tables including workflows, workflow_stages, workflow_artifacts, ic_meetings, debate_messages, positions, monitoring_events, thesis_health_metrics, and more
+- **Storage Layer**: Implemented full storage interface with 34+ methods covering workflow orchestration, artifact management, IC meeting operations, monitoring, and analytics
+- **API Layer**: Built 28 REST API endpoints with Zod validation, session-based authentication, and proper error handling
+- **WebSocket Server**: Production-ready WebSocket implementation for real-time IC meeting collaboration with session-based authentication
+- **Workflow Workspace**: Created unified /workflows/:id route with stage-aware tabs (Overview, Analysis Hub, IC Meeting, Monitoring) replacing 16+ separate pages
+- **Seed Script**: Comprehensive database seeding with complete NVDA workflow scenario from discovery through monitoring including users, proposals, workflow stages, artifacts, IC meetings, votes, debate messages, positions, monitoring events, and thesis health metrics
+- **Architectural Discovery**: E2E testing identified IC meeting-to-proposal relationship architecture that needs refinement (IC meetings currently link to workflows; frontend expects links to proposals)
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
