@@ -39,7 +39,8 @@ import {
   Clock,
   Loader2,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  MessageSquare
 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -47,7 +48,8 @@ import { useWebSocket } from "@/hooks/use-websocket";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { format } from "date-fns";
-import type { ICMeeting as ICMeetingType, Proposal, WorkflowStageRecord } from "@shared/schema";
+import { useLocation } from "wouter";
+import type { ICMeeting as ICMeetingType, Proposal, WorkflowStageRecord, DebateSession } from "@shared/schema";
 
 export default function ICMeeting() {
   const { toast } = useToast();
@@ -325,6 +327,42 @@ export default function ICMeeting() {
       toast({
         title: "DCF Model Generated",
         description: "Valuation analysis complete",
+      });
+    },
+  });
+
+  const [, navigate] = useLocation();
+
+  // Create debate session mutation
+  const startDebateMutation = useMutation({
+    mutationFn: async (proposal: Proposal) => {
+      return await apiRequest("POST", "/api/debate-sessions", {
+        ticker: proposal.ticker,
+        companyName: proposal.companyName,
+        topic: `IC Meeting Debate: ${proposal.ticker} ${proposal.proposalType} Recommendation`,
+        proposalId: proposal.id,
+        meetingId: activeMeeting?.id,
+        currentPhase: "PRESENTATION",
+        status: "ACTIVE",
+        activeAgents: [],
+        participantCount: 0,
+        messageCount: 0,
+      });
+    },
+    onSuccess: (data: DebateSession) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/debate-sessions"] });
+      toast({ 
+        title: "Debate Started", 
+        description: `Opening debate room for ${data.ticker}`,
+      });
+      // Navigate to debate room
+      navigate("/debate-room");
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to start debate session",
+        variant: "destructive",
       });
     },
   });
@@ -650,8 +688,31 @@ export default function ICMeeting() {
               {/* Proposal Analysis Tabs */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Analysis: {selectedProposal.ticker} - {selectedProposal.companyName}</CardTitle>
-                  <CardDescription>AI-powered investment analysis and valuation</CardDescription>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                      <CardTitle>Analysis: {selectedProposal.ticker} - {selectedProposal.companyName}</CardTitle>
+                      <CardDescription>AI-powered investment analysis and valuation</CardDescription>
+                    </div>
+                    <Button
+                      variant="default"
+                      onClick={() => startDebateMutation.mutate(selectedProposal)}
+                      disabled={startDebateMutation.isPending}
+                      data-testid="button-start-debate"
+                      className="gap-2"
+                    >
+                      {startDebateMutation.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Starting...
+                        </>
+                      ) : (
+                        <>
+                          <MessageSquare className="h-4 w-4" />
+                          Start Debate
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <Tabs defaultValue="research">
