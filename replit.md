@@ -6,6 +6,18 @@ Vest is an AI-powered investment committee workflow system designed to automate 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### Seed Data Enhancements (October 27, 2025)
+- **Comprehensive Research Scenarios**: Added 7 research requests covering all states (COMPLETED, IN_PROGRESS, PENDING)
+  - **CVX (Chevron)**: COMPLETED research with NO proposal - demonstrates "Create Proposal" button
+  - **GOOGL & AMZN**: COMPLETED research WITH proposals - demonstrates "View Proposal" button
+  - **META, TSLA, NVDA**: Various in-progress and pending states
+- **Multi-Sector Coverage**: Expanded from Energy-only to Energy + Technology + Consumer sectors
+- **Agent Responses**: Added comprehensive agent responses for GOOGL, AMZN, and CVX research
+- **Seed Check Improvement**: Updated logic to check for agent responses (more reliable than proposal checks)
+- **Local Docker Parity**: Seed script now creates identical data for local and Replit environments
+
 ## System Architecture
 
 ### UI/UX Decisions
