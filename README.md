@@ -17,35 +17,43 @@
 - **🎨 Professional Design** - IBM Carbon + Linear-inspired aesthetic with dark mode and enterprise polish
 - **🔒 No PII Exposure** - Demo mode uses synthetic data (Dan Mbanga, dan@example.io) - perfect for presentations
 
-## 🚀 Quick Start
+## 🚀 Quick Start - One-Shot Local Setup
 
 ### Prerequisites
 
-- Docker Desktop ([Download](https://www.docker.com/products/docker-desktop))
-- Git  
-- Make (pre-installed on macOS/Linux)
+- **Docker Desktop** ([Download](https://www.docker.com/products/docker-desktop)) - Required
+- **Git** - Required
+- **Make** - Pre-installed on macOS/Linux, [Windows installation](https://gnuwin32.sourceforge.net/packages/make.htm)
 
-### One-Command Setup (Recommended)
+### One-Command Setup (Recommended) ⚡
 
 ```bash
 # Clone the repository
 git clone <your-repo-url>
 cd vest
 
-# Build, start, migrate, and seed everything
+# 🚀 ONE SHOT - Build, start, migrate, and seed everything!
 make run-all
 ```
 
-The application will be available at **http://localhost:5000**
+**That's it!** This single command will:
+1. ✅ Build Docker containers (PostgreSQL + App)
+2. ✅ Start PostgreSQL database on port 5432
+3. ✅ Run database migrations (17 tables)
+4. ✅ Seed with complete demo data (NVDA workflow, users, IC meetings)
+5. ✅ Start development server on port 5000
 
-You'll be automatically signed in as **Dan Mbanga** (dan@example.io) with access to:
+**Access the app at: http://localhost:5000**
+
+You'll be automatically signed in as **Dan Mbanga** (dan@example.io) with full demo data:
 - ✅ Complete NVDA workflow from Discovery → Monitoring
-- ✅ 5 workflow stages with 4 research artifacts
-- ✅ IC Meeting with 3 APPROVE votes and debate messages
-- ✅ Active position (5000 NVDA shares @ $119.50)
+- ✅ Multiple research requests (TSLA, GOOGL, AMZN, OXY)
+- ✅ Proposals with AI-generated theses
+- ✅ IC Meeting with real-time voting and debate
+- ✅ Active portfolio position (5000 NVDA shares @ $119.50)
 - ✅ Monitoring events and thesis health tracking
 
-### Additional Commands
+### Daily Development Commands
 
 ```bash
 make help        # Show all available commands
