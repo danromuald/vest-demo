@@ -118,7 +118,7 @@ async function seed() {
       await storage.upsertUser(user);
     }
 
-    // Create Energy sector companies
+    // Create comprehensive company universe
     console.log("Creating companies...");
     const companies = [
       {
@@ -144,6 +144,46 @@ async function seed() {
         industry: "Oil & Gas E&P",
         marketCap: 56000000000,
         description: "Independent oil and gas company with carbon capture and enhanced oil recovery capabilities"
+      },
+      {
+        ticker: "GOOGL",
+        name: "Alphabet Inc.",
+        sector: "Technology",
+        industry: "Internet Content & Information",
+        marketCap: 1950000000000,
+        description: "Global technology leader in search, cloud computing, and artificial intelligence"
+      },
+      {
+        ticker: "AMZN",
+        name: "Amazon.com, Inc.",
+        sector: "Consumer Discretionary",
+        industry: "Internet & Direct Marketing Retail",
+        marketCap: 1800000000000,
+        description: "Global e-commerce and cloud computing leader with AWS, retail, and advertising businesses"
+      },
+      {
+        ticker: "TSLA",
+        name: "Tesla, Inc.",
+        sector: "Consumer Discretionary",
+        industry: "Auto Manufacturers",
+        marketCap: 890000000000,
+        description: "Electric vehicle and clean energy company with autonomous driving technology"
+      },
+      {
+        ticker: "NVDA",
+        name: "NVIDIA Corporation",
+        sector: "Technology",
+        industry: "Semiconductors",
+        marketCap: 3100000000000,
+        description: "Leading AI chip maker and data center GPU provider"
+      },
+      {
+        ticker: "META",
+        name: "Meta Platforms, Inc.",
+        sector: "Technology",
+        industry: "Interactive Media & Services",
+        marketCap: 1300000000000,
+        description: "Social media and virtual reality company with Facebook, Instagram, WhatsApp"
       }
     ];
 
@@ -1313,6 +1353,52 @@ Occidental has successfully navigated the challenging post-Anadarko integration 
       completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
     });
 
+    // 5. CVX research request (COMPLETED - NO PROPOSAL, should show "Create Proposal" button)
+    const cvxResearch = await storage.createResearchRequest({
+      ticker: "CVX",
+      companyName: "Chevron Corporation",
+      requestedBy: "user-analyst-2",
+      assignedTo: "user-analyst-1",
+      researchType: "INITIAL",
+      agentType: "RESEARCH_SYNTHESIZER",
+      priority: "HIGH",
+      status: "COMPLETED",
+      query: "Comprehensive analysis of Chevron's integrated oil & gas portfolio, focusing on upstream production growth, downstream refining margins, LNG expansion, and shareholder returns. Compare to peer group (XOM, BP, SHEL).",
+      context: "Energy sector rotation opportunity. CVX offers balanced exposure to upstream/downstream with strong FCF and dividend yield. Need to assess valuation vs peers.",
+      expectedDelivery: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+      completedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)
+    });
+
+    // 6. META research request (IN_PROGRESS - AI is generating analysis)
+    await storage.createResearchRequest({
+      ticker: "META",
+      companyName: "Meta Platforms, Inc.",
+      requestedBy: "user-pm-1",
+      assignedTo: "user-analyst-2",
+      researchType: "UPDATE",
+      agentType: "RESEARCH_SYNTHESIZER",
+      priority: "MEDIUM",
+      status: "IN_PROGRESS",
+      query: "Update analysis on Meta following Reality Labs restructuring announcement. Focus on path to profitability in metaverse, AI monetization opportunities, and core advertising business resilience.",
+      context: "Existing position - need updated view on Reality Labs burn rate and timeline to break-even. Stock down 15% from highs.",
+      expectedDelivery: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
+    });
+
+    // 7. NVDA research request (PENDING - assigned but not started)
+    await storage.createResearchRequest({
+      ticker: "NVDA",
+      companyName: "NVIDIA Corporation",
+      requestedBy: "user-demo-1",
+      assignedTo: "user-analyst-1",
+      researchType: "QUICK_CHECK",
+      agentType: "MARKET_MONITOR",
+      priority: "LOW",
+      status: "PENDING",
+      query: "Quick pulse check on NVDA following competitor announcements from AMD and Intel. Has competitive moat changed? Any impact on H100/H200 demand?",
+      context: "Existing large position (8% of portfolio). Want to monitor competitive dynamics but not urgent deep dive.",
+      expectedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    });
+
     // =====================================================================
     // Create proposals linked to GOOGL and AMZN research
     // =====================================================================
@@ -2076,10 +2162,58 @@ Occidental has successfully navigated the challenging post-Anadarko integration 
       })
     ]);
 
+    // CVX Agent Responses (COMPLETED research, NO PROPOSAL yet)
+    console.log("Creating agent responses for CVX...");
+    await Promise.all([
+      // CVX Research Brief
+      storage.createAgentResponse({
+        agentType: "RESEARCH_SYNTHESIZER",
+        ticker: "CVX",
+        prompt: "Generate comprehensive research brief for Chevron Corporation",
+        response: {
+          ticker: "CVX",
+          companyName: "Chevron Corporation",
+          summary: "Chevron is a vertically integrated energy major with premier upstream assets and growing LNG exposure.",
+          keyMetrics: {
+            revenue: "$200B TTM",
+            growth: "+12% YoY",
+            margins: "Operating Margin: 18%",
+            valuation: "P/E: 10.5x, FCF Yield: 8.2%"
+          },
+          strengths: [
+            "Best-in-class Permian position with low breakevens",
+            "Balanced upstream/downstream portfolio",
+            "Dividend aristocrat with 36 years of increases"
+          ],
+          risks: [
+            "Oil price sensitivity impacts FCF",
+            "Energy transition threatens long-term demand",
+            "Geopolitical exposure in Kazakhstan"
+          ],
+          recommendation: "BUY"
+        }
+      }),
+      // CVX DCF Model
+      storage.createAgentResponse({
+        agentType: "FINANCIAL_MODELER",
+        ticker: "CVX",
+        prompt: "Build DCF valuation model for CVX",
+        response: {
+          ticker: "CVX",
+          scenarios: {
+            bull: { price: 195, irr: 24.3 },
+            base: { price: 175, irr: 16.8 },
+            bear: { price: 135, irr: -8.2 }
+          },
+          wacc: 8.5,
+          terminalGrowth: 2.5
+        }
+      })
+    ]);
+
     // =====================================================================
     // WORKFLOW 4: NVDA - Technology sector, MONITORING stage
     // =====================================================================
-    console.log("\n🖥️  Creating NVDA workflow (MONITORING stage - Technology sector)...");
     
     const nvdaCompany = await storage.createCompany({
       ticker: "NVDA",
