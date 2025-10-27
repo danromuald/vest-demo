@@ -39,22 +39,25 @@ async function seed() {
   };
 
   try {
-    // Check if already seeded by looking for GOOGL/AMZN proposals AND NEE monitoring
-    const existingWorkflows = await storage.getWorkflows({ ticker: "NEE" });
-    const existingProposals = await storage.getProposals();
-    const hasGooglProposal = existingProposals.some(p => p.ticker === "GOOGL" && p.analyst === "user-demo-1");
-    const hasAmznProposal = existingProposals.some(p => p.ticker === "AMZN" && p.analyst === "user-analyst-1");
+    // Check if already seeded by looking for agent responses (more reliable than proposals)
+    const existingAgentResponses = await storage.getAgentResponses("GOOGL");
+    const googlHasResearch = existingAgentResponses.some((r: any) => r.agentType === "RESEARCH_SYNTHESIZER");
+    const amznResponses = await storage.getAgentResponses("AMZN");
+    const amznHasResearch = amznResponses.some((r: any) => r.agentType === "RESEARCH_SYNTHESIZER");
     
-    if (existingWorkflows.length > 0 && hasGooglProposal && hasAmznProposal) {
+    const existingWorkflows = await storage.getWorkflows({ ticker: "NEE" });
+    
+    if (existingWorkflows.length > 0 && googlHasResearch && amznHasResearch) {
       const existingNeeWorkflow = existingWorkflows[0];
       const monitoringEvents = await storage.getMonitoringEvents(existingNeeWorkflow.id);
       if (monitoringEvents.length > 0) {
-        console.log("✅ Database already fully seeded (NEE + GOOGL + AMZN) - skipping");
+        console.log("✅ Database already fully seeded (NEE + GOOGL + AMZN agent responses) - skipping");
         return;
       }
     }
     
     console.log("Database needs seeding - proceeding...");
+    console.log(`  Found: NEE workflows=${existingWorkflows.length}, GOOGL research=${googlHasResearch}, AMZN research=${amznHasResearch}`);
 
     // Create demo users with different roles
     console.log("Creating demo users...");
