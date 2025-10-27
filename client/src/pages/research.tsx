@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -14,7 +14,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, Edit, Trash2, Clock, CheckCircle2, AlertCircle, TrendingUp, Bot, Loader2 } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Clock, CheckCircle2, AlertCircle, TrendingUp, Bot, Loader2, FileText } from "lucide-react";
 import { AgentPanel } from "@/components/agent-panel";
 import type { ResearchRequest } from "@shared/schema";
 
@@ -688,7 +688,22 @@ export default function Research() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {!request.proposalId && (() => {
+                      {request.proposalId ? (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          asChild
+                          data-testid={`button-view-proposal-${request.ticker}`}
+                        >
+                          <Link 
+                            href={`/proposals/${request.proposalId}`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <FileText className="h-3 w-3" />
+                            View Proposal
+                          </Link>
+                        </Button>
+                      ) : (() => {
                         const workflowStage = getWorkflowStage(request.id);
                         const isAnalysisStage = workflowStage?.currentStage === "ANALYSIS" || 
                                               workflowStage?.currentStage === "IC_PREP" ||
