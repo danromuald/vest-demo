@@ -3,12 +3,49 @@ import { ThesisHealthBadge } from "@/components/thesis-health-badge";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import type { Position } from "@shared/schema";
 
 export default function Portfolio() {
+  const [, setLocation] = useLocation();
+  
   const { data: positions = [], isLoading, isError } = useQuery<Position[]>({
     queryKey: ['/api/positions'],
   });
+
+  // Fetch workflows to show workflow stage on positions
+  const { data: workflows = [] } = useQuery<any[]>({
+    queryKey: ['/api/workflows'],
+  });
+
+  // Helper to find workflow for a position by ticker
+  const getWorkflowForPosition = (position: Position) => {
+    return workflows.find(w => w.ticker === position.ticker);
+  };
+
+  // Helper to get workflow stage label
+  const getStageLabel = (stage: string) => {
+    const labels: Record<string, string> = {
+      DISCOVERY: "Discovery",
+      ANALYSIS: "Analysis",
+      IC_MEETING: "IC Meeting",
+      EXECUTION: "Execution",
+      MONITORING: "Monitoring"
+    };
+    return labels[stage] || stage;
+  };
+
+  // Helper to get workflow stage color
+  const getStageColor = (stage: string) => {
+    switch (stage) {
+      case "DISCOVERY": return "bg-blue-500/10 text-blue-500 border-blue-500/20";
+      case "ANALYSIS": return "bg-purple-500/10 text-purple-500 border-purple-500/20";
+      case "IC_MEETING": return "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
+      case "EXECUTION": return "bg-green-500/10 text-green-500 border-green-500/20";
+      case "MONITORING": return "bg-cyan-500/10 text-cyan-500 border-cyan-500/20";
+      default: return "bg-muted/50 text-muted-foreground border-muted";
+    }
+  };
 
   if (isError) {
     return (
@@ -125,6 +162,7 @@ export default function Portfolio() {
                     <th className="pb-3 text-right">Weight</th>
                     <th className="pb-3 text-right">P&L</th>
                     <th className="pb-3 text-center">Health</th>
+                    <th className="pb-3 text-center">Workflow Stage</th>
                     <th className="pb-3 text-left">Analyst</th>
                   </tr>
                 </thead>
@@ -132,11 +170,20 @@ export default function Portfolio() {
                   {positions.map((position) => {
                     const gainLoss = parseFloat(position.gainLoss);
                     const gainLossPercent = parseFloat(position.gainLossPercent);
+                    const workflow = getWorkflowForPosition(position);
+                    const hasWorkflow = !!workflow;
+                    
                     return (
                       <tr
                         key={position.id}
-                        className="border-b border-border hover-elevate"
+                        className="border-b border-border hover-elevate cursor-pointer"
                         data-testid={`row-position-${position.ticker}`}
+                        onClick={() => {
+                          // Navigate to workflow workspace if workflow exists
+                          if (hasWorkflow) {
+                            setLocation(`/workflows/${workflow.id}`);
+                          }
+                        }}
                       >
                         <td className="py-3">
                           <span className="font-mono font-medium text-foreground">{position.ticker}</span>
@@ -183,6 +230,21 @@ export default function Portfolio() {
                           <div className="flex justify-center">
                             <ThesisHealthBadge status={position.thesisHealth as 'HEALTHY' | 'WARNING' | 'ALERT'} />
                           </div>
+                        </td>
+                        <td className="py-3 text-center">
+                          {hasWorkflow ? (
+                            <div className="flex justify-center">
+                              <Badge 
+                                variant="outline" 
+                                className={getStageColor(workflow.currentStage)}
+                                data-testid={`badge-workflow-stage-${position.ticker}`}
+                              >
+                                {getStageLabel(workflow.currentStage)}
+                              </Badge>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
                         </td>
                         <td className="py-3">
                           <p className="text-sm text-foreground">{position.analyst}</p>
