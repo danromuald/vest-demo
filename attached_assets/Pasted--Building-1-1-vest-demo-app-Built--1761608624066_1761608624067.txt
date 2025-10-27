@@ -1,0 +1,110 @@
+[+] Building 1/1
+ ✔ vest-demo-app  Built                                                                                                                                                                                                                               0.0s
+✅ Containers built!
+
+⏳ Starting services...
+[+] Running 4/4
+ ✔ Network vest-demo_default       Created                                                                                                                                                                                                            0.0s
+ ✔ Volume vest-demo_postgres_data  Created                                                                                                                                                                                                            0.0s
+ ✔ Container vest-postgres         Healthy                                                                                                                                                                                                            7.4s
+ ✔ Container vest-app              Started                                                                                                                                                                                                            7.5s
+✅ Services started!
+
+⏳ Waiting for database to be ready...
+✅ Database ready!
+
+⏳ Running database migrations...
+
+> rest-express@1.0.0 db:push
+> drizzle-kit push --force
+
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/app/drizzle.config.ts'
+Using 'pg' driver for database querying
+[⣷] Pulling schema from database...
+[✓] Pulling schema from database...
+[✓] Changes applied
+
+⏳ Seeding database with demo data...
+   (This may take 30-60 seconds - please wait...)
+📊 Using local PostgreSQL database
+🌱 Starting database seeding...
+Database needs seeding - proceeding...
+  Found: NEE workflows=0, GOOGL research=false, AMZN research=false
+Creating demo users...
+Creating companies...
+
+📊 Creating NEE workflow (MONITORING stage)...
+  Creating NEE artifacts...
+  Creating NEE IC meeting...
+  Creating NEE debate session...
+  Creating NEE position...
+  Creating NEE monitoring events...
+
+📊 Creating OXY workflow (ANALYSIS stage)...
+  Creating OXY artifacts (partial)...
+  Creating research requests...
+Creating proposals for GOOGL and AMZN...
+Linking proposals to research requests...
+Creating notifications...
+Creating agent responses for 16 AI agents...
+Creating agent responses for GOOGL and AMZN...
+Creating agent responses for CVX...
+❌ Seed failed: error: duplicate key value violates unique constraint "companies_ticker_unique"
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/app/node_modules/src/node-postgres/session.ts:104:19)
+    at async DatabaseStorage.createCompany (/app/server/storage.ts:540:23)
+    at async seed (/app/scripts/seed.ts:1863:25) {
+  length: 217,
+  severity: 'ERROR',
+  code: '23505',
+  detail: 'Key (ticker)=(NVDA) already exists.',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'companies',
+  column: undefined,
+  dataType: undefined,
+  constraint: 'companies_ticker_unique',
+  file: 'nbtinsert.c',
+  line: '664',
+  routine: '_bt_check_unique'
+}
+💥 Seed script failed: error: duplicate key value violates unique constraint "companies_ticker_unique"
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/app/node_modules/src/node-postgres/session.ts:104:19)
+    at async DatabaseStorage.createCompany (/app/server/storage.ts:540:23)
+    at async seed (/app/scripts/seed.ts:1863:25) {
+  length: 217,
+  severity: 'ERROR',
+  code: '23505',
+  detail: 'Key (ticker)=(NVDA) already exists.',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'companies',
+  column: undefined,
+  dataType: undefined,
+  constraint: 'companies_ticker_unique',
+  file: 'nbtinsert.c',
+  line: '664',
+  routine: '_bt_check_unique'
+}
+
+❌ Seeding failed (Error 0)
+
+Common fixes:
+  1. Increase Docker memory: Docker Desktop → Settings → Resources
+     Recommended: 4GB minimum, 8GB preferred
+  2. Try seeding again: make seed
+  3. Check logs: make logs
+
+The app may still work - try opening: http://localhost:5000

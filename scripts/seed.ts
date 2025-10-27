@@ -1859,15 +1859,8 @@ Occidental has successfully navigated the challenging post-Anadarko integration 
     // =====================================================================
     // WORKFLOW 4: NVDA - Technology sector, MONITORING stage
     // =====================================================================
+    // Note: NVDA company already created in companies array above
     
-    const nvdaCompany = await storage.createCompany({
-      ticker: "NVDA",
-      name: "NVIDIA Corporation",
-      sector: "Technology",
-      industry: "Semiconductors",
-      description: "NVIDIA is a leading designer of graphics processing units (GPUs) for gaming, professional visualization, data centers, and automotive markets. The company has emerged as the dominant AI infrastructure provider."
-    });
-
     const nvdaProposal = await storage.createProposal({
       ticker: "NVDA",
       companyName: "NVIDIA Corporation",
