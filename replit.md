@@ -5,6 +5,16 @@ Vest is an AI-powered investment committee workflow system designed to automate 
 
 ## Recent Changes (October 27, 2025)
 
+### Session 3: Unified Voice-Enabled Debate Rooms with Shared AI Agent Configuration
+- **Shared AI Agent Configuration**: Created centralized `client/src/lib/ai-agents.ts` with 5 specialized AI agents (Research, Quant, Risk, Compliance, Contrarian) featuring consistent icons, colors, specialties, and agent-specific voice settings (pitch/rate variations)
+- **Reusable EnhancedDebateMessage Component**: Extracted `client/src/components/EnhancedDebateMessage.tsx` for consistent message rendering across both debate room implementations with agent avatars, specialty badges, TTS playback buttons, speaking animations, and artifact attachment support
+- **Standalone Debate Room Enhancements**: Updated `/debate-room` page with shared AI agent configuration, proper schema field usage (senderRole, createdAt), WebSocket real-time updates, improved voice controls with clear testids (button-toggle-tts, button-voice-recording), and visual Recording badge
+- **IC Meeting Tab Voice Integration**: Added complete STT voice recording capability to IC Meeting tab debate room with visual indicators, transcript handling, EnhancedDebateMessage integration, WebSocket support, and Export/Advance Stage functionality
+- **Voice Feature Parity**: Both implementations now have complete TTS auto-speak (with agent-specific voices), STT recording (with Recording badge indicator), proper accessibility (aria-label, aria-pressed attributes), and consistent UX
+- **Schema Alignment**: Fixed all DebateMessage field references throughout codebase - using `senderRole` (not senderType/agentRole), `createdAt` (not timestamp), removed `stance` field usage, ensuring type safety and LSP error-free code
+- **Critical Bug Fixes**: (1) Corrected active agent detection to compare `agent.role` vs activeAgents array, (2) Fixed TTS stop function to call `stopSpeaking()` instead of undefined `stop()`, (3) Removed conflicting inline component definitions, (4) Cleaned unused imports
+- **Production Ready**: Architect-approved implementation with all critical issues resolved, proper error handling, accessible voice controls, and feature parity across both debate room contexts
+
 ### Session 2: Comprehensive Multi-Sector Portfolio & Debate Data
 - **Multi-Sector Portfolio**: Extended portfolio with NVDA (Technology sector) alongside existing Energy positions (NEE, CVX, OXY), demonstrating sector diversification ($508k Energy NEE + $660k Technology NVDA)
 - **Complete Debate Sessions**: Created 3 full debate sessions with 26 total messages across workflows:
