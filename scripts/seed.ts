@@ -1842,25 +1842,36 @@ Occidental has successfully navigated the challenging post-Anadarko integration 
     const nvdaProposal = await storage.createProposal({
       ticker: "NVDA",
       companyName: "NVIDIA Corporation",
-      proposedBy: "Sarah Chen",
-      targetPrice: 145.00,
-      currentPrice: 119.50,
-      upside: 21.3,
+      analyst: "user-analyst-1",
+      proposalType: "BUY",
+      proposedWeight: "5.50",
+      targetPrice: "145.00",
+      status: "APPROVED",
       thesis: "NVIDIA is the picks-and-shovels play on AI infrastructure. The company's CUDA software moat + H100/H200 GPU dominance creates a multi-year earnings runway. Cloud providers and enterprises are in a race to build AI compute capacity, with NVIDIA capturing 90%+ of AI accelerator TAM.",
-      catalysts: ["H200 ramp in Q4 2024", "Sovereign AI deals expanding (Middle East, Asia)", "GB200 launch in 2025", "Software revenue inflection (CUDA, Omniverse, AI Enterprise)"],
-      risks: ["AMD/Intel competition intensifying", "Customer concentration (hyperscalers)", "China export restrictions", "Gross margin compression from competitive pressure"],
-      positionSize: 5.5,
+      catalysts: [
+        "H200 ramp in Q4 2024 with supply constraints easing",
+        "Sovereign AI deals expanding (Middle East, Asia-Pacific)",
+        "GB200 Grace Blackwell platform launch in 2025 with 30x performance improvement",
+        "Software revenue inflection (CUDA ecosystem, Omniverse, AI Enterprise)"
+      ],
+      risks: [
+        "Competition: AMD MI300X and Intel Gaudi 3 gaining traction in inference workloads",
+        "Customer concentration: Top 4 hyperscalers represent 40% of revenue",
+        "Geopolitical: China export restrictions limiting TAM by ~$5B annually",
+        "Margin pressure: Competitive dynamics could compress 70%+ gross margins"
+      ],
       conviction: "HIGH",
-      horizon: "12-18 months",
-      stage: "APPROVED",
-      status: "APPROVED"
+      horizon: "12-18 months"
     });
 
     const nvdaWorkflow = await storage.createWorkflow({
-      proposalId: nvdaProposal.id,
       ticker: "NVDA",
+      companyName: "NVIDIA Corporation",
+      sector: "Technology",
       currentStage: "MONITORING",
-      status: "ACTIVE"
+      status: "ACTIVE",
+      owner: "user-analyst-1",
+      description: "AI infrastructure leader with dominant GPU market position and CUDA software moat"
     });
 
     await Promise.all([
@@ -1995,89 +2006,95 @@ Occidental has successfully navigated the challenging post-Anadarko integration 
       await storage.createDebateMessage(msg);
     }
 
-    // NVDA Position (executing)
+    // NVDA Position (active)
     const nvdaPosition = await storage.createPosition({
-      workflowId: nvdaWorkflow.id,
-      proposalId: nvdaProposal.id,
       ticker: "NVDA",
       companyName: "NVIDIA Corporation",
-      entryDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000),
+      sector: "Technology",
       shares: 5000,
-      avgEntryPrice: 119.50,
-      currentPrice: 132.00,
-      positionValue: 660000,
-      costBasis: 597500,
-      unrealizedPnL: 62500,
-      unrealizedPnLPercent: 10.5,
-      positionWeight: 5.5,
-      targetWeight: 5.5,
-      status: "ACTIVE"
+      avgCost: "119.50",
+      currentPrice: "132.00",
+      marketValue: "660000.00",
+      gainLoss: "62500.00",
+      gainLossPercent: "10.46",
+      portfolioWeight: "5.50",
+      analyst: "Sarah Chen",
+      thesisHealth: "HEALTHY",
+      purchaseDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000)
     });
 
     // NVDA Monitoring events
-    await Promise.all([
-      storage.createMonitoringEvent({
+    const nvdaMonitoringEvents = [
+      {
+        workflowId: nvdaWorkflow.id,
         positionId: nvdaPosition.id,
-        ticker: "NVDA",
-        eventType: "EARNINGS_BEAT",
-        severity: "LOW",
-        title: "Q3 Earnings Beat - Data Center Revenue +279% YoY",
-        description: "NVDA reported Q3 earnings with data center revenue of $14.5B (+279% YoY), beating estimates of $12.9B. H100 supply improving. Raised FY guidance.",
-        impact: "POSITIVE",
-        requiresAction: false,
-        createdAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000)
-      }),
-      storage.createMonitoringEvent({
+        eventType: "EARNINGS_BEAT" as const,
+        severity: "INFO" as const,
+        title: "Q3 Earnings Crush - Data Center Revenue +279% YoY",
+        description: "NVIDIA reported Q3 earnings with data center revenue of $14.5B (+279% YoY), massively beating estimates of $12.9B. Gaming and professional visualization also strong. H100 supply constraints easing. Raised FY guidance by $2B. Management commentary: 'AI infrastructure demand continues to exceed supply across all segments.'",
+        impactOnThesis: "Extremely positive - validates AI infrastructure thesis. TAM expansion faster than expected.",
+        actionRequired: false,
+        actionTaken: null
+      },
+      {
+        workflowId: nvdaWorkflow.id,
         positionId: nvdaPosition.id,
-        ticker: "NVDA",
-        eventType: "PRODUCT_LAUNCH",
-        severity: "MEDIUM",
-        title: "GB200 Grace Blackwell Platform Announced",
-        description: "NVIDIA announced GB200 combining Grace CPU + Blackwell GPU for AI inference. 30x performance improvement vs H100. Shipping Q2 2025.",
-        impact: "POSITIVE",
-        requiresAction: false,
-        createdAt: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000)
-      }),
-      storage.createMonitoringEvent({
+        eventType: "PRODUCT_ANNOUNCEMENT" as const,
+        severity: "INFO" as const,
+        title: "GB200 Grace Blackwell Platform Unveiled",
+        description: "NVIDIA announced next-generation GB200 combining Grace CPU + Blackwell GPU architecture for AI inference. Claims 30x performance improvement vs H100 with 25x lower TCO. Hyperscalers already placing pre-orders. Shipping begins Q2 2025. Analyst reactions overwhelmingly positive.",
+        impactOnThesis: "Positive - extends product roadmap advantage, should drive 2025-2026 upgrade cycle",
+        actionRequired: false,
+        actionTaken: null
+      },
+      {
+        workflowId: nvdaWorkflow.id,
         positionId: nvdaPosition.id,
-        ticker: "NVDA",
-        eventType: "COMPETITIVE_THREAT",
-        severity: "MEDIUM",
-        title: "AMD Launches MI300X Competitor",
-        description: "AMD launched MI300X GPU targeting AI inference workloads. Early benchmarks show competitive performance. Pricing 20% below H100.",
-        impact: "NEGATIVE",
-        requiresAction: true,
-        actionItems: ["Monitor customer feedback", "Assess pricing pressure", "Review market share trends"],
-        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
-      })
-    ]);
+        eventType: "COMPETITIVE_THREAT" as const,
+        severity: "WARNING" as const,
+        title: "AMD MI300X Launch - First Credible H100 Competition",
+        description: "AMD launched MI300X GPU targeting AI inference workloads. Early benchmarks from Meta show 80-90% of H100 performance on certain LLM inference tasks. Pricing reportedly 20% below H100. Microsoft Azure adding MI300X instances.",
+        impactOnThesis: "Slight negative - first credible competition but CUDA moat remains intact. Monitor market share.",
+        actionRequired: true,
+        actionTaken: "Increased monitoring cadence on customer win/loss trends and pricing dynamics"
+      }
+    ];
+
+    for (const event of nvdaMonitoringEvents) {
+      await storage.createMonitoringEvent(event);
+    }
 
     // NVDA Thesis Health
-    await storage.createThesisHealth({
+    await storage.createThesisHealthMetric({
+      workflowId: nvdaWorkflow.id,
       positionId: nvdaPosition.id,
       ticker: "NVDA",
-      overallScore: 92,
-      metrics: {
-        fundamentals: { score: 95, trend: "IMPROVING", details: "Revenue growth accelerating, margins expanding" },
-        technicals: { score: 88, trend: "STABLE", details: "Strong uptrend, above all moving averages" },
-        sentiment: { score: 90, trend: "IMPROVING", details: "Analyst upgrades, institutional buying" },
-        catalyst: { score: 95, trend: "IMPROVING", details: "H200 ramp on track, GB200 excitement building" }
+      healthStatus: "HEALTHY",
+      healthScore: 92,
+      catalystsStatus: {
+        h200Ramp: { status: "AHEAD", progress: 115, note: "Supply improving faster than expected" },
+        sovereignAI: { status: "ON_TRACK", progress: 90, note: "Middle East and APAC deals progressing" },
+        gb200Launch: { status: "ON_TRACK", progress: 80, note: "On schedule for Q2 2025" },
+        softwareRevenue: { status: "AHEAD", progress: 125, note: "CUDA ecosystem growing 300% YoY" }
       },
-      risks: {
-        competition: { status: "MONITORED", severity: "MEDIUM", note: "AMD gaining traction but CUDA moat holds" },
-        regulation: { status: "MONITORED", severity: "MEDIUM", note: "China export restrictions ongoing" },
-        valuation: { status: "ELEVATED", severity: "LOW", note: "Premium multiple but justified by growth" }
+      risksStatus: {
+        competition: { status: "MONITORED", severity: "MEDIUM", note: "AMD MI300X competitive but CUDA moat holds" },
+        chinaRestrictions: { status: "MONITORED", severity: "MEDIUM", note: "$5B annual TAM impact" },
+        marginPressure: { status: "LOW", severity: "LOW", note: "Gross margins expanding to 75%" }
       },
       keyMetrics: {
         revenueGrowth: { expected: 110.0, actual: 206.0, variance: "+87%" },
         grossMargin: { expected: 70.0, actual: 75.0, variance: "+7.1%" },
-        datacentreMix: { expected: "65%", actual: "73%", variance: "+12%" }
+        dataCenterMix: { expected: 65.0, actual: 73.0, variance: "+12%" },
+        fcfGeneration: { expected: "35B", actual: "42B", variance: "+20%" }
       },
       deviation: {
-        summary: "Thesis massively outperforming. AI infrastructure demand exceeding all expectations. Data center revenue nearly 3x estimates. CUDA moat strengthening.",
-        significant: false,
-        actionRequired: false
-      }
+        summary: "Thesis massively outperforming. AI infrastructure demand exceeding all expectations. Data center revenue nearly 3x estimates. CUDA moat strengthening. GB200 pre-orders exceeding H100 launch. No material negative deviations.",
+        majorChanges: ["Data center growth 2x faster than modeled", "Gross margins expanding vs compression fears"]
+      },
+      lastCheck: new Date(),
+      nextCheck: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      createdBy: "user-analyst-1"
     });
 
     console.log("\n✅ Seed completed successfully!");
