@@ -22,6 +22,8 @@ import {
 import { Link, useLocation } from "wouter";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { UserMenu } from "@/components/user-menu";
+import { useAuth } from "@/hooks/useAuth";
+import { getPermissions } from "@/lib/permissions";
 
 const workflowItems = [
   {
@@ -110,6 +112,64 @@ const resourceItems = [
 
 export function AppSidebar() {
   const [location] = useLocation();
+  const { user } = useAuth();
+  const permissions = getPermissions(user);
+
+  // Filter workflow items based on permissions
+  const filteredWorkflowItems = workflowItems.filter((item) => {
+    // Dashboard is always visible
+    if (item.url === "/") return true;
+    
+    // Workflow Timeline - all roles can view
+    if (item.url === "/workflow-timeline") return permissions.canViewWorkflows;
+    
+    // Research - analysts and PMs can access
+    if (item.url === "/research") return permissions.canGenerateAgentOutput;
+    
+    // Proposals - all roles can view
+    if (item.url === "/proposals") return permissions.canViewWorkflows;
+    
+    // IC Meeting - participants only (not compliance)
+    if (item.url === "/ic-meeting") return permissions.canParticipateInMeeting;
+    
+    // Portfolio - PM and Admin only
+    if (item.url === "/portfolio") return permissions.canManagePortfolio || permissions.canViewPortfolio;
+    
+    // Monitoring - all roles
+    if (item.url === "/monitoring") return true;
+    
+    return true;
+  });
+
+  // Filter Pre-Work agents based on role
+  const filteredPreWorkAgents = preWorkAgents.filter(() => {
+    // Analysts, PM, and Admin can see research agents
+    // Compliance cannot generate research
+    return permissions.canGenerateAgentOutput;
+  });
+
+  // Filter IC & Execution agents based on role
+  const filteredMeetingAgents = meetingAgents.filter(() => {
+    return permissions.canParticipateInMeeting;
+  });
+
+  const filteredExecutionAgents = executionAgents.filter((item) => {
+    // Compliance Reports and Risk Reports - all can view
+    if (item.url === "/compliance-reports") return permissions.canViewComplianceReports;
+    if (item.url === "/risk-reports") return permissions.canViewComplianceReports;
+    
+    // Meeting Minutes - all can view
+    if (item.url === "/meeting-minutes") return true;
+    
+    // Trade Orders - only PM, Compliance, and Admin
+    if (item.url === "/trade-orders") return permissions.canApproveTrades || permissions.canExecuteTrades;
+    
+    return true;
+  });
+
+  // Filter monitoring agents - all roles can view
+  const filteredMonitoringAgents = monitoringAgents;
+  const filteredSupportingAgents = supportingAgents;
 
   return (
     <Sidebar>
@@ -129,7 +189,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Workflow</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {workflowItems.map((item) => (
+              {filteredWorkflowItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
@@ -151,95 +211,101 @@ export function AppSidebar() {
           <SidebarGroupLabel>AI Agents</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <Collapsible defaultOpen={false} className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton data-testid="toggle-prework-agents">
-                      <Brain className="h-4 w-4" />
-                      <span>Pre-Work Agents</span>
-                      <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {preWorkAgents.map((item) => (
-                        <SidebarMenuSubItem key={item.title}>
-                          <SidebarMenuSubButton
-                            asChild
-                            isActive={location === item.url}
-                            data-testid={`link-${item.title.toLowerCase().replace(/ /g, '-')}`}
-                          >
-                            <Link href={item.url}>
-                              <item.icon className="h-3.5 w-3.5" />
-                              <span className="text-xs">{item.title}</span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
+              {filteredPreWorkAgents.length > 0 && (
+                <Collapsible defaultOpen={false} className="group/collapsible">
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton data-testid="toggle-prework-agents">
+                        <Brain className="h-4 w-4" />
+                        <span>Pre-Work Agents</span>
+                        <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {filteredPreWorkAgents.map((item) => (
+                          <SidebarMenuSubItem key={item.title}>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={location === item.url}
+                              data-testid={`link-${item.title.toLowerCase().replace(/ /g, '-')}`}
+                            >
+                              <Link href={item.url}>
+                                <item.icon className="h-3.5 w-3.5" />
+                                <span className="text-xs">{item.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
+              )}
 
-              <Collapsible defaultOpen={false} className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton data-testid="toggle-ic-execution-agents">
-                      <Users className="h-4 w-4" />
-                      <span>IC & Execution</span>
-                      <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {[...meetingAgents, ...executionAgents].map((item) => (
-                        <SidebarMenuSubItem key={item.title}>
-                          <SidebarMenuSubButton
-                            asChild
-                            isActive={location === item.url}
-                            data-testid={`link-${item.title.toLowerCase().replace(/ /g, '-')}`}
-                          >
-                            <Link href={item.url}>
-                              <item.icon className="h-3.5 w-3.5" />
-                              <span className="text-xs">{item.title}</span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
+              {(filteredMeetingAgents.length > 0 || filteredExecutionAgents.length > 0) && (
+                <Collapsible defaultOpen={false} className="group/collapsible">
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton data-testid="toggle-ic-execution-agents">
+                        <Users className="h-4 w-4" />
+                        <span>IC & Execution</span>
+                        <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {[...filteredMeetingAgents, ...filteredExecutionAgents].map((item) => (
+                          <SidebarMenuSubItem key={item.title}>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={location === item.url}
+                              data-testid={`link-${item.title.toLowerCase().replace(/ /g, '-')}`}
+                            >
+                              <Link href={item.url}>
+                                <item.icon className="h-3.5 w-3.5" />
+                                <span className="text-xs">{item.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
+              )}
 
-              <Collapsible defaultOpen={false} className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton data-testid="toggle-monitoring-agents">
-                      <Activity className="h-4 w-4" />
-                      <span>Monitoring & Analytics</span>
-                      <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {[...monitoringAgents, ...supportingAgents].map((item) => (
-                        <SidebarMenuSubItem key={item.title}>
-                          <SidebarMenuSubButton
-                            asChild
-                            isActive={location === item.url}
-                            data-testid={`link-${item.title.toLowerCase().replace(/ /g, '-')}`}
-                          >
-                            <Link href={item.url}>
-                              <item.icon className="h-3.5 w-3.5" />
-                              <span className="text-xs">{item.title}</span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
+              {(filteredMonitoringAgents.length > 0 || filteredSupportingAgents.length > 0) && (
+                <Collapsible defaultOpen={false} className="group/collapsible">
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton data-testid="toggle-monitoring-agents">
+                        <Activity className="h-4 w-4" />
+                        <span>Monitoring & Analytics</span>
+                        <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {[...filteredMonitoringAgents, ...filteredSupportingAgents].map((item) => (
+                          <SidebarMenuSubItem key={item.title}>
+                            <SidebarMenuSubButton
+                              asChild
+                              isActive={location === item.url}
+                              data-testid={`link-${item.title.toLowerCase().replace(/ /g, '-')}`}
+                            >
+                              <Link href={item.url}>
+                                <item.icon className="h-3.5 w-3.5" />
+                                <span className="text-xs">{item.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

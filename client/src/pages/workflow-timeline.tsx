@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2, Clock, AlertCircle, FileText, Users, TrendingUp, Target, Activity } from "lucide-react";
 import { Link } from "wouter";
-import type { WorkflowStageRecord, ResearchRequest, Proposal, ICMeeting, Position } from "@shared/schema";
+import type { Workflow } from "@shared/schema";
 
 interface StageData {
   name: string;
@@ -12,73 +12,16 @@ interface StageData {
   icon: React.ComponentType<any>;
   description: string;
   color: string;
-  entities: {
-    research?: ResearchRequest[];
-    proposals?: Proposal[];
-    meetings?: ICMeeting[];
-    positions?: Position[];
-  };
+  workflows: Workflow[];
 }
 
 export default function WorkflowTimeline() {
-  const { data: workflowStages } = useQuery<WorkflowStageRecord[]>({
-    queryKey: ["/api/workflow-stages"],
+  // Fetch all workflows
+  const { data: workflows = [], isLoading } = useQuery<Workflow[]>({
+    queryKey: ["/api/workflows"],
   });
 
-  const { data: researchRequests } = useQuery<ResearchRequest[]>({
-    queryKey: ["/api/research-requests"],
-  });
-
-  const { data: proposals } = useQuery<Proposal[]>({
-    queryKey: ["/api/proposals"],
-  });
-
-  const { data: icMeetings } = useQuery<ICMeeting[]>({
-    queryKey: ["/api/ic-meetings"],
-  });
-
-  const { data: positions } = useQuery<Position[]>({
-    queryKey: ["/api/positions"],
-  });
-
-  const getEntitiesAtStage = (stageName: string): StageData["entities"] => {
-    const stagesAtThisStage = workflowStages?.filter(s => s.currentStage === stageName) || [];
-    const entityIds = stagesAtThisStage.map(s => s.entityId);
-
-    const result: StageData["entities"] = {};
-
-    switch (stageName) {
-      case "DISCOVERY":
-      case "ANALYSIS":
-        result.research = researchRequests?.filter(r => 
-          stagesAtThisStage.some(s => s.entityType === "RESEARCH" && s.entityId === r.id)
-        );
-        break;
-      case "IC_MEETING":
-        result.proposals = proposals?.filter(p => 
-          stagesAtThisStage.some(s => s.entityType === "PROPOSAL" && s.entityId === p.id)
-        );
-        result.meetings = icMeetings?.filter(m => 
-          stagesAtThisStage.some(s => s.entityType === "MEETING" && s.entityId === m.id)
-        );
-        break;
-      case "EXECUTION":
-        result.proposals = proposals?.filter(p => 
-          p.status === "APPROVED" && 
-          stagesAtThisStage.some(s => s.entityType === "PROPOSAL" && s.entityId === p.id)
-        );
-        break;
-      case "MONITORING":
-        result.positions = positions?.filter(p => 
-          stagesAtThisStage.some(s => s.entityType === "POSITION" && s.entityId === p.id)
-        );
-        break;
-    }
-
-    return result;
-  };
-
-  const stages: Omit<StageData, "entities">[] = [
+  const stages: Omit<StageData, "workflows">[] = [
     {
       name: "Discovery",
       stage: "DISCOVERY",
@@ -116,24 +59,16 @@ export default function WorkflowTimeline() {
     },
   ];
 
+  // Group workflows by current stage
   const stagesWithData: StageData[] = stages.map(stage => ({
     ...stage,
-    entities: getEntitiesAtStage(stage.stage),
+    workflows: workflows.filter(w => w.currentStage === stage.stage),
   }));
 
-  const getTotalEntitiesCount = (entities: StageData["entities"]): number => {
-    return (
-      (entities.research?.length || 0) +
-      (entities.proposals?.length || 0) +
-      (entities.meetings?.length || 0) +
-      (entities.positions?.length || 0)
-    );
-  };
-
   const getStageStatus = (stage: StageData) => {
-    const count = getTotalEntitiesCount(stage.entities);
+    const count = stage.workflows.length;
     if (count === 0) return { icon: Clock, text: "Empty", variant: "outline" as const };
-    if (count >= 3) return { icon: AlertCircle, text: "Active", variant: "default" as const };
+    if (count >= 2) return { icon: AlertCircle, text: "Active", variant: "default" as const };
     return { icon: CheckCircle2, text: "In Progress", variant: "secondary" as const };
   };
 
@@ -152,12 +87,14 @@ export default function WorkflowTimeline() {
       <Card>
         <CardHeader>
           <CardTitle>Workflow Overview</CardTitle>
-          <CardDescription>Current pipeline status across all stages</CardDescription>
+          <CardDescription>
+            {workflows.length} active {workflows.length === 1 ? 'workflow' : 'workflows'} across all stages
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2 flex-wrap">
             {stagesWithData.map((stage, index) => {
-              const count = getTotalEntitiesCount(stage.entities);
+              const count = stage.workflows.length;
               return (
                 <div key={stage.stage} className="flex items-center gap-2">
                   <div className="flex items-center gap-2">
@@ -182,7 +119,7 @@ export default function WorkflowTimeline() {
           const Icon = stage.icon;
           const status = getStageStatus(stage);
           const StatusIcon = status.icon;
-          const count = getTotalEntitiesCount(stage.entities);
+          const count = stage.workflows.length;
 
           return (
             <Card key={stage.stage} className="hover-elevate" data-testid={`card-stage-${stage.stage}`}>
@@ -202,151 +139,38 @@ export default function WorkflowTimeline() {
               <CardContent className="space-y-4">
                 {/* Count Summary */}
                 <div className="flex items-center justify-between p-3 rounded-md bg-muted/50">
-                  <span className="text-sm text-muted-foreground">Total Entities</span>
+                  <span className="text-sm text-muted-foreground">Active Workflows</span>
                   <span className="text-2xl font-semibold text-foreground">{count}</span>
                 </div>
 
-                {/* Entity Lists */}
+                {/* Workflows at this stage */}
                 <div className="space-y-3">
-                  {/* Research Requests */}
-                  {stage.entities.research && stage.entities.research.length > 0 && (
+                  {stage.workflows.length > 0 ? (
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-muted-foreground">Research Requests</span>
-                        <Badge variant="outline" className="text-xs">{stage.entities.research.length}</Badge>
-                      </div>
-                      <div className="space-y-1">
-                        {stage.entities.research.slice(0, 3).map((r) => (
+                      {stage.workflows.map((workflow) => (
+                        <Link key={workflow.id} href={`/workflows/${workflow.id}`}>
                           <div
-                            key={r.id}
-                            className="text-xs p-2 rounded border flex items-center justify-between"
-                            data-testid={`research-${r.ticker}`}
+                            className="text-xs p-3 rounded border flex items-center justify-between hover-elevate cursor-pointer"
+                            data-testid={`workflow-${workflow.ticker}`}
                           >
-                            <span className="font-mono font-semibold">{r.ticker}</span>
-                            <Badge variant="outline" className="text-xs">{r.status}</Badge>
+                            <div className="flex-1">
+                              <div className="font-mono font-semibold text-sm">{workflow.ticker}</div>
+                              <div className="text-muted-foreground mt-0.5">{workflow.companyName}</div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="text-xs">{workflow.sector}</Badge>
+                              <Badge variant={workflow.status === "ACTIVE" ? "default" : "secondary"} className="text-xs">
+                                {workflow.status}
+                              </Badge>
+                            </div>
                           </div>
-                        ))}
-                        {stage.entities.research.length > 3 && (
-                          <p className="text-xs text-muted-foreground pl-2">
-                            +{stage.entities.research.length - 3} more
-                          </p>
-                        )}
-                      </div>
+                        </Link>
+                      ))}
                     </div>
-                  )}
-
-                  {/* Proposals */}
-                  {stage.entities.proposals && stage.entities.proposals.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-muted-foreground">Proposals</span>
-                        <Badge variant="outline" className="text-xs">{stage.entities.proposals.length}</Badge>
-                      </div>
-                      <div className="space-y-1">
-                        {stage.entities.proposals.slice(0, 3).map((p) => (
-                          <div
-                            key={p.id}
-                            className="text-xs p-2 rounded border flex items-center justify-between"
-                            data-testid={`proposal-${p.ticker}`}
-                          >
-                            <span className="font-mono font-semibold">{p.ticker}</span>
-                            <Badge variant="outline" className="text-xs">{p.proposalType}</Badge>
-                          </div>
-                        ))}
-                        {stage.entities.proposals.length > 3 && (
-                          <p className="text-xs text-muted-foreground pl-2">
-                            +{stage.entities.proposals.length - 3} more
-                          </p>
-                        )}
-                      </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-sm text-muted-foreground">No workflows at this stage</p>
                     </div>
-                  )}
-
-                  {/* IC Meetings */}
-                  {stage.entities.meetings && stage.entities.meetings.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-muted-foreground">IC Meetings</span>
-                        <Badge variant="outline" className="text-xs">{stage.entities.meetings.length}</Badge>
-                      </div>
-                      <div className="space-y-1">
-                        {stage.entities.meetings.slice(0, 3).map((m) => (
-                          <div
-                            key={m.id}
-                            className="text-xs p-2 rounded border flex items-center justify-between"
-                            data-testid={`meeting-${m.id}`}
-                          >
-                            <span>{new Date(m.meetingDate).toLocaleDateString()}</span>
-                            <Badge variant="outline" className="text-xs">{m.status}</Badge>
-                          </div>
-                        ))}
-                        {stage.entities.meetings.length > 3 && (
-                          <p className="text-xs text-muted-foreground pl-2">
-                            +{stage.entities.meetings.length - 3} more
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Positions */}
-                  {stage.entities.positions && stage.entities.positions.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-muted-foreground">Active Positions</span>
-                        <Badge variant="outline" className="text-xs">{stage.entities.positions.length}</Badge>
-                      </div>
-                      <div className="space-y-1">
-                        {stage.entities.positions.slice(0, 3).map((p) => (
-                          <div
-                            key={p.id}
-                            className="text-xs p-2 rounded border flex items-center justify-between"
-                            data-testid={`position-${p.ticker}`}
-                          >
-                            <span className="font-mono font-semibold">{p.ticker}</span>
-                            <Badge variant="outline" className="text-xs">
-                              {p.portfolioWeight}%
-                            </Badge>
-                          </div>
-                        ))}
-                        {stage.entities.positions.length > 3 && (
-                          <p className="text-xs text-muted-foreground pl-2">
-                            +{stage.entities.positions.length - 3} more
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {count === 0 && (
-                    <div className="text-center py-4">
-                      <p className="text-sm text-muted-foreground">No entities at this stage</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="pt-2 border-t">
-                  {stage.stage === "DISCOVERY" && (
-                    <Link href="/research">
-                      <Button variant="outline" size="sm" className="w-full" data-testid="button-goto-research">
-                        View Research Pipeline
-                      </Button>
-                    </Link>
-                  )}
-                  {stage.stage === "IC_MEETING" && (
-                    <Link href="/ic-meeting">
-                      <Button variant="outline" size="sm" className="w-full" data-testid="button-goto-ic">
-                        View IC Meeting
-                      </Button>
-                    </Link>
-                  )}
-                  {stage.stage === "MONITORING" && (
-                    <Link href="/monitoring-hub">
-                      <Button variant="outline" size="sm" className="w-full" data-testid="button-goto-monitoring">
-                        View Monitoring Hub
-                      </Button>
-                    </Link>
                   )}
                 </div>
               </CardContent>

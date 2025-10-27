@@ -9,6 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { ThesisHealthBadge } from "@/components/thesis-health-badge";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { getPermissions } from "@/lib/permissions";
 import { 
   TrendingUp, 
   Calendar, 
@@ -761,6 +763,8 @@ function AnalysisSection({
 
 // IC Meeting Tab - Real-time collaborative meeting room
 function ICMeetingTab({ workflowId }: { workflowId: string }) {
+  const { user } = useAuth();
+  const permissions = getPermissions(user);
   const [selectedVote, setSelectedVote] = useState<"APPROVE" | "REJECT" | "ABSTAIN" | null>(null);
   const [debateMessage, setDebateMessage] = useState("");
 
@@ -772,11 +776,30 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
 
   const activeMeeting = meetings?.find(m => m.status === "IN_PROGRESS") || meetings?.[0];
 
-  // Mock vote data (would come from WebSocket in production)
-  const mockVotes = {
-    APPROVE: 3,
-    REJECT: 1,
-    ABSTAIN: 0
+  // Fetch debate messages for the active meeting
+  const { data: debateMessages = [], isLoading: messagesLoading } = useQuery<any[]>({
+    queryKey: [`/api/ic-meetings`, activeMeeting?.id, "debate-messages"],
+    queryFn: () => fetch(`/api/ic-meetings/${activeMeeting?.id}/debate-messages`).then(res => res.json()),
+    enabled: !!activeMeeting?.id,
+  });
+
+  // Fetch votes for the active meeting
+  const { data: votes = [], isLoading: votesLoading } = useQuery<any[]>({
+    queryKey: [`/api/ic-meetings`, activeMeeting?.id, "votes"],
+    queryFn: () => fetch(`/api/ic-meetings/${activeMeeting?.id}/votes`).then(res => res.json()),
+    enabled: !!activeMeeting?.id,
+  });
+
+  // Calculate vote tallies from real data
+  const votesByType = votes.reduce((acc, vote) => {
+    acc[vote.vote] = (acc[vote.vote] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const voteTally = {
+    APPROVE: votesByType.APPROVE || 0,
+    REJECT: votesByType.REJECT || 0,
+    ABSTAIN: votesByType.ABSTAIN || 0,
   };
 
   return (
@@ -921,35 +944,48 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
         <CardHeader>
           <CardTitle>Committee Vote</CardTitle>
           <CardDescription>
-            Cast your vote and view committee consensus
+            {permissions.canVoteInMeeting 
+              ? "Cast your vote and view committee consensus"
+              : "View committee vote results (voting restricted to PM and Admin roles)"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {!permissions.canVoteInMeeting && (
+            <div className="p-3 rounded-md bg-muted border border-muted-foreground/20 mb-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Shield className="h-4 w-4" />
+                <span>Your role ({user?.role}) can participate in discussions but cannot vote. Only Portfolio Managers and Administrators can vote.</span>
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-3 gap-4">
             <Button
               variant={selectedVote === "APPROVE" ? "default" : "outline"}
               className={selectedVote === "APPROVE" ? "bg-green-600 hover:bg-green-700" : ""}
               onClick={() => setSelectedVote("APPROVE")}
+              disabled={!permissions.canVoteInMeeting}
               data-testid="button-vote-approve"
             >
               <CheckCircle2 className="h-4 w-4 mr-2" />
-              Approve ({mockVotes.APPROVE})
+              Approve ({voteTally.APPROVE})
             </Button>
             <Button
               variant={selectedVote === "REJECT" ? "default" : "outline"}
               className={selectedVote === "REJECT" ? "bg-red-600 hover:bg-red-700" : ""}
               onClick={() => setSelectedVote("REJECT")}
+              disabled={!permissions.canVoteInMeeting}
               data-testid="button-vote-reject"
             >
               <AlertCircle className="h-4 w-4 mr-2" />
-              Reject ({mockVotes.REJECT})
+              Reject ({voteTally.REJECT})
             </Button>
             <Button
               variant={selectedVote === "ABSTAIN" ? "default" : "outline"}
               onClick={() => setSelectedVote("ABSTAIN")}
+              disabled={!permissions.canVoteInMeeting}
               data-testid="button-vote-abstain"
             >
-              Abstain ({mockVotes.ABSTAIN})
+              Abstain ({voteTally.ABSTAIN})
             </Button>
           </div>
 
@@ -957,17 +993,17 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
           <div className="p-4 rounded-md bg-muted">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium">Vote Tally</span>
-              <span className="text-sm text-muted-foreground">4 of 5 members voted</span>
+              <span className="text-sm text-muted-foreground">{votes.length} members voted</span>
             </div>
             <div className="flex gap-2">
               <div className="flex-1 h-8 rounded bg-green-600 flex items-center justify-center text-white text-sm font-medium">
-                {mockVotes.APPROVE}
+                {voteTally.APPROVE}
               </div>
               <div className="flex-1 h-8 rounded bg-red-600 flex items-center justify-center text-white text-sm font-medium">
-                {mockVotes.REJECT}
+                {voteTally.REJECT}
               </div>
               <div className="flex-1 h-8 rounded bg-muted-foreground flex items-center justify-center text-white text-sm font-medium">
-                {mockVotes.ABSTAIN}
+                {voteTally.ABSTAIN}
               </div>
             </div>
           </div>
@@ -983,26 +1019,44 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Mock Debate Messages */}
+          {/* Real Debate Messages */}
           <div className="space-y-3 max-h-96 overflow-y-auto">
-            <DebateMessage
-              author="Sarah Chen (PM)"
-              timestamp="2 min ago"
-              message="The customer concentration risk is valid, but worth noting they have multi-year contracts with committed capacity. Sticky relationships."
-              type="comment"
-            />
-            <DebateMessage
-              author="AI Analyst"
-              timestamp="1 min ago"
-              message="Counter-point: Those same contracts could become liabilities if demand softens. Historical precedent shows hardware cycles can turn quickly."
-              type="ai"
-            />
-            <DebateMessage
-              author="Mike Rodriguez (Analyst)"
-              timestamp="30 sec ago"
-              message="Agree with PM. Also, their software moat is underappreciated - CUDA ecosystem creates significant switching costs."
-              type="comment"
-            />
+            {messagesLoading ? (
+              <div className="text-center py-4 text-muted-foreground text-sm">
+                Loading discussion...
+              </div>
+            ) : debateMessages.length > 0 ? (
+              debateMessages.map((msg: any, index: number) => {
+                // Format timestamp
+                const timestamp = msg.createdAt 
+                  ? new Date(msg.createdAt).toLocaleString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric', 
+                      hour: 'numeric', 
+                      minute: '2-digit' 
+                    })
+                  : 'Just now';
+                
+                // Determine if this is an AI agent message
+                const isAI = msg.senderRole?.includes('AGENT') || msg.senderRole === 'BULL_AGENT' || msg.senderRole === 'BEAR_AGENT';
+                
+                return (
+                  <DebateMessage
+                    key={msg.id || index}
+                    author={`${msg.senderName} ${!isAI ? `(${msg.senderRole})` : ''}`}
+                    timestamp={timestamp}
+                    message={msg.content}
+                    type={isAI ? "ai" : "comment"}
+                  />
+                );
+              })
+            ) : (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No discussion yet</p>
+                <p className="text-xs mt-1">Start the conversation below</p>
+              </div>
+            )}
           </div>
 
           {/* Message Input */}

@@ -56,6 +56,34 @@ function parseCookies(cookieHeader: string): Record<string, string> {
   return cookies;
 }
 
+// Server-side role-based authorization helper
+type UserRole = "ANALYST" | "PM" | "COMPLIANCE" | "ADMIN";
+
+interface RoleCheck {
+  canVote: boolean;
+  canManageWorkflow: boolean;
+  canApproveTrades: boolean;
+}
+
+function getRolePermissions(role: UserRole): RoleCheck {
+  const permissions: Record<UserRole, RoleCheck> = {
+    ANALYST: { canVote: false, canManageWorkflow: false, canApproveTrades: false },
+    PM: { canVote: true, canManageWorkflow: true, canApproveTrades: true },
+    COMPLIANCE: { canVote: false, canManageWorkflow: false, canApproveTrades: true },
+    ADMIN: { canVote: true, canManageWorkflow: true, canApproveTrades: true },
+  };
+  return permissions[role] || permissions.ANALYST;
+}
+
+async function getUserRole(userId: string): Promise<UserRole> {
+  try {
+    const user = await storage.getUser(userId);
+    return (user?.role as UserRole) || "ANALYST";
+  } catch {
+    return "ANALYST";
+  }
+}
+
 // Validate WebSocket session against express-session store
 // This prevents identity spoofing by verifying the session from the HTTP handshake
 async function validateWebSocketSession(
@@ -479,8 +507,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/votes", async (req, res) => {
+  app.post("/api/votes", async (req: any, res) => {
     try {
+      let userId: string;
+      
+      // In development mode, always use mock user
+      if (process.env.NODE_ENV === 'development') {
+        userId = 'user-demo-1';
+      } else {
+        // In production, require authenticated session
+        if (!req.user || !req.session) {
+          res.status(401).json({ error: "Unauthorized - authentication required" });
+          return;
+        }
+        userId = req.user.claims?.sub || req.user.id;
+        if (!userId) {
+          res.status(401).json({ error: "Unauthorized - invalid session" });
+          return;
+        }
+      }
+
+      // Verify user exists in database
+      const user = await storage.getUser(userId);
+      if (!user) {
+        res.status(401).json({ error: "Unauthorized - user not found" });
+        return;
+      }
+
+      // Check if user has permission to vote
+      const userRole = (user.role || 'ANALYST') as UserRole;
+      const permissions = getRolePermissions(userRole);
+      
+      if (!permissions.canVote) {
+        res.status(403).json({ 
+          error: "Forbidden - your role does not have voting permissions. Only PM and Admin roles can vote.",
+          role: userRole
+        });
+        return;
+      }
+
       const validated = insertVoteSchema.parse(req.body);
       const vote = await storage.createVote(validated);
       res.json(vote);
