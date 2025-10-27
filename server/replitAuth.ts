@@ -73,10 +73,22 @@ async function upsertUser(
 }
 
 export async function setupAuth(app: Express) {
-  // Skip auth setup if required env vars are missing (development mode)
-  if (!process.env.REPLIT_DOMAINS || !process.env.REPL_ID) {
+  // Skip auth setup in development mode
+  if (process.env.NODE_ENV === 'development') {
     console.warn("🔓 Running without authentication - Development mode");
     // Add development-only routes for testing
+    app.get("/api/login", (_req, res) => {
+      res.redirect("/");
+    });
+    app.get("/api/logout", (_req, res) => {
+      res.redirect("/");
+    });
+    return;
+  }
+
+  // Skip auth setup if required env vars are missing
+  if (!process.env.REPLIT_DOMAINS || !process.env.REPL_ID) {
+    console.warn("⚠️  Missing REPLIT_DOMAINS or REPL_ID - Auth disabled");
     app.get("/api/login", (_req, res) => {
       res.redirect("/");
     });
@@ -147,6 +159,19 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
+  // Development mode: bypass authentication and use demo user
+  if (process.env.NODE_ENV === 'development') {
+    // Set mock user in request
+    (req as any).user = {
+      id: 'user-demo-1',
+      email: 'dan@example.io',
+      firstName: 'Dan',
+      lastName: 'Mbanga',
+      role: 'ANALYST',
+    };
+    return next();
+  }
+
   const user = req.user as any;
 
   if (!req.isAuthenticated() || !user.expires_at) {

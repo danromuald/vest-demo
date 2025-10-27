@@ -35,19 +35,21 @@ The application will be available at: **http://localhost:5000**
 
 Open your browser and navigate to http://localhost:5000
 
-Click **"Enter Demo"** to sign in without credentials.
+The app automatically signs you in as **Dan Mbanga** (dan@example.io) in development mode - no login required!
 
 ## What's Included
 
 The Docker setup automatically creates:
 - ✅ PostgreSQL 15 database
-- ✅ Demo user account
-- ✅ 5 sample companies (TSLA, GOOGL, NVDA, MSFT, AAPL)
-- ✅ 2 active portfolio positions
-- ✅ 2 investment proposals
-- ✅ Sample IC meeting
-- ✅ Research requests and notifications
-- ✅ Agent responses (Research Brief, DCF Model, Risk Analysis)
+- ✅ Demo user account (Dan Mbanga - dan@example.io)
+- ✅ Complete NVDA workflow from Discovery → Monitoring
+  - 5 workflow stages (Discovery, Analysis, IC Meeting, Execution, Monitoring)
+  - 4 research artifacts (Research Brief, Financial Model, Risk Analysis, Thesis)
+  - IC Meeting with 3 APPROVE votes and debate messages
+  - Active position (5000 NVDA shares @ $119.50)
+  - 3 monitoring events and thesis health metrics
+- ✅ Sample companies (TSLA, GOOGL, NVDA)
+- ✅ Notifications and agent responses
 
 ## Useful Commands
 
@@ -155,10 +157,16 @@ The application will be available at: **http://localhost:5000**
 
 ### No Authentication Required
 
-In local development, the app runs without real authentication. You can:
-- Click "Enter Demo" to instantly access the platform
+In local development, the app runs without real authentication. You are automatically signed in as:
+- **Name**: Dan Mbanga
+- **Email**: dan@example.io
+- **Role**: Analyst (can be changed via user menu)
+
+You can:
+- Access the platform immediately without login
 - Switch between roles (Analyst, PM, Compliance, Admin) using the user menu
 - Test all features without credential requirements
+- No PII (Personally Identifiable Information) is exposed
 
 ### Hot Reload
 

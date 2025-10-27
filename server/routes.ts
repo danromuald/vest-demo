@@ -63,11 +63,11 @@ async function validateWebSocketSession(
   sessionMiddleware: any
 ): Promise<{ userId: string, email: string } | null> {
   // Development mode: Accept any connection if auth is disabled
-  if (!process.env.REPLIT_DOMAINS || !process.env.REPL_ID) {
+  if (process.env.NODE_ENV === 'development') {
     console.log("[WebSocket Auth] Development mode - using mock user");
     return {
-      userId: 'dev-user-1',
-      email: 'demo@vest.com',
+      userId: 'user-demo-1',
+      email: 'dan@example.io',
     };
   }
 
@@ -136,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       // In development mode, just redirect and let /api/auth/user handle user creation
-      if (!process.env.REPLIT_DOMAINS || !process.env.REPL_ID) {
+      if (process.env.NODE_ENV === 'development') {
         console.log("Development mode - redirecting to app");
         res.redirect('/');
         return;
@@ -154,12 +154,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user', async (req: any, res) => {
     // Development mode: return mock user if auth not configured
-    if (!process.env.REPLIT_DOMAINS || !process.env.REPL_ID) {
+    if (process.env.NODE_ENV === 'development') {
       const mockUser = {
-        id: "dev-user-1",
-        email: "demo@vest.com",
-        firstName: "Demo",
-        lastName: "User",
+        id: "user-demo-1",
+        email: "dan@example.io",
+        firstName: "Dan",
+        lastName: "Mbanga",
         profileImageUrl: null,
         role: "ANALYST",
         createdAt: new Date(),
@@ -174,9 +174,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Production: use real auth
     return isAuthenticated(req, res, async () => {
       try {
-        const userId = req.user.claims.sub;
-        const user = await storage.getUser(userId);
-        res.json(user);
+        const user = req.user as any;
+        const userId = user.claims?.sub || user.id;
+        const dbUser = await storage.getUser(userId);
+        res.json(dbUser);
       } catch (error) {
         console.error("Error fetching user:", error);
         res.status(500).json({ message: "Failed to fetch user" });
@@ -186,7 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/auth/user/role', async (req: any, res) => {
     // Development mode: allow role changes without auth
-    if (!process.env.REPLIT_DOMAINS || !process.env.REPL_ID) {
+    if (process.env.NODE_ENV === 'development') {
       const { role } = req.body;
       
       if (!['ANALYST', 'PM', 'COMPLIANCE', 'ADMIN'].includes(role)) {
@@ -195,7 +196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       try {
-        const user = await storage.updateUserRole("dev-user-1", role);
+        const user = await storage.updateUserRole("user-demo-1", role);
         return res.json(user);
       } catch (error) {
         console.error("Error updating role:", error);
@@ -206,7 +207,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Production: use real auth
     return isAuthenticated(req, res, async () => {
       try {
-        const userId = req.user.claims.sub;
+        const user = req.user as any;
+        const userId = user.claims?.sub || user.id;
         const { role } = req.body;
         
         if (!['ANALYST', 'PM', 'COMPLIANCE', 'ADMIN'].includes(role)) {
@@ -214,8 +216,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
 
-        const user = await storage.updateUserRole(userId, role);
-        res.json(user);
+        const updatedUser = await storage.updateUserRole(userId, role);
+        res.json(updatedUser);
       } catch (error) {
         console.error("Error updating user role:", error);
         res.status(500).json({ message: "Failed to update role" });
