@@ -92,8 +92,8 @@ export default function ICMeeting() {
     return workflows.find(w => w.id === meeting.workflowId);
   };
 
-  // Filter proposals that are PENDING and ready for IC review
-  const pendingProposals = allProposals.filter(p => p.status === 'PENDING' && !p.icMeetingId);
+  // Show all existing proposals that haven't been assigned to a meeting yet
+  const availableProposals = allProposals.filter(p => !p.icMeetingId);
 
   // Get proposals for active meeting
   const activeMeeting = meetings.find(m => m.status === 'SCHEDULED' || m.status === 'IN_PROGRESS');
@@ -458,12 +458,12 @@ export default function ICMeeting() {
               <div>
                 <Label>Select Proposals for Review ({selectedProposalIds.length} selected)</Label>
                 <div className="mt-2 space-y-2 max-h-64 overflow-y-auto border rounded-md p-3">
-                  {pendingProposals.length === 0 ? (
+                  {availableProposals.length === 0 ? (
                     <p className="text-sm text-muted-foreground py-4 text-center">
-                      No pending proposals available. Create proposals first.
+                      No proposals available. Create proposals first.
                     </p>
                   ) : (
-                    pendingProposals.map((proposal) => (
+                    availableProposals.map((proposal) => (
                       <div key={proposal.id} className="flex items-center space-x-2">
                         <Checkbox
                           id={`proposal-${proposal.id}`}
