@@ -82,6 +82,16 @@ export default function ICMeeting() {
     queryKey: ['/api/workflow-stages'],
   });
 
+  // Fetch workflows to enable navigation to workflow IC Meeting tab
+  const { data: workflows = [] } = useQuery<any[]>({
+    queryKey: ['/api/workflows'],
+  });
+
+  // Helper to find workflow for a meeting
+  const getWorkflowForMeeting = (meeting: ICMeetingType) => {
+    return workflows.find(w => w.id === meeting.workflowId);
+  };
+
   // Filter proposals that are PENDING and ready for IC review
   const pendingProposals = allProposals.filter(p => p.status === 'PENDING' && !p.icMeetingId);
 
@@ -532,6 +542,8 @@ export default function ICMeeting() {
                 };
                 
                 const isActiveMeeting = activeMeeting?.id === meeting.id;
+                const workflow = getWorkflowForMeeting(meeting);
+                const hasWorkflow = !!workflow;
                 
                 return (
                   <div
@@ -575,6 +587,18 @@ export default function ICMeeting() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
+                      {hasWorkflow && (
+                        <Link href={`/workflows/${workflow.id}`}>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            data-testid={`button-open-workflow-${meeting.id}`}
+                          >
+                            <ChevronRight className="h-4 w-4 mr-2" />
+                            Open in Workflow
+                          </Button>
+                        </Link>
+                      )}
                       <Link href={`/ic-meeting/${meeting.id}`}>
                         <Button
                           variant="outline"
