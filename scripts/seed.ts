@@ -1307,6 +1307,71 @@ Occidental has successfully navigated the challenging post-Anadarko integration 
       completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
     });
 
+    // =====================================================================
+    // Create proposals linked to GOOGL and AMZN research
+    // =====================================================================
+    console.log("Creating proposals for GOOGL and AMZN...");
+    
+    // GOOGL Proposal
+    const googlProposal = await storage.createProposal({
+      ticker: "GOOGL",
+      companyName: "Alphabet Inc.",
+      analyst: "user-demo-1",
+      proposalType: "BUY",
+      proposedWeight: "5.50",
+      targetPrice: "165.00",
+      status: "DRAFT",
+      thesis: "Alphabet dominates internet search (90%+ market share) while building strong positions in cloud computing and digital advertising. Google Cloud Platform is gaining share in the $500B+ cloud market with 30%+ growth rates. AI integration across products (Search, Workspace, Cloud) creates significant monetization opportunities. YouTube and advertising businesses provide stable cash flow to fund AI investments and buybacks.",
+      catalysts: [
+        "Google Cloud achieving profitability with 30%+ growth trajectory",
+        "AI integration driving new revenue streams (Bard, Workspace AI, Cloud AI)",
+        "Search maintaining dominance despite AI disruption concerns",
+        "YouTube Shorts monetization ramping with 50B daily views",
+        "Waymo autonomous driving commercialization beginning",
+        "$70B annual buyback program provides valuation floor"
+      ],
+      risks: [
+        "AI-powered search alternatives (ChatGPT, Perplexity) disrupting core search",
+        "Antitrust regulation forcing business divestitures",
+        "Cloud competition from AWS, Azure intensifying",
+        "Advertising market cyclicality in potential recession",
+        "High R&D spend with uncertain AI ROI timeline"
+      ],
+    });
+
+    // AMZN Proposal
+    const amznProposal = await storage.createProposal({
+      ticker: "AMZN",
+      companyName: "Amazon.com, Inc.",
+      analyst: "user-analyst-1",
+      proposalType: "BUY",
+      proposedWeight: "6.00",
+      targetPrice: "185.00",
+      status: "PENDING",
+      thesis: "Amazon is a unique combination of three high-quality businesses: AWS (cloud infrastructure leader with 60%+ margins), retail (improving profitability with advertising overlay), and advertising (fastest-growing digital ad platform). AWS maintains 30%+ market share in $500B+ cloud market. Retail margins inflecting positive from 3PL density and automation. Advertising is a high-margin growth engine overlaying retail traffic.",
+      catalysts: [
+        "AWS re-accelerating growth with 30%+ market share in expanding cloud TAM",
+        "Retail operating margins expanding to 5%+ (from 2%) via automation and density",
+        "Advertising business hitting $50B+ run rate at 50%+ margins",
+        "Same-day delivery rollout driving Prime membership growth",
+        "Project Kuiper satellite internet creating new TAM",
+        "Healthcare initiatives (Amazon Pharmacy, One Medical) scaling"
+      ],
+      risks: [
+        "AWS growth slowing due to macro headwinds and customer optimization",
+        "Retail margin improvement slower than expected",
+        "Regulatory pressure on marketplace practices",
+        "Competition in cloud from Microsoft Azure, Google Cloud",
+        "Labor costs and unionization pressures",
+        "Capital intensity of warehouse and satellite buildout"
+      ],
+    });
+
+    // Link proposals back to research requests
+    console.log("Linking proposals to research requests...");
+    await storage.updateResearchRequest(googlResearch.id, { proposalId: googlProposal.id });
+    await storage.updateResearchRequest(amznResearch.id, { proposalId: amznProposal.id });
+
     // Create notifications
     console.log("Creating notifications...");
     const notifications = [
