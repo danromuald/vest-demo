@@ -75,12 +75,28 @@ export async function setupAuth(app: Express) {
   // Skip auth setup in development mode
   if (process.env.NODE_ENV === 'development') {
     console.warn("🔓 Running without authentication - Development mode");
+    
+    // Add simple session middleware for demo mode
+    const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
+    app.use(session({
+      secret: process.env.SESSION_SECRET || 'dev-secret-key',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        httpOnly: true,
+        secure: false, // Allow HTTP in development
+        maxAge: sessionTtl,
+      },
+    }));
+    
     // Add development-only routes for testing
     app.get("/api/login", (_req, res) => {
       res.redirect("/");
     });
-    app.get("/api/logout", (_req, res) => {
-      res.redirect("/");
+    app.get("/api/logout", (req, res) => {
+      req.session.destroy(() => {
+        res.redirect("/");
+      });
     });
     return;
   }

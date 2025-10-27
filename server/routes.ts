@@ -158,14 +158,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
   // Demo signin route - allows instant access without credentials
-  // In development mode, just set session and redirect - user will be created on first /api/auth/user call
+  // In development mode, set session flag and redirect - user will be created on first /api/auth/user call
   app.get('/api/demo-signin', async (req: any, res) => {
     console.log("Demo signin requested");
     
     try {
-      // In development mode, just redirect and let /api/auth/user handle user creation
+      // In development mode, set session flag and redirect
       if (process.env.NODE_ENV === 'development') {
-        console.log("Development mode - redirecting to app");
+        console.log("Development mode - setting demo session and redirecting to app");
+        req.session.demoAuthenticated = true;
         res.redirect('/');
         return;
       }
@@ -181,8 +182,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth routes
   app.get('/api/auth/user', async (req: any, res) => {
-    // Development mode: return mock user if auth not configured
+    // Development mode: return mock user only if demo session is active
     if (process.env.NODE_ENV === 'development') {
+      // Check if user has clicked "Enter Demo"
+      if (!req.session || !req.session.demoAuthenticated) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      
       const mockUser = {
         id: "user-demo-1",
         email: "dan@example.io",
