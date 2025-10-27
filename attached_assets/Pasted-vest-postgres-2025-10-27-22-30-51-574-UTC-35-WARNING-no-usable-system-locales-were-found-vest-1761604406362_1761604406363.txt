@@ -1,0 +1,72 @@
+vest-postgres  | 2025-10-27 22:30:51.574 UTC [35] WARNING:  no usable system locales were found
+vest-postgres  | performing post-bootstrap initialization ... ok
+vest-postgres  | initdb: warning: enabling "trust" authentication for local connections
+vest-postgres  | initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+vest-postgres  | syncing data to disk ... ok
+vest-postgres  |
+vest-postgres  |
+vest-postgres  | Success. You can now start the database server using:
+vest-postgres  |
+vest-postgres  |     pg_ctl -D /var/lib/postgresql/data -l logfile start
+vest-postgres  |
+vest-postgres  | waiting for server to start....2025-10-27 22:30:51.793 UTC [41] LOG:  starting PostgreSQL 15.14 on aarch64-unknown-linux-musl, compiled by gcc (Alpine 14.2.0) 14.2.0, 64-bit
+vest-postgres  | 2025-10-27 22:30:51.794 UTC [41] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+vest-postgres  | 2025-10-27 22:30:51.796 UTC [44] LOG:  database system was shut down at 2025-10-27 22:30:51 UTC
+vest-postgres  | 2025-10-27 22:30:51.798 UTC [41] LOG:  database system is ready to accept connections
+vest-postgres  |  done
+vest-postgres  | server started
+vest-postgres  | CREATE DATABASE
+vest-postgres  |
+vest-postgres  |
+vest-postgres  | /usr/local/bin/docker-entrypoint.sh: running /docker-entrypoint-initdb.d/init-db.sh
+vest-postgres  | CREATE EXTENSION
+vest-postgres  | GRANT
+vest-postgres  | Database initialized successfully!
+vest-postgres  |
+vest-postgres  | waiting for server to shut down....2025-10-27 22:30:51.926 UTC [41] LOG:  received fast shutdown request
+vest-postgres  | 2025-10-27 22:30:51.926 UTC [41] LOG:  aborting any active transactions
+vest-postgres  | 2025-10-27 22:30:51.927 UTC [41] LOG:  background worker "logical replication launcher" (PID 47) exited with exit code 1
+vest-postgres  | 2025-10-27 22:30:51.931 UTC [42] LOG:  shutting down
+vest-postgres  | 2025-10-27 22:30:51.932 UTC [42] LOG:  checkpoint starting: shutdown immediate
+vest-postgres  | 2025-10-27 22:30:51.958 UTC [42] LOG:  checkpoint complete: wrote 921 buffers (5.6%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.010 s, sync=0.016 s, total=0.028 s; sync files=301, longest=0.007 s, average=0.001 s; distance=4248 kB, estimate=4248 kB
+vest-postgres  | 2025-10-27 22:30:51.960 UTC [41] LOG:  database system is shut down
+vest-postgres  |  done
+vest-postgres  | server stopped
+vest-postgres  |
+vest-postgres  | PostgreSQL init process complete; ready for start up.
+vest-postgres  |
+vest-postgres  | 2025-10-27 22:30:52.043 UTC [1] LOG:  starting PostgreSQL 15.14 on aarch64-unknown-linux-musl, compiled by gcc (Alpine 14.2.0) 14.2.0, 64-bit
+vest-postgres  | 2025-10-27 22:30:52.043 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+vest-postgres  | 2025-10-27 22:30:52.043 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+vest-postgres  | 2025-10-27 22:30:52.044 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+vest-postgres  | 2025-10-27 22:30:52.046 UTC [60] LOG:  database system was shut down at 2025-10-27 22:30:51 UTC
+vest-postgres  | 2025-10-27 22:30:52.049 UTC [1] LOG:  database system is ready to accept connections
+vest-postgres  | 2025-10-27 22:30:56.444 UTC [70] FATAL:  database "vest" does not exist
+vest-app       |
+vest-app       | > rest-express@1.0.0 dev
+vest-app       | > NODE_ENV=development tsx server/index.ts
+vest-app       |
+vest-app       | ⚠️  REPLIT_DOMAINS not set - Auth system will not function
+vest-app       | ℹ️  This is expected in local development. Deploy to Replit for full auth.
+vest-app       | /app/node_modules/openai/src/client.ts:376
+vest-app       |       throw new Errors.OpenAIError(
+vest-app       |             ^
+vest-app       |
+vest-app       |
+vest-app       | OpenAIError: Missing credentials. Please pass an `apiKey`, or set the `OPENAI_API_KEY` environment variable.
+vest-app       |     at new OpenAI (/app/node_modules/openai/src/client.ts:376:13)
+vest-app       |     at <anonymous> (/app/server/lib/openai.ts:6:16)
+vest-app       |     at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+vest-app       |     at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+vest-app       |     at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+vest-app       |
+vest-app       | Node.js v20.19.5
+vest-app exited with code 1
+vest-postgres  | 2025-10-27 22:31:01.497 UTC [77] FATAL:  database "vest" does not exist
+vest-postgres  | 2025-10-27 22:31:06.548 UTC [84] FATAL:  database "vest" does not exist
+vest-postgres  | 2025-10-27 22:31:11.596 UTC [91] FATAL:  database "vest" does not exist
+vest-postgres  | 2025-10-27 22:31:16.654 UTC [99] FATAL:  database "vest" does not exist
+vest-postgres  | 2025-10-27 22:31:21.701 UTC [106] FATAL:  database "vest" does not exist
+vest-postgres  | 2025-10-27 22:31:26.744 UTC [113] FATAL:  database "vest" does not exist
+vest-postgres  | 2025-10-27 22:31:31.798 UTC [120] FATAL:  database "vest" does not exist
+vest-postgres  | 2025-10-27 22:31:36.839 UTC [128] FATAL:  database "vest" does not exist

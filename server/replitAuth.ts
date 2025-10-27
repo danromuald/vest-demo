@@ -8,13 +8,12 @@ import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 
-// Check for required environment variables
-if (!process.env.REPLIT_DOMAINS) {
+// Check for required environment variables (only warn in production)
+if (!process.env.REPLIT_DOMAINS && process.env.NODE_ENV === 'production') {
   console.warn("⚠️  REPLIT_DOMAINS not set - Auth system will not function");
-  console.warn("ℹ️  This is expected in local development. Deploy to Replit for full auth.");
 }
 
-if (!process.env.SESSION_SECRET) {
+if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
   console.warn("⚠️  SESSION_SECRET not set - Using fallback (insecure for production)");
 }
 
