@@ -324,7 +324,7 @@ Vest can be deployed to any platform that supports Node.js and PostgreSQL:
 
 ## 📝 License
 
-Proprietary - All rights reserved
+Apache 2.0
 
 ## 🙋 Support
 
