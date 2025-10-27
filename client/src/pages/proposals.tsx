@@ -32,7 +32,8 @@ import {
   Target,
   Loader2,
   Filter,
-  CalendarPlus
+  CalendarPlus,
+  Bot
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -125,6 +126,42 @@ export default function ProposalsPage() {
       catalysts: "",
       risks: "",
       status: "DRAFT",
+    },
+  });
+
+  const generateThesisMutation = useMutation({
+    mutationFn: async ({ ticker, companyName }: { ticker: string; companyName: string }) => {
+      return await apiRequest("POST", "/api/agents/thesis-generator", {
+        ticker,
+        companyName,
+        researchData: null,
+        dcfData: null,
+      });
+    },
+    onSuccess: (data: any) => {
+      if (data.thesis) {
+        form.setValue('thesis', data.thesis);
+      }
+      if (data.catalysts && data.catalysts.length > 0) {
+        form.setValue('catalysts', data.catalysts.join('\n'));
+      }
+      if (data.risks && data.risks.length > 0) {
+        form.setValue('risks', data.risks.join('\n'));
+      }
+      if (data.targetPrice) {
+        form.setValue('targetPrice', data.targetPrice.toString());
+      }
+      toast({
+        title: "Thesis Generated",
+        description: "AI has drafted your investment thesis",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate thesis",
+        variant: "destructive",
+      });
     },
   });
 
@@ -387,7 +424,45 @@ export default function ProposalsPage() {
                   name="thesis"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Investment Thesis</FormLabel>
+                      <div className="flex items-center justify-between mb-2">
+                        <FormLabel>Investment Thesis</FormLabel>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const ticker = form.getValues('ticker');
+                            const companyName = form.getValues('companyName');
+                            
+                            if (ticker && companyName) {
+                              generateThesisMutation.mutate({
+                                ticker,
+                                companyName,
+                              });
+                            } else {
+                              toast({
+                                title: "Missing Information",
+                                description: "Please enter ticker and company name first",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
+                          disabled={generateThesisMutation.isPending}
+                          data-testid="button-generate-thesis"
+                        >
+                          {generateThesisMutation.isPending ? (
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <Bot className="h-3 w-3 mr-1" />
+                              Generate with AI
+                            </>
+                          )}
+                        </Button>
+                      </div>
                       <FormControl>
                         <Textarea 
                           {...field} 
