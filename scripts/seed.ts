@@ -1826,22 +1826,284 @@ Occidental has successfully navigated the challenging post-Anadarko integration 
       })
     ]);
 
+    // =====================================================================
+    // WORKFLOW 4: NVDA - Technology sector, MONITORING stage
+    // =====================================================================
+    console.log("\n🖥️  Creating NVDA workflow (MONITORING stage - Technology sector)...");
+    
+    const nvdaCompany = await storage.createCompany({
+      ticker: "NVDA",
+      name: "NVIDIA Corporation",
+      sector: "Technology",
+      industry: "Semiconductors",
+      description: "NVIDIA is a leading designer of graphics processing units (GPUs) for gaming, professional visualization, data centers, and automotive markets. The company has emerged as the dominant AI infrastructure provider."
+    });
+
+    const nvdaProposal = await storage.createProposal({
+      ticker: "NVDA",
+      companyName: "NVIDIA Corporation",
+      proposedBy: "Sarah Chen",
+      targetPrice: 145.00,
+      currentPrice: 119.50,
+      upside: 21.3,
+      thesis: "NVIDIA is the picks-and-shovels play on AI infrastructure. The company's CUDA software moat + H100/H200 GPU dominance creates a multi-year earnings runway. Cloud providers and enterprises are in a race to build AI compute capacity, with NVIDIA capturing 90%+ of AI accelerator TAM.",
+      catalysts: ["H200 ramp in Q4 2024", "Sovereign AI deals expanding (Middle East, Asia)", "GB200 launch in 2025", "Software revenue inflection (CUDA, Omniverse, AI Enterprise)"],
+      risks: ["AMD/Intel competition intensifying", "Customer concentration (hyperscalers)", "China export restrictions", "Gross margin compression from competitive pressure"],
+      positionSize: 5.5,
+      conviction: "HIGH",
+      horizon: "12-18 months",
+      stage: "APPROVED",
+      status: "APPROVED"
+    });
+
+    const nvdaWorkflow = await storage.createWorkflow({
+      proposalId: nvdaProposal.id,
+      ticker: "NVDA",
+      currentStage: "MONITORING",
+      status: "ACTIVE"
+    });
+
+    await Promise.all([
+      storage.createWorkflowStage({
+        workflowId: nvdaWorkflow.id,
+        stage: "DISCOVERY",
+        status: "COMPLETED",
+        completedAt: new Date(Date.now() - 65 * 24 * 60 * 60 * 1000)
+      }),
+      storage.createWorkflowStage({
+        workflowId: nvdaWorkflow.id,
+        stage: "ANALYSIS",
+        status: "COMPLETED",
+        completedAt: new Date(Date.now() - 58 * 24 * 60 * 60 * 1000)
+      }),
+      storage.createWorkflowStage({
+        workflowId: nvdaWorkflow.id,
+        stage: "IC_MEETING",
+        status: "COMPLETED",
+        completedAt: new Date(Date.now() - 50 * 24 * 60 * 60 * 1000)
+      }),
+      storage.createWorkflowStage({
+        workflowId: nvdaWorkflow.id,
+        stage: "EXECUTION",
+        status: "COMPLETED",
+        completedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000)
+      }),
+      storage.createWorkflowStage({
+        workflowId: nvdaWorkflow.id,
+        stage: "MONITORING",
+        status: "IN_PROGRESS"
+      })
+    ]);
+
+    // NVDA IC Meeting (completed)
+    const nvdaMeeting = await storage.createICMeeting({
+      workflowId: nvdaWorkflow.id,
+      meetingDate: new Date(Date.now() - 50 * 24 * 60 * 60 * 1000),
+      status: "COMPLETED",
+      title: "NVDA Investment Committee Meeting",
+      description: "Review and vote on NVIDIA Corporation investment proposal - AI infrastructure leader",
+      attendees: ["user-analyst-1", "user-pm-1", "user-compliance-1"],
+      agenda: { items: ["AI infrastructure thesis", "Competitive moat analysis", "Valuation and position sizing", "Vote"] },
+      minutes: "Strong consensus on NVDA thesis. Approved 5.5% position. Discussion on customer concentration risk.",
+      createdBy: "user-pm-1"
+    });
+
+    const nvdaDebateSession = await storage.createDebateSession({
+      meetingId: nvdaMeeting.id,
+      proposalId: nvdaProposal.id,
+      ticker: "NVDA",
+      topic: "NVIDIA - AI Infrastructure Dominance Thesis",
+      status: "COMPLETED",
+      currentPhase: "CONCLUDED",
+      leadModerator: "Mike Rodriguez",
+      activeAgents: ["RESEARCH", "QUANT"],
+      decision: "APPROVED",
+      voteCount: { approve: 3, reject: 0, abstain: 0 },
+      summary: "Unanimous approval for NVDA at 5.5% weight. Strong AI infrastructure thesis with durable moat.",
+      keyPoints: ["CUDA moat provides pricing power", "H100 supply constraints easing", "Customer concentration manageable given TAM expansion"],
+      participantCount: 5,
+      messageCount: 4,
+      endedAt: new Date(Date.now() - 50 * 24 * 60 * 60 * 1000 + 45 * 60 * 1000)
+    });
+
+    await Promise.all([
+      storage.createVote({
+        proposalId: nvdaProposal.id,
+        voterName: "Mike Rodriguez",
+        voterRole: "PM",
+        vote: "APPROVE",
+        comment: "AI infrastructure thesis is compelling. CUDA moat is real. Approve at 5.5% weight."
+      }),
+      storage.createVote({
+        proposalId: nvdaProposal.id,
+        voterName: "Sarah Chen",
+        voterRole: "ANALYST",
+        vote: "APPROVE",
+        comment: "Best way to play AI infrastructure boom. H100 margins are exceptional."
+      }),
+      storage.createVote({
+        proposalId: nvdaProposal.id,
+        voterName: "Jane Smith",
+        voterRole: "COMPLIANCE",
+        vote: "APPROVE",
+        comment: "Liquidity excellent. Governance solid. ESG concerns manageable."
+      })
+    ]);
+
+    const nvdaDebateMessages = [
+      {
+        meetingId: nvdaMeeting.id,
+        debateSessionId: nvdaDebateSession.id,
+        userId: "user-pm-1",
+        senderName: "Mike Rodriguez",
+        senderRole: "PM",
+        messageType: "QUESTION",
+        content: "Sarah, great work on the NVDA analysis. My main concern is customer concentration - aren't we too dependent on a handful of hyperscalers?"
+      },
+      {
+        meetingId: nvdaMeeting.id,
+        debateSessionId: nvdaDebateSession.id,
+        userId: "user-analyst-1",
+        senderName: "Sarah Chen",
+        senderRole: "ANALYST",
+        messageType: "ANSWER",
+        content: "Valid concern, but I'd argue it's mitigated by three factors: (1) TAM is expanding so fast that all hyperscalers are buyers, (2) Enterprise and sovereign AI are emerging as new customer segments, (3) The hyperscalers are locked into CUDA ecosystem - switching costs are massive."
+      },
+      {
+        meetingId: nvdaMeeting.id,
+        debateSessionId: nvdaDebateSession.id,
+        userId: null,
+        senderName: "Research Agent",
+        senderRole: "ANALYST",
+        messageType: "COMMENT",
+        content: "📊 **Market Analysis**: AI accelerator TAM expanding from $45B (2024) to $150B+ (2027). NVIDIA maintains 92% share in data center GPU. Key competitive advantages: (1) CUDA has 4M+ developers - unmatched ecosystem, (2) H100 performance leads AMD MI300 by 30-40% on inference workloads, (3) Software revenue (Omniverse, AI Enterprise) growing 300% YoY adds stickiness. Customer concentration declining: Top 4 customers dropped from 45% to 38% of revenue as enterprise/sovereign AI ramps.",
+        metadata: { agentType: "research" }
+      },
+      {
+        meetingId: nvdaMeeting.id,
+        debateSessionId: nvdaDebateSession.id,
+        userId: null,
+        senderName: "Quant Agent",
+        senderRole: "ANALYST",
+        messageType: "COMMENT",
+        content: "📈 **Valuation Framework**: At $119.50, NVDA trades at 28x NTM earnings vs 5-year average of 45x. Despite premium multiple, justified by 40%+ earnings CAGR through 2026. DCF yields $145 fair value (21% upside). Data center segment (73% of revenue) growing 200%+ YoY with 70%+ gross margins. Free cash flow of $42B annually supports buybacks + R&D investment. Risk-adjusted return: 18.2% vs sector 11.4%. Recommend 5-6% position weight.",
+        metadata: { agentType: "quant" }
+      }
+    ];
+
+    for (const msg of nvdaDebateMessages) {
+      await storage.createDebateMessage(msg);
+    }
+
+    // NVDA Position (executing)
+    const nvdaPosition = await storage.createPosition({
+      workflowId: nvdaWorkflow.id,
+      proposalId: nvdaProposal.id,
+      ticker: "NVDA",
+      companyName: "NVIDIA Corporation",
+      entryDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000),
+      shares: 5000,
+      avgEntryPrice: 119.50,
+      currentPrice: 132.00,
+      positionValue: 660000,
+      costBasis: 597500,
+      unrealizedPnL: 62500,
+      unrealizedPnLPercent: 10.5,
+      positionWeight: 5.5,
+      targetWeight: 5.5,
+      status: "ACTIVE"
+    });
+
+    // NVDA Monitoring events
+    await Promise.all([
+      storage.createMonitoringEvent({
+        positionId: nvdaPosition.id,
+        ticker: "NVDA",
+        eventType: "EARNINGS_BEAT",
+        severity: "LOW",
+        title: "Q3 Earnings Beat - Data Center Revenue +279% YoY",
+        description: "NVDA reported Q3 earnings with data center revenue of $14.5B (+279% YoY), beating estimates of $12.9B. H100 supply improving. Raised FY guidance.",
+        impact: "POSITIVE",
+        requiresAction: false,
+        createdAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000)
+      }),
+      storage.createMonitoringEvent({
+        positionId: nvdaPosition.id,
+        ticker: "NVDA",
+        eventType: "PRODUCT_LAUNCH",
+        severity: "MEDIUM",
+        title: "GB200 Grace Blackwell Platform Announced",
+        description: "NVIDIA announced GB200 combining Grace CPU + Blackwell GPU for AI inference. 30x performance improvement vs H100. Shipping Q2 2025.",
+        impact: "POSITIVE",
+        requiresAction: false,
+        createdAt: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000)
+      }),
+      storage.createMonitoringEvent({
+        positionId: nvdaPosition.id,
+        ticker: "NVDA",
+        eventType: "COMPETITIVE_THREAT",
+        severity: "MEDIUM",
+        title: "AMD Launches MI300X Competitor",
+        description: "AMD launched MI300X GPU targeting AI inference workloads. Early benchmarks show competitive performance. Pricing 20% below H100.",
+        impact: "NEGATIVE",
+        requiresAction: true,
+        actionItems: ["Monitor customer feedback", "Assess pricing pressure", "Review market share trends"],
+        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)
+      })
+    ]);
+
+    // NVDA Thesis Health
+    await storage.createThesisHealth({
+      positionId: nvdaPosition.id,
+      ticker: "NVDA",
+      overallScore: 92,
+      metrics: {
+        fundamentals: { score: 95, trend: "IMPROVING", details: "Revenue growth accelerating, margins expanding" },
+        technicals: { score: 88, trend: "STABLE", details: "Strong uptrend, above all moving averages" },
+        sentiment: { score: 90, trend: "IMPROVING", details: "Analyst upgrades, institutional buying" },
+        catalyst: { score: 95, trend: "IMPROVING", details: "H200 ramp on track, GB200 excitement building" }
+      },
+      risks: {
+        competition: { status: "MONITORED", severity: "MEDIUM", note: "AMD gaining traction but CUDA moat holds" },
+        regulation: { status: "MONITORED", severity: "MEDIUM", note: "China export restrictions ongoing" },
+        valuation: { status: "ELEVATED", severity: "LOW", note: "Premium multiple but justified by growth" }
+      },
+      keyMetrics: {
+        revenueGrowth: { expected: 110.0, actual: 206.0, variance: "+87%" },
+        grossMargin: { expected: 70.0, actual: 75.0, variance: "+7.1%" },
+        datacentreMix: { expected: "65%", actual: "73%", variance: "+12%" }
+      },
+      deviation: {
+        summary: "Thesis massively outperforming. AI infrastructure demand exceeding all expectations. Data center revenue nearly 3x estimates. CUDA moat strengthening.",
+        significant: false,
+        actionRequired: false
+      }
+    });
+
     console.log("\n✅ Seed completed successfully!");
     console.log("\n📊 Created data:");
     console.log("  - 5 users (Dan, Sarah, Mike, Jane, Alex)");
-    console.log("  - 3 Energy sector companies (NEE, CVX, OXY)");
-    console.log("  - 3 workflows in different stages:");
+    console.log("  - 4 companies across 2 sectors:");
+    console.log("    • Energy: NEE, CVX, OXY");
+    console.log("    • Technology: NVDA");
+    console.log("  - 4 workflows in different stages:");
     console.log("    • NEE (MONITORING): Complete workflow with position & thesis tracking");
-    console.log("    • CVX (IC_MEETING): Ready for IC decision");
+    console.log("    • NVDA (MONITORING): AI infrastructure position with monitoring");
+    console.log("    • CVX (IC_MEETING): Active debate session in progress");
     console.log("    • OXY (ANALYSIS): Work in progress");
     console.log("  - 9 research artifacts across workflows");
-    console.log("  - 2 IC meetings (1 completed with debate, 1 scheduled)");
-    console.log("  - 1 active position (NEE)");
-    console.log("  - 3 monitoring events for NEE");
-    console.log("  - 7 debate messages with contrarian AI input");
+    console.log("  - 3 IC meetings with debate sessions:");
+    console.log("    • NEE: COMPLETED with 11 debate messages (5 AI agents)");
+    console.log("    • CVX: ACTIVE with 9 debate messages (5 AI agents)");
+    console.log("    • NVDA: COMPLETED with 4 debate messages (2 AI agents)");
+    console.log("  - 2 active positions (NEE $741k, NVDA $660k)");
+    console.log("  - 6 monitoring events (3 NEE, 3 NVDA)");
+    console.log("  - 24 total debate messages with AI agent participation");
+    console.log("  - Voice-enabled debate room ready for testing");
     console.log("  - 4 notifications");
     console.log("\n🎯 Demo user: Dan Mbanga (dan@example.io)");
-    console.log("   You can see all workflows and participate in IC meetings!");
+    console.log("   Multi-sector portfolio (Energy + Technology)");
+    console.log("   Voice-enabled debate rooms with AI agents");
 
   } catch (error) {
     console.error("❌ Seed failed:", error);
