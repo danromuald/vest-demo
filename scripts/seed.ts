@@ -1201,6 +1201,7 @@ Occidental has successfully navigated the challenging post-Anadarko integration 
       proposalId: oxyProposal.id,
       workflowId: oxyWorkflow.id,
       requestedBy: "user-demo-1",
+      researchType: "SCENARIO_ANALYSIS",
       agentType: "SCENARIO_SIMULATOR",
       priority: "MEDIUM",
       status: "IN_PROGRESS",
