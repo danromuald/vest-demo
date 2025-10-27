@@ -3,59 +3,16 @@
 ## Overview
 Vest is an AI-powered investment committee workflow system designed to automate and enhance the investment decision-making process. The platform streamlines workflows from initial research through execution and ongoing portfolio monitoring, leveraging a 16-agent AI system. Its purpose is to reduce analyst workload, enhance meeting quality, ensure compliance, and maintain institutional knowledge. Vest offers capabilities for automated research synthesis, AI-assisted investment committee meetings with real-time contrarian analysis, portfolio monitoring with thesis health tracking, document generation, scenario simulation, compliance checks, trade order generation, and risk assessment. The project is a production-ready enterprise MVP with comprehensive workflow automation.
 
-## Recent Changes (October 27, 2025)
-
-### Session 3: Unified Voice-Enabled Debate Rooms with Shared AI Agent Configuration
-- **Shared AI Agent Configuration**: Created centralized `client/src/lib/ai-agents.ts` with 5 specialized AI agents (Research, Quant, Risk, Compliance, Contrarian) featuring consistent icons, colors, specialties, and agent-specific voice settings (pitch/rate variations)
-- **Reusable EnhancedDebateMessage Component**: Extracted `client/src/components/EnhancedDebateMessage.tsx` for consistent message rendering across both debate room implementations with agent avatars, specialty badges, TTS playback buttons, speaking animations, and artifact attachment support
-- **Standalone Debate Room Enhancements**: Updated `/debate-room` page with shared AI agent configuration, proper schema field usage (senderRole, createdAt), WebSocket real-time updates, improved voice controls with clear testids (button-toggle-tts, button-voice-recording), and visual Recording badge
-- **IC Meeting Tab Voice Integration**: Added complete STT voice recording capability to IC Meeting tab debate room with visual indicators, transcript handling, EnhancedDebateMessage integration, WebSocket support, and Export/Advance Stage functionality
-- **Voice Feature Parity**: Both implementations now have complete TTS auto-speak (with agent-specific voices), STT recording (with Recording badge indicator), proper accessibility (aria-label, aria-pressed attributes), and consistent UX
-- **Schema Alignment**: Fixed all DebateMessage field references throughout codebase - using `senderRole` (not senderType/agentRole), `createdAt` (not timestamp), removed `stance` field usage, ensuring type safety and LSP error-free code
-- **Critical Bug Fixes**: (1) Corrected active agent detection to compare `agent.role` vs activeAgents array, (2) Fixed TTS stop function to call `stopSpeaking()` instead of undefined `stop()`, (3) Removed conflicting inline component definitions, (4) Cleaned unused imports
-- **Production Ready**: Architect-approved implementation with all critical issues resolved, proper error handling, accessible voice controls, and feature parity across both debate room contexts
-
-### Session 2: Comprehensive Multi-Sector Portfolio & Debate Data
-- **Multi-Sector Portfolio**: Extended portfolio with NVDA (Technology sector) alongside existing Energy positions (NEE, CVX, OXY), demonstrating sector diversification ($508k Energy NEE + $660k Technology NVDA)
-- **Complete Debate Sessions**: Created 3 full debate sessions with 26 total messages across workflows:
-  - NEE: COMPLETED session with 12 messages (5 AI agents: Research, Quant, Risk, Compliance, Contrarian)
-  - CVX: ACTIVE session with 10 messages (5 AI agents debating in real-time)
-  - NVDA: COMPLETED session with 4 messages (2 AI agents)
-- **NVDA Workflow**: Added comprehensive Technology sector workflow from discovery through monitoring including proposal, IC meeting, debate session, position ($660k, 5000 shares @ $132), monitoring events (earnings beat, GB200 launch, AMD competition), and thesis health metrics
-- **Database Integrity**: Fixed all schema field mismatches (senderId→userId, avgEntryPrice→avgCost, proposalType requirement, monetary values as strings) ensuring seed runs cleanly
-- **Comprehensive Test Data**: 4 workflows across 2 sectors, 3 debate sessions, 2 active positions, 6 monitoring events, voice-enabled debate rooms ready for testing
-
-### Session 1: IC Meeting Debate Room & Workflow UX
-- **Multi-Agent IC Meeting Room**: Implemented AI-powered debate room with 5 specialized agents (Research, Quant, Risk, Compliance, Contrarian) each with unique icons, colors, and specialties. Agents can be toggled on/off dynamically
-- **Voice Input Capability**: Added voice recording interface with visual indicators (pulsing red dots during recording), mock implementation ready for speech-to-text integration
-- **Enhanced Debate Messages**: Created EnhancedDebateMessage component with agent avatars, specialty descriptions, role badges, text-to-speech buttons with speaking animations, and support for artifact attachments
-- **Auto-Scroll Fix**: Corrected useEffect dependency to auto-scroll to latest messages when debate content updates
-- **Workflow UX Enhancements**: Export and Advance Stage buttons fully functional with proper API integration and loading states
-- **Framer Motion Animations**: Added smooth fade/slide transitions to all workflow tabs, staggered card animations in Overview tab, and expandable artifact previews
-- **Monitoring Tab Enhancements**: Consolidated thesis health score dashboard, alert rules management, and event stream with filtering capabilities
-- **Fixed Type Errors**: Corrected MonitoringEvent schema mismatches (changed `triggeredAt` to `createdAt`, removed `status` in favor of `resolvedAt` check)
-- **Enhanced Artifact Display**: Artifacts in Analysis Hub now show expandable inline previews with smooth animations
-- **Role-Based Authorization**: Completed server-side voting authorization and client-side permission filtering
-
-## Previous Changes (October 26, 2025)
-- **Backend Infrastructure**: Completed comprehensive database schema with 17 tables including workflows, workflow_stages, workflow_artifacts, ic_meetings, debate_messages, positions, monitoring_events, thesis_health_metrics, and more
-- **Storage Layer**: Implemented full storage interface with 34+ methods covering workflow orchestration, artifact management, IC meeting operations, monitoring, and analytics
-- **API Layer**: Built 28 REST API endpoints with Zod validation, session-based authentication, and proper error handling
-- **WebSocket Server**: Production-ready WebSocket implementation for real-time IC meeting collaboration with session-based authentication
-- **Workflow Workspace**: Created unified /workflows/:id route with stage-aware tabs (Overview, Analysis Hub, IC Meeting, Monitoring) replacing 16+ separate pages
-- **Seed Script**: Comprehensive database seeding with complete NVDA workflow scenario from discovery through monitoring including users, proposals, workflow stages, artifacts, IC meetings, votes, debate messages, positions, monitoring events, and thesis health metrics
-- **Architectural Discovery**: E2E testing identified IC meeting-to-proposal relationship architecture that needs refinement (IC meetings currently link to workflows; frontend expects links to proposals)
-
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
 ### UI/UX Decisions
-The frontend is built with React 18+ and TypeScript, utilizing Shadcn/ui with Radix UI primitives for a professional, data-intensive enterprise financial aesthetic, inspired by IBM Carbon Design and Linear. Styling is managed with Tailwind CSS, prioritizing dark mode, a custom financial services color palette, and the Inter Variable and JetBrains Mono typefaces. Key design principles include information clarity, professional trust, efficient workflows, and data-first visualization. The sidebar uses a collapsible hierarchical structure for efficient navigation, organized into "Workflow," "AI Agents" (with Pre-Work, IC & Execution, and Monitoring & Analytics sub-groups), and "Resources." A reusable BreadcrumbNav component provides context-aware navigation.
+The frontend is built with React 18+ and TypeScript, utilizing Shadcn/ui with Radix UI primitives for a professional, data-intensive enterprise financial aesthetic. Styling is managed with Tailwind CSS, prioritizing dark mode, a custom financial services color palette, and the Inter Variable and JetBrains Mono typefaces. Key design principles include information clarity, professional trust, efficient workflows, and data-first visualization. The sidebar uses a collapsible hierarchical structure for efficient navigation. A reusable BreadcrumbNav component provides context-aware navigation.
 
 ### Technical Implementations
-The backend uses Node.js with TypeScript and Express.js, serving RESTful APIs and static assets. Real-time features, such as collaborative IC meetings and voting, are powered by a WebSocket server. Data persistence is handled by PostgreSQL via Neon, with Drizzle ORM. The system includes a robust notification system for thesis monitoring and market events, and a PDF generation service. Authentication uses Replit Auth (OpenID Connect) for production and falls back to a mock user in development. All API endpoints use Zod for input validation. The system supports four user roles with distinct permissions: ANALYST, PM, COMPLIANCE, and ADMIN.
+The backend uses Node.js with TypeScript and Express.js, serving RESTful APIs and static assets. Real-time features are powered by a WebSocket server. Data persistence is handled by PostgreSQL via Neon, with Drizzle ORM. The system includes a robust notification system and a PDF generation service. Authentication uses Replit Auth (OpenID Connect) for production and falls back to a mock user in development. All API endpoints use Zod for input validation. The system supports four user roles with distinct permissions: ANALYST, PM, COMPLIANCE, and ADMIN.
 
 ### Feature Specifications
 Vest supports a comprehensive workflow from `DISCOVERY` to `MONITORING`, with automated progression. Key features include:
