@@ -458,32 +458,6 @@ NextEra Energy represents a rare combination of defensive utility characteristic
       createdBy: "user-pm-1"
     });
 
-    // NEE Debate Session
-    console.log("  Creating NEE debate session...");
-    const neeDebateSession = await storage.createDebateSession({
-      meetingId: neeMeeting.id,
-      proposalId: neeProposal.id,
-      ticker: "NEE",
-      topic: "NextEra Energy Investment Proposal - Clean Energy Infrastructure Leader",
-      status: "COMPLETED",
-      currentPhase: "CONCLUDED",
-      leadModerator: "Mike Rodriguez",
-      activeAgents: ["CONTRARIAN", "RESEARCH", "QUANT", "RISK", "COMPLIANCE"],
-      decision: "APPROVED",
-      voteCount: { approve: 3, reject: 0, abstain: 0 },
-      summary: "Strong consensus on NEE investment thesis. All committee members and AI agents provided comprehensive analysis. Approved 4.5% position weight.",
-      keyPoints: [
-        "Renewable energy backlog provides 4+ years of visible growth",
-        "Florida utility provides downside protection and stable cash flows",
-        "Strong execution track record with regulatory approvals",
-        "Interest rate sensitivity addressed through hedging program",
-        "ESG profile and compliance requirements fully satisfied"
-      ],
-      participantCount: 9,
-      messageCount: 11,
-      endedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000)
-    });
-
     // IC Meeting votes
     await Promise.all([
       storage.createVote({
@@ -513,117 +487,116 @@ NextEra Energy represents a rare combination of defensive utility characteristic
     const neeDebateMessages = [
       {
         meetingId: neeMeeting.id,
-        debateSessionId: neeDebateSession.id,
-        userId: "user-pm-1",
+        proposalId: neeProposal.id,
+        senderId: "user-pm-1",
         senderName: "Mike Rodriguez",
         senderRole: "PM",
-        messageType: "QUESTION",
-        content: "Sarah, great work on the research brief. The renewable backlog visibility is compelling. My main question is on the Florida rate case - what's your confidence on approval?"
+        content: "Sarah, great work on the research brief. The renewable backlog visibility is compelling. My main question is on the Florida rate case - what's your confidence on approval?",
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 5 * 60 * 1000)
       },
       {
         meetingId: neeMeeting.id,
-        debateSessionId: neeDebateSession.id,
-        userId: "user-analyst-1",
+        proposalId: neeProposal.id,
+        senderId: "user-analyst-1",
         senderName: "Sarah Chen",
         senderRole: "ANALYST",
-        messageType: "ANSWER",
-        content: "High confidence - 85%. FPL has a strong track record with the FL PSC. They've approved 95% of rate increases over the past 10 years. The infrastructure investments are clearly beneficial to customers (grid hardening, reliability)."
+        content: "High confidence - 85%. FPL has a strong track record with the FL PSC. They've approved 95% of rate increases over the past 10 years. The infrastructure investments are clearly beneficial to customers (grid hardening, reliability).",
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 8 * 60 * 1000)
       },
       {
         meetingId: neeMeeting.id,
-        debateSessionId: neeDebateSession.id,
-        userId: null,
+        proposalId: neeProposal.id,
+        senderId: "AI_AGENT",
         senderName: "Contrarian AI",
         senderRole: "ANALYST",
-        messageType: "COMMENT",
         content: "🤖 **Contrarian View**: While NEE's renewable portfolio is impressive, I'm concerned about three factors: (1) Rising interest rates disproportionately impact capital-intensive renewable developers - every 100bps reduces project returns by ~200bps. (2) Battery storage costs are declining 15-20% annually, which could obsolete some of NEE's solar/wind assets sooner than expected. (3) The stock has historically underperformed during rate hike cycles - we're potentially early in a multi-year hiking cycle. Have we stress-tested the model for 9% WACC?",
-        metadata: { agentType: "contrarian" }
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 12 * 60 * 1000)
       },
       {
         meetingId: neeMeeting.id,
-        debateSessionId: neeDebateSession.id,
-        userId: "user-analyst-1",
+        proposalId: neeProposal.id,
+        senderId: "user-analyst-1",
         senderName: "Sarah Chen",
         senderRole: "ANALYST",
-        messageType: "ANSWER",
-        content: "Good pushback. On interest rates: NEE has hedged ~70% of their floating rate exposure through 2025. Their PPAs also have inflation escalators which partially offset. At 9% WACC, fair value drops to $72 - still only 2% below current price. On battery storage: NEE is actually a leader there with 3 GW in development. They're positioned to benefit from the disruption, not be disrupted by it."
+        content: "Good pushback. On interest rates: NEE has hedged ~70% of their floating rate exposure through 2025. Their PPAs also have inflation escalators which partially offset. At 9% WACC, fair value drops to $72 - still only 2% below current price. On battery storage: NEE is actually a leader there with 3 GW in development. They're positioned to benefit from the disruption, not be disrupted by it.",
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 16 * 60 * 1000)
       },
       {
         meetingId: neeMeeting.id,
-        debateSessionId: neeDebateSession.id,
-        userId: null,
+        proposalId: neeProposal.id,
+        senderId: "AI_AGENT_RESEARCH",
         senderName: "Research Agent",
         senderRole: "ANALYST",
-        messageType: "COMMENT",
+        agentType: "research",
         content: "📊 **Research Synthesis**: My analysis of 47 renewable energy companies and 23 regulated utilities shows NEE has the strongest competitive moat. Key differentiators: (1) Geographic concentration in Florida provides regulatory predictability, (2) Integrated model generates 2.5x higher ROIC than pure-play renewables, (3) Customer acquisition cost for FPL is $412 vs industry average $890, (4) Renewable backlog of 23 GW represents 4.2 years of visible growth at current run-rate. Competitive analysis shows no peer has this combination of scale, returns, and growth visibility.",
-        metadata: { agentType: "research" }
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 10 * 60 * 1000)
       },
       {
         meetingId: neeMeeting.id,
-        debateSessionId: neeDebateSession.id,
-        userId: null,
+        proposalId: neeProposal.id,
+        senderId: "AI_AGENT_QUANT",
         senderName: "Quant Agent",
         senderRole: "ANALYST",
-        messageType: "COMMENT",
+        agentType: "quant",
         content: "📈 **Quantitative Analysis**: I've run 10,000 Monte Carlo simulations across 50 scenarios. Base case: $82 fair value (18% upside). Bull case (P75): $94. Bear case (P25): $68. Key sensitivities: (1) 100bps WACC change = ±$8 fair value, (2) 10% renewable backlog variance = ±$4, (3) 50bps FPL ROE = ±$3. Risk-adjusted return: 11.2% vs. 8.5% for utilities sector. Sharpe ratio: 0.68 vs sector 0.52. Options market implies 28% annual volatility - we can capitalize on this through collar strategies to enhance yield to 5.2%.",
-        metadata: { agentType: "quant" }
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 14 * 60 * 1000)
       },
       {
         meetingId: neeMeeting.id,
-        debateSessionId: neeDebateSession.id,
-        userId: null,
+        proposalId: neeProposal.id,
+        senderId: "AI_AGENT_RISK",
         senderName: "Risk Agent",
         senderRole: "ANALYST",
-        messageType: "COMMENT",
+        agentType: "risk",
         content: "⚠️ **Risk Assessment**: I've identified 3 high-priority risks and 5 medium-priority risks. **Critical**: (1) Regulatory risk - 15% probability Florida PSC becomes less constructive (impact: -12% fair value), (2) Hurricane exposure - Cat 5 event costs $2-3B, occurs every 8-12 years historically, (3) Interest rate sensitivity - each 100bps hike reduces NPV of development pipeline by $1.8B. **Mitigants**: Geographic diversification (37 states), infrastructure hardening ($12B invested 2018-2023), hedging program covers 70% rate exposure. Portfolio-level correlation: 0.42 with S&P 500, -0.15 with crude oil. VaR(95%): -8.2% over 30 days.",
-        metadata: { agentType: "risk" }
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 18 * 60 * 1000)
       },
       {
         meetingId: neeMeeting.id,
-        debateSessionId: neeDebateSession.id,
-        userId: "user-demo-1",
+        proposalId: neeProposal.id,
+        senderId: "user-demo-1",
         senderName: "Dan Mbanga",
         senderRole: "ANALYST",
-        messageType: "COMMENT",
-        content: "I think the regulated utility piece gives us meaningful downside protection here. Even in a bear case on renewables, FPL is worth $50-55/share by itself. We're essentially getting the competitive renewables business for $20/share when it generates $4B+ in EBITDA."
+        content: "I think the regulated utility piece gives us meaningful downside protection here. Even in a bear case on renewables, FPL is worth $50-55/share by itself. We're essentially getting the competitive renewables business for $20/share when it generates $4B+ in EBITDA.",
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 20 * 60 * 1000)
       },
       {
         meetingId: neeMeeting.id,
-        debateSessionId: neeDebateSession.id,
-        userId: null,
+        proposalId: neeProposal.id,
+        senderId: "AI_AGENT_COMPLIANCE",
         senderName: "Compliance Agent",
         senderRole: "COMPLIANCE",
-        messageType: "COMMENT",
+        agentType: "compliance",
         content: "✅ **Compliance Review**: Position clears all regulatory requirements. Liquidity: Avg daily volume 8.2M shares ($640M) - can build/exit 4.5% position over 2-3 weeks with <5bps impact. ESG: MSCI AAA rating, top decile for utilities. Governance: 9/12 independent directors, separate CEO/Chair since 2021, executive comp tied to TSR and operational metrics. Disclosure: Consistently ranked #1 in Edison Electric Institute transparency index. Concentration limits: Position at 4.5% is well below our 7.5% single-name limit. Sector exposure: Energy sector would be 12.3% of portfolio, below 15% threshold. **No objections from compliance perspective.**",
-        metadata: { agentType: "compliance" }
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 22 * 60 * 1000)
       },
       {
         meetingId: neeMeeting.id,
-        debateSessionId: neeDebateSession.id,
-        userId: "user-compliance-1",
+        proposalId: neeProposal.id,
+        senderId: "user-compliance-1",
         senderName: "Jane Smith",
         senderRole: "COMPLIANCE",
-        messageType: "COMMENT",
-        content: "From a compliance perspective, I'm comfortable with the position. Liquidity is excellent, ESG profile is strong, and the regulatory environment is well-understood. No red flags on governance or disclosure quality."
+        content: "From a compliance perspective, I'm comfortable with the position. Liquidity is excellent, ESG profile is strong, and the regulatory environment is well-understood. No red flags on governance or disclosure quality.",
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 24 * 60 * 1000)
       },
       {
         meetingId: neeMeeting.id,
-        debateSessionId: neeDebateSession.id,
-        userId: null,
+        proposalId: neeProposal.id,
+        senderId: "AI_AGENT_CONTRARIAN",
         senderName: "Contrarian Agent",
         senderRole: "ANALYST",
-        messageType: "COMMENT",
+        agentType: "contrarian",
         content: "⚡ **Devil's Advocate - Alternative Scenarios**: Let me challenge three key assumptions. (1) **Renewable economics deterioration**: What if battery storage + solar costs decline 25% annually vs our 15% assumption? By 2027, distributed generation could make utility-scale projects uneconomic. NEE's $60B development pipeline assumes current cost curves. (2) **Regulatory regime change**: Florida is a purple state - if Democrats gain control of legislature + PSC, we could see shift toward lower allowed ROEs (10.0% vs current 11.6%), impacting 60% of earnings. (3) **Stranded asset risk**: 15 GW of natural gas generation may face early retirement pressure. Carbon pricing or methane regulations could force $3-4B in write-downs. **Base case might be too optimistic - recommend 3.0% weight vs 4.5%.**",
-        metadata: { agentType: "contrarian" }
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 26 * 60 * 1000)
       },
       {
         meetingId: neeMeeting.id,
-        debateSessionId: neeDebateSession.id,
-        userId: "user-pm-1",
+        proposalId: neeProposal.id,
+        senderId: "user-pm-1",
         senderName: "Mike Rodriguez",
         senderRole: "PM",
-        messageType: "DECISION",
-        content: "Alright, I'm convinced. Let's approve at 4.5% weight. The risk/reward looks favorable here, and the thesis has multi-year durability. Sarah, please coordinate with trading on building the position over the next 2-3 weeks."
+        content: "Alright, I'm convinced. Let's approve at 4.5% weight. The risk/reward looks favorable here, and the thesis has multi-year durability. Sarah, please coordinate with trading on building the position over the next 2-3 weeks.",
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 28 * 60 * 1000)
       }
     ];
 
@@ -948,123 +921,102 @@ $60 oil: $120/share (-31%)`
       createdBy: "user-pm-1"
     });
 
-    // CVX Debate Session (in progress)
-    console.log("  Creating CVX debate session...");
-    const cvxDebateSession = await storage.createDebateSession({
-      meetingId: cvxMeeting.id,
-      proposalId: cvxProposal.id,
-      ticker: "CVX",
-      topic: "Chevron Corporation - Traditional Energy Thesis in Transition Era",
-      status: "ACTIVE",
-      currentPhase: "DELIBERATION",
-      leadModerator: "Mike Rodriguez",
-      activeAgents: ["CONTRARIAN", "RESEARCH", "QUANT", "RISK", "COMPLIANCE"],
-      participantCount: 6,
-      messageCount: 6,
-      keyPoints: [
-        "Oil price assumptions and sensitivity analysis",
-        "Energy transition timeline and CVX's positioning",
-        "Capital allocation and shareholder returns",
-        "Valuation attractive but execution risk elevated"
-      ]
-    });
-
     // Rich debate messages with all 5 AI agents participating
     const cvxDebateMessages = [
       {
         meetingId: cvxMeeting.id,
-        debateSessionId: cvxDebateSession.id,
-        userId: "user-pm-1",
+        proposalId: cvxProposal.id,
+        senderId: "user-pm-1",
         senderName: "Mike Rodriguez",
         senderRole: "PM",
-        messageType: "QUESTION",
-        content: "Alex, thanks for the work here. Playing devil's advocate: aren't we late to the party on traditional energy? Oil stocks have rallied 40% this year. What's the catalyst for further upside from here?"
+        content: "Alex, thanks for the work here. Playing devil's advocate: aren't we late to the party on traditional energy? Oil stocks have rallied 40% this year. What's the catalyst for further upside from here?",
+        timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000)
       },
       {
         meetingId: cvxMeeting.id,
-        debateSessionId: cvxDebateSession.id,
-        userId: "user-analyst-2",
+        proposalId: cvxProposal.id,
+        senderId: "user-analyst-2",
         senderName: "Alex Thompson",
         senderRole: "ANALYST",
-        messageType: "ANSWER",
-        content: "Fair point. But I'd argue CVX at 9x earnings with an 8% shareholder yield is still cheap. The rally has been justified - supply is tight, OPEC is disciplined, and energy capex was severely underfunded 2015-2020. We're in a structural deficit. Plus CVX specifically has Tengiz ramping which adds 15% to production at $40 breakeven."
+        content: "Fair point. But I'd argue CVX at 9x earnings with an 8% shareholder yield is still cheap. The rally has been justified - supply is tight, OPEC is disciplined, and energy capex was severely underfunded 2015-2020. We're in a structural deficit. Plus CVX specifically has Tengiz ramping which adds 15% to production at $40 breakeven.",
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000 - 45 * 60 * 1000)
       },
       {
         meetingId: cvxMeeting.id,
-        debateSessionId: cvxDebateSession.id,
-        userId: null,
+        proposalId: cvxProposal.id,
+        senderId: "AI_AGENT_RESEARCH",
         senderName: "Research Agent",
         senderRole: "ANALYST",
-        messageType: "COMMENT",
+        agentType: "research",
         content: "📊 **Research Analysis**: Global oil market fundamentals support the thesis. Key findings: (1) Spare capacity at 15-year lows - only 2.1M bpd vs 4.5M historical average, (2) Upstream capex has been $400B below maintenance levels since 2015, creating supply deficit, (3) CVX-specific advantages: Permian breakevens of $35/bbl (Peer average: $42), Kazakhstan Tengiz project adds 260K bpd at industry-leading margins, LNG portfolio provides optionality on Asian gas demand. Competitive positioning: CVX ranks #2 globally in reserve quality (proved reserves: 11.1B boe, 60% liquids). Energy transition timeline: IEA forecasts oil demand peak in 2030 - gives us 6-8 year runway for returns.",
-        metadata: { agentType: "research" }
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000 - 30 * 60 * 1000)
       },
       {
         meetingId: cvxMeeting.id,
-        debateSessionId: cvxDebateSession.id,
-        userId: null,
+        proposalId: cvxProposal.id,
+        senderId: "AI_AGENT_QUANT",
         senderName: "Quant Agent",
         senderRole: "ANALYST",
-        messageType: "COMMENT",
+        agentType: "quant",
         content: "📈 **Valuation & Scenario Modeling**: At $155/share, CVX trades at 6.2x EV/EBITDA vs 10-year average of 7.8x - implies 26% upside to historical mean. DCF analysis across oil price scenarios: Bull case ($95/bbl): $198 fair value. Base case ($80/bbl): $178. Bear case ($65/bbl): $142. Current price of $155 offers 3.5:1 reward/risk ratio. Free cash flow yield: 12.3% vs XLE average 9.1%. Shareholder yield (buybacks + dividend): 8.2% ranks in top decile of energy majors. Statistical analysis shows CVX outperforms in late-cycle environments (correlation: 0.73 with ISM Manufacturing). Current ISM at 48.2 suggests cyclical bottom is near.",
-        metadata: { agentType: "quant" }
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000 - 15 * 60 * 1000)
       },
       {
         meetingId: cvxMeeting.id,
-        debateSessionId: cvxDebateSession.id,
-        userId: null,
+        proposalId: cvxProposal.id,
+        senderId: "AI_AGENT_RISK",
         senderName: "Risk Agent",
         senderRole: "ANALYST",
-        messageType: "COMMENT",
+        agentType: "risk",
         content: "⚠️ **Risk Report**: Primary risks include: (1) **Oil price volatility**: Each $10/bbl move impacts earnings by $2.8B annually. Historical volatility: 35% (vs 18% for S&P 500). (2) **Energy transition acceleration**: Scenario analysis shows aggressive EV adoption could reduce demand by 8M bpd by 2030 (base case: 4M bpd). (3) **Geopolitical exposure**: 23% of production from Kazakhstan - political instability or sanctions risk. (4) **Regulatory/ESG pressures**: Carbon pricing could add $5-8/bbl to operating costs. Portfolio impact: Energy sector weight would increase to 8.7% (limit: 12%). Correlation with existing positions: 0.35 with NEE (manageable). Liquidity: ADV $1.2B allows position building with minimal impact. **Recommendation: 3% weight with oil hedges at $70/bbl floor.**",
-        metadata: { agentType: "risk" }
+        timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000 - 45 * 60 * 1000)
       },
       {
         meetingId: cvxMeeting.id,
-        debateSessionId: cvxDebateSession.id,
-        userId: "user-demo-1",
+        proposalId: cvxProposal.id,
+        senderId: "user-demo-1",
         senderName: "Dan Mbanga",
         senderRole: "ANALYST",
-        messageType: "COMMENT",
-        content: "The shareholder yield story is compelling. With oil at $80, they generate $20B+ in free cash flow. Even if we're wrong on price, that 8% yield provides a nice floor while we wait."
+        content: "The shareholder yield story is compelling. With oil at $80, they generate $20B+ in free cash flow. Even if we're wrong on price, that 8% yield provides a nice floor while we wait.",
+        timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000 - 30 * 60 * 1000)
       },
       {
         meetingId: cvxMeeting.id,
-        debateSessionId: cvxDebateSession.id,
-        userId: null,
+        proposalId: cvxProposal.id,
+        senderId: "AI_AGENT_COMPLIANCE",
         senderName: "Compliance Agent",
         senderRole: "COMPLIANCE",
-        messageType: "COMMENT",
+        agentType: "compliance",
         content: "✅ **Compliance Assessment**: Position meets regulatory requirements with noted concerns. **Cleared**: Liquidity (ADV $1.2B), concentration (3% well below 7.5% limit), governance (12/13 independent directors). **Concerns**: (1) ESG scoring: MSCI BB rating due to carbon intensity - may trigger client redemptions from ESG-mandated funds, (2) Stranded asset risk: $15B in proved reserves may become uneconomic if carbon pricing exceeds $80/ton, (3) Disclosure: Scope 3 emissions reporting incomplete vs peers. **Mitigation**: Position CVX as transition play with expanding renewables (hydrogen, CCUS, biofuels now 8% of capex). Recommend engaging management on net-zero pathway. **Cleared for investment with enhanced monitoring.**",
-        metadata: { agentType: "compliance" }
+        timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000 - 15 * 60 * 1000)
       },
       {
         meetingId: cvxMeeting.id,
-        debateSessionId: cvxDebateSession.id,
-        userId: null,
+        proposalId: cvxProposal.id,
+        senderId: "AI_AGENT_CONTRARIAN",
         senderName: "Contrarian Agent",
         senderRole: "ANALYST",
-        messageType: "COMMENT",
+        agentType: "contrarian",
         content: "⚡ **Contrarian Perspective**: I see significant downside risks being underestimated. (1) **Peak demand earlier than expected**: EV adoption accelerating - Tesla, BYD hitting price parity 2 years ahead of schedule. Chinese EV penetration now 38% vs 15% last year. (2) **OPEC cohesion breaking**: Russia has incentive to cheat on quotas to fund Ukraine war, UAE wants higher production. History shows OPEC discipline collapses in late cycle. (3) **Stranded asset write-downs**: If oil stays <$70 for 2+ years, CVX's $42B in high-cost reserves face impairment. (4) **Capital allocation risk**: Management has terrible track record - Anadarko acquisition destroyed $10B in value. Noble Energy overpaid by $2B. What makes us think buybacks at 9x earnings is smart capital allocation? **Counter-recommendation: PASS or max 1.5% weight.**",
-        metadata: { agentType: "contrarian" }
+        timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000)
       },
       {
         meetingId: cvxMeeting.id,
-        debateSessionId: cvxDebateSession.id,
-        userId: "user-analyst-2",
+        proposalId: cvxProposal.id,
+        senderId: "user-analyst-2",
         senderName: "Alex Thompson",
         senderRole: "ANALYST",
-        messageType: "ANSWER",
-        content: "Strong pushback from Contrarian Agent, but I'd counter: (1) Peak demand timing is uncertain - aviation and petrochemicals still growing 3-4% annually, offsetting transport weakness. (2) Even at $70 oil, CVX generates $15B FCF - that's a 10% FCF yield. (3) On capital allocation: recent track record is better - they've returned $65B to shareholders since 2020 while maintaining investment-grade balance sheet."
+        content: "Strong pushback from Contrarian Agent, but I'd counter: (1) Peak demand timing is uncertain - aviation and petrochemicals still growing 3-4% annually, offsetting transport weakness. (2) Even at $70 oil, CVX generates $15B FCF - that's a 10% FCF yield. (3) On capital allocation: recent track record is better - they've returned $65B to shareholders since 2020 while maintaining investment-grade balance sheet.",
+        timestamp: new Date(Date.now() - 45 * 60 * 1000)
       },
       {
         meetingId: cvxMeeting.id,
-        debateSessionId: cvxDebateSession.id,
-        userId: "user-pm-1",
+        proposalId: cvxProposal.id,
+        senderId: "user-pm-1",
         senderName: "Mike Rodriguez",
         senderRole: "PM",
-        messageType: "COMMENT",
-        content: "This is helpful debate. I'm inclined to approve but at a smaller weight than proposed - maybe 2.5-3.0% given the risks highlighted. The yield is attractive but let's be prudent on sizing. Alex, can you refine the recommendation and we'll vote next meeting?"
+        content: "This is helpful debate. I'm inclined to approve but at a smaller weight than proposed - maybe 2.5-3.0% given the risks highlighted. The yield is attractive but let's be prudent on sizing. Alex, can you refine the recommendation and we'll vote next meeting?",
+        timestamp: new Date(Date.now() - 30 * 60 * 1000)
       }
     ];
 
