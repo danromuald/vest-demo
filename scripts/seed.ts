@@ -39,19 +39,22 @@ async function seed() {
   };
 
   try {
-    // Check if already seeded by looking for NEE workflow
+    // Check if already seeded by looking for GOOGL/AMZN proposals AND NEE monitoring
     const existingWorkflows = await storage.getWorkflows({ ticker: "NEE" });
-    if (existingWorkflows.length > 0) {
+    const existingProposals = await storage.getProposals();
+    const hasGooglProposal = existingProposals.some(p => p.ticker === "GOOGL" && p.analyst === "user-demo-1");
+    const hasAmznProposal = existingProposals.some(p => p.ticker === "AMZN" && p.analyst === "user-analyst-1");
+    
+    if (existingWorkflows.length > 0 && hasGooglProposal && hasAmznProposal) {
       const existingNeeWorkflow = existingWorkflows[0];
       const monitoringEvents = await storage.getMonitoringEvents(existingNeeWorkflow.id);
       if (monitoringEvents.length > 0) {
-        console.log("✅ Database already seeded - skipping");
+        console.log("✅ Database already fully seeded (NEE + GOOGL + AMZN) - skipping");
         return;
       }
-      console.log("NEE workflow exists but incomplete - proceeding with seed...");
-    } else {
-      console.log("Database not seeded yet - proceeding with seed...");
     }
+    
+    console.log("Database needs seeding - proceeding...");
 
     // Create demo users with different roles
     console.log("Creating demo users...");
