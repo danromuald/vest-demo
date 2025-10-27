@@ -4,7 +4,19 @@
 Vest is an AI-powered investment committee workflow system designed to automate and enhance the investment decision-making process. The platform streamlines workflows from initial research through execution and ongoing portfolio monitoring, leveraging a 16-agent AI system. Its purpose is to reduce analyst workload, enhance meeting quality, ensure compliance, and maintain institutional knowledge. Vest offers capabilities for automated research synthesis, AI-assisted investment committee meetings with real-time contrarian analysis, portfolio monitoring with thesis health tracking, document generation, scenario simulation, compliance checks, trade order generation, and risk assessment. The project is a production-ready enterprise MVP with comprehensive workflow automation.
 
 ## Recent Changes (October 27, 2025)
-- **Multi-Agent IC Meeting Room**: Implemented AI-powered debate room with 5 specialized agents (Research, Quant, Risk, Compliance, Contrarian) each with unique icons, colors, and specialties. Agents can be toggled on/off dynamically.
+
+### Session 2: Comprehensive Multi-Sector Portfolio & Debate Data
+- **Multi-Sector Portfolio**: Extended portfolio with NVDA (Technology sector) alongside existing Energy positions (NEE, CVX, OXY), demonstrating sector diversification ($508k Energy NEE + $660k Technology NVDA)
+- **Complete Debate Sessions**: Created 3 full debate sessions with 26 total messages across workflows:
+  - NEE: COMPLETED session with 12 messages (5 AI agents: Research, Quant, Risk, Compliance, Contrarian)
+  - CVX: ACTIVE session with 10 messages (5 AI agents debating in real-time)
+  - NVDA: COMPLETED session with 4 messages (2 AI agents)
+- **NVDA Workflow**: Added comprehensive Technology sector workflow from discovery through monitoring including proposal, IC meeting, debate session, position ($660k, 5000 shares @ $132), monitoring events (earnings beat, GB200 launch, AMD competition), and thesis health metrics
+- **Database Integrity**: Fixed all schema field mismatches (senderId→userId, avgEntryPrice→avgCost, proposalType requirement, monetary values as strings) ensuring seed runs cleanly
+- **Comprehensive Test Data**: 4 workflows across 2 sectors, 3 debate sessions, 2 active positions, 6 monitoring events, voice-enabled debate rooms ready for testing
+
+### Session 1: IC Meeting Debate Room & Workflow UX
+- **Multi-Agent IC Meeting Room**: Implemented AI-powered debate room with 5 specialized agents (Research, Quant, Risk, Compliance, Contrarian) each with unique icons, colors, and specialties. Agents can be toggled on/off dynamically
 - **Voice Input Capability**: Added voice recording interface with visual indicators (pulsing red dots during recording), mock implementation ready for speech-to-text integration
 - **Enhanced Debate Messages**: Created EnhancedDebateMessage component with agent avatars, specialty descriptions, role badges, text-to-speech buttons with speaking animations, and support for artifact attachments
 - **Auto-Scroll Fix**: Corrected useEffect dependency to auto-scroll to latest messages when debate content updates
