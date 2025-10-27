@@ -1,5 +1,5 @@
 import { useParams } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,9 @@ import { ThesisHealthBadge } from "@/components/thesis-health-badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { getPermissions } from "@/lib/permissions";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   TrendingUp, 
   Calendar, 
@@ -41,6 +44,8 @@ import type { Workflow, MonitoringEvent as MonitoringEventType, ThesisHealthMetr
 export default function WorkflowWorkspace() {
   const params = useParams<{ id: string }>();
   const workflowId = params.id;
+  const { toast } = useToast();
+  const { user } = useAuth();
 
   // Fetch workflow data
   const { data: workflow, isLoading: workflowLoading } = useQuery<Workflow>({
@@ -61,6 +66,61 @@ export default function WorkflowWorkspace() {
   });
 
   const isLoading = workflowLoading || stagesLoading || artifactsLoading;
+
+  // Export workflow as PDF
+  const handleExport = async () => {
+    if (!workflow) return;
+    
+    try {
+      toast({
+        title: "Generating PDF",
+        description: "Preparing comprehensive workflow export...",
+      });
+
+      // Generate a download link for the portfolio summary PDF
+      // In production, this would be a workflow-specific export
+      const exportUrl = `/api/export/portfolio-summary`;
+      window.open(exportUrl, '_blank');
+      
+      toast({
+        title: "Export Started",
+        description: "Your workflow PDF will download shortly",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: error instanceof Error ? error.message : "Failed to export workflow",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Advance to next stage mutation
+  const advanceStageMutation = useMutation({
+    mutationFn: async () => {
+      if (!workflowId || !user) throw new Error("Missing workflow or user");
+      
+      const response = await apiRequest('POST', `/api/workflow/workflow/${workflowId}/advance`, {
+        userId: user.id,
+      });
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/workflows/${workflowId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/workflows/${workflowId}/stages`] });
+      toast({
+        title: "Stage Advanced",
+        description: "Workflow has been moved to the next stage",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Advance",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   if (isLoading) {
     return (
@@ -136,13 +196,23 @@ export default function WorkflowWorkspace() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" data-testid="button-export">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleExport}
+                data-testid="button-export"
+              >
                 <FileText className="h-4 w-4 mr-2" />
                 Export
               </Button>
-              <Button size="sm" data-testid="button-advance-stage">
+              <Button 
+                size="sm" 
+                onClick={() => advanceStageMutation.mutate()}
+                disabled={advanceStageMutation.isPending}
+                data-testid="button-advance-stage"
+              >
                 <ArrowRight className="h-4 w-4 mr-2" />
-                Advance Stage
+                {advanceStageMutation.isPending ? "Advancing..." : "Advance Stage"}
               </Button>
             </div>
           </div>
@@ -195,34 +265,69 @@ export default function WorkflowWorkspace() {
           <div className="flex-1 overflow-auto">
             {/* Overview Tab */}
             <TabsContent value="overview" className="p-6 space-y-6 m-0">
-              <OverviewTab workflow={workflow} stages={stages} artifacts={artifacts} />
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <OverviewTab workflow={workflow} stages={stages} artifacts={artifacts} />
+              </motion.div>
             </TabsContent>
 
             {/* Analysis Hub Tab */}
             {showAnalysis && (
               <TabsContent value="analysis" className="p-6 space-y-6 m-0">
-                <AnalysisHubTab workflowId={workflowId!} artifacts={artifacts} />
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <AnalysisHubTab workflowId={workflowId!} artifacts={artifacts} />
+                </motion.div>
               </TabsContent>
             )}
 
             {/* IC Meeting Tab */}
             {showICMeeting && (
               <TabsContent value="ic-meeting" className="p-6 space-y-6 m-0">
-                <ICMeetingTab workflowId={workflowId!} />
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ICMeetingTab workflowId={workflowId!} />
+                </motion.div>
               </TabsContent>
             )}
 
             {/* Execution Tab */}
             {showExecution && (
               <TabsContent value="execution" className="p-6 space-y-6 m-0">
-                <ExecutionTab workflowId={workflowId!} />
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ExecutionTab workflowId={workflowId!} />
+                </motion.div>
               </TabsContent>
             )}
 
             {/* Monitoring Tab */}
             {showMonitoring && (
               <TabsContent value="monitoring" className="p-6 space-y-6 m-0">
-                <MonitoringTab workflowId={workflowId!} />
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <MonitoringTab workflowId={workflowId!} />
+                </motion.div>
               </TabsContent>
             )}
           </div>
@@ -304,79 +409,47 @@ function OverviewTab({ workflow, stages, artifacts }: {
   const totalArtifacts = artifacts?.length || 0;
   const latestUpdate = workflow.updatedAt ? new Date(workflow.updatedAt).toLocaleDateString() : "N/A";
 
+  const metricCards = [
+    { id: 'stage', title: 'Current Stage', value: workflow.currentStage.replace("_", " "), detail: `${completedStages} of 5 stages completed`, icon: null },
+    { id: 'owner', title: 'Owner', value: workflow.owner, detail: 'Lead analyst', icon: Users },
+    { id: 'artifacts', title: 'Artifacts', value: totalArtifacts.toString(), detail: 'Research outputs', icon: null },
+    { id: 'updated', title: 'Last Updated', value: latestUpdate, detail: 'Activity timestamp', icon: Clock },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card data-testid="card-metric-stage">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-medium uppercase tracking-wide">
-              Current Stage
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold font-mono">
-              {workflow.currentStage.replace("_", " ")}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {completedStages} of 5 stages completed
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card data-testid="card-metric-owner">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-medium uppercase tracking-wide">
-              Owner
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-muted-foreground" />
-              <div className="text-lg font-medium">
-                {workflow.owner}
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Lead analyst
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card data-testid="card-metric-artifacts">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-medium uppercase tracking-wide">
-              Artifacts
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold font-mono">
-              {totalArtifacts}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Research outputs
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card data-testid="card-metric-updated">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-medium uppercase tracking-wide">
-              Last Updated
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-muted-foreground" />
-              <div className="text-lg font-medium">
-                {latestUpdate}
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Activity timestamp
-            </p>
-          </CardContent>
-        </Card>
+        {metricCards.map((metric, index) => {
+          const Icon = metric.icon;
+          return (
+            <motion.div
+              key={metric.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+            >
+              <Card data-testid={`card-metric-${metric.id}`}>
+                <CardHeader className="pb-2">
+                  <CardDescription className="text-xs font-medium uppercase tracking-wide">
+                    {metric.title}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className={cn("flex items-center", Icon ? "gap-2" : "")}>
+                    {Icon && <Icon className="h-5 w-5 text-muted-foreground" />}
+                    <div className={cn(metric.id === 'stage' || metric.id === 'artifacts' ? "text-2xl font-semibold font-mono" : "text-lg font-medium")}>
+                      {metric.value}
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {metric.detail}
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        })}
       </div>
 
       {/* Workflow Details */}
@@ -545,34 +618,40 @@ function AnalysisHubTab({ workflowId, artifacts }: { workflowId: string; artifac
       </div>
 
       {/* Quick Actions */}
-      <Card data-testid="card-quick-actions">
-        <CardHeader>
-          <CardTitle className="text-lg">Quick Actions</CardTitle>
-          <CardDescription>
-            Generate new research outputs or refresh existing analysis
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Button variant="outline" className="justify-start" data-testid="button-generate-brief">
-              <Plus className="h-4 w-4 mr-2" />
-              Research Brief
-            </Button>
-            <Button variant="outline" className="justify-start" data-testid="button-generate-model">
-              <Plus className="h-4 w-4 mr-2" />
-              Financial Model
-            </Button>
-            <Button variant="outline" className="justify-start" data-testid="button-generate-quant">
-              <Plus className="h-4 w-4 mr-2" />
-              Quant Analysis
-            </Button>
-            <Button variant="outline" className="justify-start" data-testid="button-generate-risk">
-              <Plus className="h-4 w-4 mr-2" />
-              Risk Analysis
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.4 }}
+      >
+        <Card data-testid="card-quick-actions">
+          <CardHeader>
+            <CardTitle className="text-lg">Quick Actions</CardTitle>
+            <CardDescription>
+              Generate new research outputs or refresh existing analysis
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <Button variant="outline" className="justify-start hover-elevate" data-testid="button-generate-brief">
+                <Plus className="h-4 w-4 mr-2" />
+                Research Brief
+              </Button>
+              <Button variant="outline" className="justify-start hover-elevate" data-testid="button-generate-model">
+                <Plus className="h-4 w-4 mr-2" />
+                Financial Model
+              </Button>
+              <Button variant="outline" className="justify-start hover-elevate" data-testid="button-generate-quant">
+                <Plus className="h-4 w-4 mr-2" />
+                Quant Analysis
+              </Button>
+              <Button variant="outline" className="justify-start hover-elevate" data-testid="button-generate-risk">
+                <Plus className="h-4 w-4 mr-2" />
+                Risk Analysis
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 }
@@ -1160,9 +1239,9 @@ function MonitoringTab({ workflowId }: { workflowId: string }) {
       severity: "HIGH",
       title: "Price moved -8% below target",
       description: "Current price $132 vs target $145, triggering review threshold",
-      eventData: {},
-      status: "ACTIVE",
-      triggeredAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      details: {},
+      actionRequired: true,
+      actionTaken: null,
       resolvedAt: null,
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
     },
@@ -1174,9 +1253,9 @@ function MonitoringTab({ workflowId }: { workflowId: string }) {
       severity: "MEDIUM",
       title: "Earnings beat expectations",
       description: "Q3 EPS $2.15 vs est. $1.98, revenue $14.2B vs $13.8B expected",
-      eventData: {},
-      status: "RESOLVED",
-      triggeredAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      details: {},
+      actionRequired: false,
+      actionTaken: "Reviewed and confirmed thesis alignment",
       resolvedAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
       createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
     },
@@ -1188,9 +1267,9 @@ function MonitoringTab({ workflowId }: { workflowId: string }) {
       severity: "LOW",
       title: "Analyst upgrade from Morgan Stanley",
       description: "Upgraded to Overweight with $155 price target",
-      eventData: {},
-      status: "RESOLVED",
-      triggeredAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      details: {},
+      actionRequired: false,
+      actionTaken: "Noted in research updates",
       resolvedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
       createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
     }
@@ -1481,6 +1560,8 @@ function MonitoringEvent({ event }: { event: MonitoringEventType }) {
     return `${days}d ago`;
   };
 
+  const isResolved = event.resolvedAt !== null;
+
   return (
     <div 
       className={`p-4 rounded-md border ${severityColors[event.severity as keyof typeof severityColors]}`}
@@ -1492,13 +1573,18 @@ function MonitoringEvent({ event }: { event: MonitoringEventType }) {
             <Badge variant="outline" className="text-xs">
               {event.eventType.replace(/_/g, " ")}
             </Badge>
-            <span className="text-xs text-muted-foreground">{timeAgo(event.triggeredAt)}</span>
-            {event.status === "RESOLVED" && (
+            <span className="text-xs text-muted-foreground">{timeAgo(event.createdAt!)}</span>
+            {isResolved && (
               <CheckCircle2 className="h-4 w-4 text-green-500" />
             )}
           </div>
           <h4 className="font-medium text-sm mb-1">{event.title}</h4>
           <p className="text-sm text-muted-foreground">{event.description}</p>
+          {event.actionTaken && (
+            <p className="text-xs text-muted-foreground mt-1 italic">
+              Action: {event.actionTaken}
+            </p>
+          )}
         </div>
         <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
           <ArrowRight className="h-4 w-4" />

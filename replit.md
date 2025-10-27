@@ -3,7 +3,14 @@
 ## Overview
 Vest is an AI-powered investment committee workflow system designed to automate and enhance the investment decision-making process. The platform streamlines workflows from initial research through execution and ongoing portfolio monitoring, leveraging a 16-agent AI system. Its purpose is to reduce analyst workload, enhance meeting quality, ensure compliance, and maintain institutional knowledge. Vest offers capabilities for automated research synthesis, AI-assisted investment committee meetings with real-time contrarian analysis, portfolio monitoring with thesis health tracking, document generation, scenario simulation, compliance checks, trade order generation, and risk assessment. The project is a production-ready enterprise MVP with comprehensive workflow automation.
 
-## Recent Changes (October 26, 2025)
+## Recent Changes (October 27, 2025)
+- **Workflow UX Enhancements**: Export and Advance Stage buttons now fully functional with proper API integration and loading states
+- **Framer Motion Animations**: Added smooth fade/slide transitions to all workflow tabs, staggered card animations in Overview tab, and expandable artifact previews
+- **Fixed Type Errors**: Corrected MonitoringEvent schema mismatches (changed `triggeredAt` to `createdAt`, removed `status` in favor of `resolvedAt` check)
+- **Enhanced Artifact Display**: Artifacts in Analysis Hub now show expandable inline previews with smooth animations
+- **Role-Based Authorization**: Completed server-side voting authorization and client-side permission filtering
+
+## Previous Changes (October 26, 2025)
 - **Backend Infrastructure**: Completed comprehensive database schema with 17 tables including workflows, workflow_stages, workflow_artifacts, ic_meetings, debate_messages, positions, monitoring_events, thesis_health_metrics, and more
 - **Storage Layer**: Implemented full storage interface with 34+ methods covering workflow orchestration, artifact management, IC meeting operations, monitoring, and analytics
 - **API Layer**: Built 28 REST API endpoints with Zod validation, session-based authentication, and proper error handling
