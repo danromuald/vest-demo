@@ -22,17 +22,18 @@
 ### Prerequisites
 
 - Docker Desktop ([Download](https://www.docker.com/products/docker-desktop))
-- Git
+- Git  
+- Make (pre-installed on macOS/Linux)
 
-### Launch with Docker (Recommended)
+### One-Command Setup (Recommended)
 
 ```bash
 # Clone the repository
 git clone <your-repo-url>
 cd vest
 
-# Start everything with one command
-docker-compose up
+# Build, start, migrate, and seed everything
+make run-all
 ```
 
 The application will be available at **http://localhost:5000**
@@ -44,27 +45,18 @@ You'll be automatically signed in as **Dan Mbanga** (dan@example.io) with access
 - ✅ Active position (5000 NVDA shares @ $119.50)
 - ✅ Monitoring events and thesis health tracking
 
-### Using Makefile (Alternative)
+### Additional Commands
 
 ```bash
-# View all available commands
-make help
-
-# First time setup
-make setup
-
-# Start the application
-make start
-
-# View logs
-make logs
-
-# Stop the application
-make stop
-
-# Clean everything (remove all data)
-make clean
+make help        # Show all available commands
+make start       # Start application (with logs)
+make stop        # Stop application
+make logs        # View logs
+make clean       # Remove all containers and data
+make db-reset    # Reset and reseed database
 ```
+
+See [LOCAL_SETUP.md](./LOCAL_SETUP.md) for detailed instructions and troubleshooting.
 
 ## 📖 Comprehensive Documentation
 
