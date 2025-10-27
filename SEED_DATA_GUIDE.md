@@ -20,18 +20,17 @@ The seed script now creates diverse, realistic data across multiple research sce
 
 **Key Testing Scenario:** CVX shows "Create Proposal" button because research is COMPLETED but no proposal exists yet.
 
-### Proposals (5 across different stages)
+### Proposals (4 across different stages)
 
 | Ticker | Company | Status | Analyst | Workflow Stage |
 |--------|---------|--------|---------|----------------|
 | **NEE** | NextEra Energy | APPROVED | user-analyst-1 | MONITORING |
 | **NVDA** | NVIDIA | APPROVED | user-analyst-1 | MONITORING |
-| **CVX** | Chevron | PENDING | user-analyst-2 | IC_MEETING |
 | **OXY** | Occidental | PENDING | user-demo-1 | ANALYSIS |
-| **GOOGL** | Alphabet | DRAFT | user-demo-1 | (research stage) |
-| **AMZN** | Amazon | PENDING | user-analyst-1 | (research stage) |
+| **GOOGL** | Alphabet | DRAFT | user-demo-1 | (linked to research) |
+| **AMZN** | Amazon | PENDING | user-analyst-1 | (linked to research) |
 
-### Complete Workflows (4 at different stages)
+### Complete Workflows (3 at different stages)
 
 #### 1. NEE - Full Monitoring Workflow
 - **Stage**: MONITORING (post-execution)
@@ -52,15 +51,7 @@ The seed script now creates diverse, realistic data across multiple research sce
   - Completed IC meeting (4 debate messages)
   - Full set of agent responses
 
-#### 3. CVX - Active IC Meeting
-- **Stage**: IC_MEETING
-- **Status**: ACTIVE
-- **Features**:
-  - Active debate session in progress (9 messages)
-  - Research artifacts complete
-  - Awaiting committee vote
-
-#### 4. OXY - Analysis In Progress
+#### 3. OXY - Analysis In Progress
 - **Stage**: ANALYSIS
 - **Status**: ACTIVE
 - **Features**:
@@ -230,12 +221,11 @@ Watch for this output:
 
 **Verify:**
 1. **NEE Meeting** - COMPLETED (11 debate messages)
-2. **CVX Meeting** - ACTIVE (9 debate messages, ongoing)
-3. **NVDA Meeting** - COMPLETED (4 debate messages)
+2. **NVDA Meeting** - COMPLETED (4 debate messages)
 
 **Test Debate Room:**
-- Click into CVX meeting
-- Should see active debate with AI agent responses
+- Click into NEE or NVDA meeting
+- Should see completed debate with AI agent responses
 - Test voice controls if available
 
 ### Step 6: Test Monitoring Hub
@@ -291,8 +281,8 @@ docker compose exec postgres psql -U vest -d vest_db -c \
 
 **Expected Counts:**
 - Research requests: 7 (CVX, GOOGL, AMZN, OXY, META, TSLA, NVDA)
-- Proposals: 6 (NEE, NVDA, CVX, OXY, GOOGL, AMZN)
-- Workflows: 4 (NEE, NVDA, CVX, OXY)
+- Proposals: 5 (NEE, NVDA, OXY, GOOGL, AMZN)
+- Workflows: 3 (NEE, NVDA, OXY)
 - Agent responses: 40+ total
   - NEE: ~32 (all 16 agents x 2 instances)
   - GOOGL: 2 (Research + DCF)

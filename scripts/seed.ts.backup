@@ -770,9 +770,354 @@ NextEra Energy represents a rare combination of defensive utility characteristic
     });
 
     // =====================================================================
-    // NOTE: CVX is created as a RESEARCH REQUEST only (no workflow/proposal yet)
-    // This demonstrates the "Create Proposal" button UI state
-    // CVX research request and agent responses are created later in this script
+    // WORKFLOW 2: CVX - In IC_MEETING stage
+    // =====================================================================
+    console.log("\n📊 Creating CVX workflow (IC_MEETING stage)...");
+    
+    const cvxProposal = await storage.createProposal({
+      ticker: "CVX",
+      companyName: "Chevron Corporation",
+      analyst: "user-analyst-2",
+      proposalType: "BUY",
+      proposedWeight: "3.50",
+      targetPrice: "175.00",
+      status: "PENDING",
+      thesis: "Chevron offers attractive exposure to rising oil prices with best-in-class capital discipline and shareholder returns. The company's low-cost asset base (Permian, Kazakhstan, LNG) provides competitive advantages in any price environment. Target $175 represents 12% upside with 3.8% dividend yield and 5% buyback.",
+      catalysts: [
+        "Permian production growth of 10%+ annually through 2027 from tier-1 acreage",
+        "Tengiz expansion project ramping to 850K bpd (15% company production increase)",
+        "LNG portfolio (Gorgon, Wheatstone) benefiting from Asian demand and European gas crisis",
+        "Capital returns of $20B+ annually (7-8% yield at current prices) with oil at $80+"
+      ],
+      risks: [
+        "Oil price exposure: Breakeven ~$50 WTI but material earnings sensitivity to prices",
+        "Geopolitical risk: ~40% production from Kazakhstan, Australia, Nigeria",
+        "Energy transition: Long-term demand concerns and stranded asset risk",
+        "Refining exposure: Margins compressed in recession scenarios"
+      ],
+      recommendation: "BUY",
+      upside: "12.40",
+      downside: "-18.20"
+    });
+
+    const cvxWorkflow = await storage.createWorkflow({
+      ticker: "CVX",
+      companyName: "Chevron Corporation",
+      sector: "Energy",
+      currentStage: "IC_MEETING",
+      status: "ACTIVE",
+      owner: "user-analyst-2",
+      description: "Integrated energy major with low-cost production and strong capital returns"
+    });
+
+    // Create CVX workflow stages (up to IC Meeting)
+    await Promise.all([
+      storage.createWorkflowStage({
+        workflowId: cvxWorkflow.id,
+        stage: "DISCOVERY",
+        status: "COMPLETED",
+        owner: "user-analyst-2",
+        startedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+        completedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+        notes: "Initial research on CVX completed"
+      }),
+      storage.createWorkflowStage({
+        workflowId: cvxWorkflow.id,
+        stage: "ANALYSIS",
+        status: "COMPLETED",
+        owner: "user-analyst-2",
+        startedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+        completedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+        notes: "Financial model and risk analysis completed"
+      }),
+      storage.createWorkflowStage({
+        workflowId: cvxWorkflow.id,
+        stage: "IC_MEETING",
+        status: "IN_PROGRESS",
+        owner: "user-pm-1",
+        startedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        completedAt: null,
+        notes: "IC meeting in progress - reviewing proposal"
+      }),
+      storage.createWorkflowStage({
+        workflowId: cvxWorkflow.id,
+        stage: "EXECUTION",
+        status: "PENDING",
+        owner: null,
+        startedAt: null,
+        completedAt: null,
+        notes: null
+      }),
+      storage.createWorkflowStage({
+        workflowId: cvxWorkflow.id,
+        stage: "MONITORING",
+        status: "PENDING",
+        owner: null,
+        startedAt: null,
+        completedAt: null,
+        notes: null
+      })
+    ]);
+
+    // CVX Artifacts
+    console.log("  Creating CVX artifacts...");
+    await Promise.all([
+      seedArtifact({
+        workflowId: cvxWorkflow.id,
+        artifactType: "RESEARCH_BRIEF",
+        stage: "ANALYSIS",
+        title: "CVX Traditional Energy Quality Analysis",
+        createdBy: "user-analyst-2",
+        content: `# Chevron Corporation Investment Brief
+
+## Executive Summary
+Chevron is a top-tier integrated energy company with low-cost production assets and industry-leading capital discipline. Despite energy transition headwinds, CVX offers attractive near-term returns through strong free cash flow generation and shareholder returns.
+
+## Investment Highlights
+- Permian Basin: Tier-1 acreage with 10+ years inventory at sub-$30 breakeven
+- Tengiz Expansion: Adding 260K bpd at $40/bbl breakeven (world-class)
+- Capital Returns: $20B+ annually at $80+ oil (8% shareholder yield)
+- Balance Sheet: Net debt target of $25B vs $13B today (room for returns)
+
+## Financial Outlook
+- Production CAGR 2024-2027: 3.5%
+- FCF yield: 12-14% at $85 oil, 8-10% at $70 oil
+- Dividend yield: 3.8% with 6% growth
+- Buyback: $15B annually (~5% shares outstanding)
+
+## Key Debate Points
+**Bull Case**: Energy security drives sustained $80+ oil, CVX's low-cost assets print cash, stock re-rates from 9x to 11x P/E
+**Bear Case**: Demand destruction + energy transition accelerates, oil to $60, CVX cuts buybacks
+
+## Recommendation: BUY (with timing considerations)
+Target: $175 (12% upside + 9% shareholder yield)`
+      }),
+
+      seedArtifact({
+        workflowId: cvxWorkflow.id,
+        artifactType: "FINANCIAL_MODEL",
+        stage: "ANALYSIS",
+        title: "CVX Cash Flow Model & Valuation",
+        createdBy: "user-analyst-2",
+        content: `# Chevron Financial Model
+
+## Production & Price Assumptions
+- Oil production: 3.1M bpd (2024) → 3.4M bpd (2027)
+- Brent price deck: $85/bbl (2024) → $80/bbl (long-term)
+- Permian: 700K bpd → 900K bpd (+29% growth)
+- Tengiz expansion: 600K bpd → 850K bpd
+
+## Financial Projections (2024-2027)
+Revenue: $200B → $215B (+2.3% CAGR)
+EBITDA: $52B → $56B
+FCF: $28B → $30B
+EPS: $14.20 → $16.50
+
+## Valuation
+**DCF Fair Value**: $182/share
+- WACC: 9.5%
+- Terminal FCF: $28B
+- Growth rate: 0%
+
+**Relative Valuation**: $165-175/share
+- 10x P/E on $17 normalized EPS
+- In-line with XOM, premium to Occidental
+
+**Shareholder Return Value**: $170/share
+- PV of 10-year buyback at 5% of shares = $45/share of value
+
+## Sensitivity: Oil Price Impact
+$100 oil: $205/share (+31%)
+$85 oil: $175/share (base)
+$70 oil: $145/share (-17%)
+$60 oil: $120/share (-31%)`
+      }),
+
+      seedArtifact({
+        workflowId: cvxWorkflow.id,
+        artifactType: "RISK_ANALYSIS",
+        stage: "ANALYSIS",
+        title: "CVX Risk Assessment",
+        createdBy: "user-analyst-2",
+        content: `# Risk Analysis: Chevron Corporation
+
+## Risk #1: Oil Price Volatility (HIGH)
+- **Probability**: High (oil prices inherently volatile)
+- **Impact**: Material - $10 oil = $1.50/share EPS impact
+- **Mitigation**: Low-cost assets, hedging program, dividend covered even at $50 oil
+- **Our View**: Bullish on oil given supply constraints and China reopening
+
+## Risk #2: Energy Transition (MEDIUM-HIGH)
+- **Probability**: Medium (pace uncertain but direction clear)
+- **Impact**: High over 10+ years - demand destruction risk
+- **Mitigation**: Shifting to LNG, low-carbon, but limited alternative energy investments
+- **Our View**: Risk real but 10-15 year timeframe allows returns before peak oil
+
+## Risk #3: Geopolitical Exposure (MEDIUM)
+- **Probability**: Medium (Kazakhstan 10% of production, some Nigeria)
+- **Impact**: Medium - loss of asset would hurt but not fatal
+- **Mitigation**: Diversified portfolio, insurance, government relations
+- **Our View**: Acceptable given returns in base case
+
+## Risk #4: Refining Margin Compression (MEDIUM)
+- **Probability**: Medium-High in recession
+- **Impact**: Medium - refining is ~25% of EBITDA
+- **Mitigation**: Integrated model, downstream often hedges upstream
+- **Our View**: Near-term risk but margins still elevated vs history
+
+## Scenario Analysis
+**Bull**: $100 oil, strong execution → $210/share (+35%)
+**Base**: $80-85 oil, on-track → $175/share (+12%)
+**Bear**: $65 oil, transition accelerates → $130/share (-17%)`
+      })
+    ]);
+
+    // CVX IC Meeting (SCHEDULED but not completed)
+    console.log("  Creating CVX IC meeting (in progress)...");
+    const cvxMeeting = await storage.createICMeeting({
+      workflowId: cvxWorkflow.id,
+      meetingDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
+      status: "SCHEDULED",
+      title: "CVX Investment Committee Meeting",
+      description: "Review and vote on Chevron Corporation (CVX) investment proposal",
+      attendees: ["user-analyst-2", "user-pm-1", "user-compliance-1", "user-demo-1"],
+      agenda: {
+        items: [
+          "Traditional energy thesis review",
+          "Oil price sensitivity analysis",
+          "Energy transition risk assessment",
+          "Q&A and contrarian debate",
+          "Vote on position"
+        ]
+      },
+      minutes: "Upcoming IC meeting to review CVX proposal. Key discussion points: oil price assumptions, energy transition timeline, position sizing given sector exposure.",
+      createdBy: "user-pm-1"
+    });
+
+    // CVX Debate Session (in progress)
+    console.log("  Creating CVX debate session...");
+    const cvxDebateSession = await storage.createDebateSession({
+      meetingId: cvxMeeting.id,
+      proposalId: cvxProposal.id,
+      ticker: "CVX",
+      topic: "Chevron Corporation - Traditional Energy Thesis in Transition Era",
+      status: "ACTIVE",
+      currentPhase: "DELIBERATION",
+      leadModerator: "Mike Rodriguez",
+      activeAgents: ["CONTRARIAN", "RESEARCH", "QUANT", "RISK", "COMPLIANCE"],
+      participantCount: 6,
+      messageCount: 6,
+      keyPoints: [
+        "Oil price assumptions and sensitivity analysis",
+        "Energy transition timeline and CVX's positioning",
+        "Capital allocation and shareholder returns",
+        "Valuation attractive but execution risk elevated"
+      ]
+    });
+
+    // Rich debate messages with all 5 AI agents participating
+    const cvxDebateMessages = [
+      {
+        meetingId: cvxMeeting.id,
+        debateSessionId: cvxDebateSession.id,
+        userId: "user-pm-1",
+        senderName: "Mike Rodriguez",
+        senderRole: "PM",
+        messageType: "QUESTION",
+        content: "Alex, thanks for the work here. Playing devil's advocate: aren't we late to the party on traditional energy? Oil stocks have rallied 40% this year. What's the catalyst for further upside from here?"
+      },
+      {
+        meetingId: cvxMeeting.id,
+        debateSessionId: cvxDebateSession.id,
+        userId: "user-analyst-2",
+        senderName: "Alex Thompson",
+        senderRole: "ANALYST",
+        messageType: "ANSWER",
+        content: "Fair point. But I'd argue CVX at 9x earnings with an 8% shareholder yield is still cheap. The rally has been justified - supply is tight, OPEC is disciplined, and energy capex was severely underfunded 2015-2020. We're in a structural deficit. Plus CVX specifically has Tengiz ramping which adds 15% to production at $40 breakeven."
+      },
+      {
+        meetingId: cvxMeeting.id,
+        debateSessionId: cvxDebateSession.id,
+        userId: null,
+        senderName: "Research Agent",
+        senderRole: "ANALYST",
+        messageType: "COMMENT",
+        content: "📊 **Research Analysis**: Global oil market fundamentals support the thesis. Key findings: (1) Spare capacity at 15-year lows - only 2.1M bpd vs 4.5M historical average, (2) Upstream capex has been $400B below maintenance levels since 2015, creating supply deficit, (3) CVX-specific advantages: Permian breakevens of $35/bbl (Peer average: $42), Kazakhstan Tengiz project adds 260K bpd at industry-leading margins, LNG portfolio provides optionality on Asian gas demand. Competitive positioning: CVX ranks #2 globally in reserve quality (proved reserves: 11.1B boe, 60% liquids). Energy transition timeline: IEA forecasts oil demand peak in 2030 - gives us 6-8 year runway for returns.",
+        metadata: { agentType: "research" }
+      },
+      {
+        meetingId: cvxMeeting.id,
+        debateSessionId: cvxDebateSession.id,
+        userId: null,
+        senderName: "Quant Agent",
+        senderRole: "ANALYST",
+        messageType: "COMMENT",
+        content: "📈 **Valuation & Scenario Modeling**: At $155/share, CVX trades at 6.2x EV/EBITDA vs 10-year average of 7.8x - implies 26% upside to historical mean. DCF analysis across oil price scenarios: Bull case ($95/bbl): $198 fair value. Base case ($80/bbl): $178. Bear case ($65/bbl): $142. Current price of $155 offers 3.5:1 reward/risk ratio. Free cash flow yield: 12.3% vs XLE average 9.1%. Shareholder yield (buybacks + dividend): 8.2% ranks in top decile of energy majors. Statistical analysis shows CVX outperforms in late-cycle environments (correlation: 0.73 with ISM Manufacturing). Current ISM at 48.2 suggests cyclical bottom is near.",
+        metadata: { agentType: "quant" }
+      },
+      {
+        meetingId: cvxMeeting.id,
+        debateSessionId: cvxDebateSession.id,
+        userId: null,
+        senderName: "Risk Agent",
+        senderRole: "ANALYST",
+        messageType: "COMMENT",
+        content: "⚠️ **Risk Report**: Primary risks include: (1) **Oil price volatility**: Each $10/bbl move impacts earnings by $2.8B annually. Historical volatility: 35% (vs 18% for S&P 500). (2) **Energy transition acceleration**: Scenario analysis shows aggressive EV adoption could reduce demand by 8M bpd by 2030 (base case: 4M bpd). (3) **Geopolitical exposure**: 23% of production from Kazakhstan - political instability or sanctions risk. (4) **Regulatory/ESG pressures**: Carbon pricing could add $5-8/bbl to operating costs. Portfolio impact: Energy sector weight would increase to 8.7% (limit: 12%). Correlation with existing positions: 0.35 with NEE (manageable). Liquidity: ADV $1.2B allows position building with minimal impact. **Recommendation: 3% weight with oil hedges at $70/bbl floor.**",
+        metadata: { agentType: "risk" }
+      },
+      {
+        meetingId: cvxMeeting.id,
+        debateSessionId: cvxDebateSession.id,
+        userId: "user-demo-1",
+        senderName: "Dan Mbanga",
+        senderRole: "ANALYST",
+        messageType: "COMMENT",
+        content: "The shareholder yield story is compelling. With oil at $80, they generate $20B+ in free cash flow. Even if we're wrong on price, that 8% yield provides a nice floor while we wait."
+      },
+      {
+        meetingId: cvxMeeting.id,
+        debateSessionId: cvxDebateSession.id,
+        userId: null,
+        senderName: "Compliance Agent",
+        senderRole: "COMPLIANCE",
+        messageType: "COMMENT",
+        content: "✅ **Compliance Assessment**: Position meets regulatory requirements with noted concerns. **Cleared**: Liquidity (ADV $1.2B), concentration (3% well below 7.5% limit), governance (12/13 independent directors). **Concerns**: (1) ESG scoring: MSCI BB rating due to carbon intensity - may trigger client redemptions from ESG-mandated funds, (2) Stranded asset risk: $15B in proved reserves may become uneconomic if carbon pricing exceeds $80/ton, (3) Disclosure: Scope 3 emissions reporting incomplete vs peers. **Mitigation**: Position CVX as transition play with expanding renewables (hydrogen, CCUS, biofuels now 8% of capex). Recommend engaging management on net-zero pathway. **Cleared for investment with enhanced monitoring.**",
+        metadata: { agentType: "compliance" }
+      },
+      {
+        meetingId: cvxMeeting.id,
+        debateSessionId: cvxDebateSession.id,
+        userId: null,
+        senderName: "Contrarian Agent",
+        senderRole: "ANALYST",
+        messageType: "COMMENT",
+        content: "⚡ **Contrarian Perspective**: I see significant downside risks being underestimated. (1) **Peak demand earlier than expected**: EV adoption accelerating - Tesla, BYD hitting price parity 2 years ahead of schedule. Chinese EV penetration now 38% vs 15% last year. (2) **OPEC cohesion breaking**: Russia has incentive to cheat on quotas to fund Ukraine war, UAE wants higher production. History shows OPEC discipline collapses in late cycle. (3) **Stranded asset write-downs**: If oil stays <$70 for 2+ years, CVX's $42B in high-cost reserves face impairment. (4) **Capital allocation risk**: Management has terrible track record - Anadarko acquisition destroyed $10B in value. Noble Energy overpaid by $2B. What makes us think buybacks at 9x earnings is smart capital allocation? **Counter-recommendation: PASS or max 1.5% weight.**",
+        metadata: { agentType: "contrarian" }
+      },
+      {
+        meetingId: cvxMeeting.id,
+        debateSessionId: cvxDebateSession.id,
+        userId: "user-analyst-2",
+        senderName: "Alex Thompson",
+        senderRole: "ANALYST",
+        messageType: "ANSWER",
+        content: "Strong pushback from Contrarian Agent, but I'd counter: (1) Peak demand timing is uncertain - aviation and petrochemicals still growing 3-4% annually, offsetting transport weakness. (2) Even at $70 oil, CVX generates $15B FCF - that's a 10% FCF yield. (3) On capital allocation: recent track record is better - they've returned $65B to shareholders since 2020 while maintaining investment-grade balance sheet."
+      },
+      {
+        meetingId: cvxMeeting.id,
+        debateSessionId: cvxDebateSession.id,
+        userId: "user-pm-1",
+        senderName: "Mike Rodriguez",
+        senderRole: "PM",
+        messageType: "COMMENT",
+        content: "This is helpful debate. I'm inclined to approve but at a smaller weight than proposed - maybe 2.5-3.0% given the risks highlighted. The yield is attractive but let's be prudent on sizing. Alex, can you refine the recommendation and we'll vote next meeting?"
+      }
+    ];
+
+    for (const msg of cvxDebateMessages) {
+      await storage.createDebateMessage(msg);
+    }
+
     // =====================================================================
     // WORKFLOW 3: OXY - In ANALYSIS stage
     // =====================================================================
@@ -1141,6 +1486,16 @@ Occidental has successfully navigated the challenging post-Anadarko integration 
         severity: "WARNING" as const,
         readAt: null,
         actionUrl: "/workflows/" + neeWorkflow.id
+      },
+      {
+        userId: "user-demo-1",
+        ticker: "CVX",
+        title: "CVX IC Meeting Scheduled",
+        message: "IC meeting for Chevron proposal scheduled for 2 days from now. Please review materials.",
+        type: "IC_MEETING" as const,
+        severity: "INFO" as const,
+        readAt: null,
+        actionUrl: "/ic-meeting/" + cvxMeeting.id
       },
       {
         userId: "user-demo-1",
@@ -2132,14 +2487,15 @@ Occidental has successfully navigated the challenging post-Anadarko integration 
     console.log("  - 4 companies across 2 sectors:");
     console.log("    • Energy: NEE, CVX, OXY");
     console.log("    • Technology: NVDA");
-    console.log("  - 3 workflows in different stages:");
+    console.log("  - 4 workflows in different stages:");
     console.log("    • NEE (MONITORING): Complete workflow with position & thesis tracking");
     console.log("    • NVDA (MONITORING): AI infrastructure position with monitoring");
+    console.log("    • CVX (IC_MEETING): Active debate session in progress");
     console.log("    • OXY (ANALYSIS): Work in progress");
-    console.log("  - 7 research requests (GOOGL, AMZN, CVX, TSLA, META + NEE, NVDA)");
     console.log("  - 9 research artifacts across workflows");
-    console.log("  - 2 IC meetings with debate sessions:");
+    console.log("  - 3 IC meetings with debate sessions:");
     console.log("    • NEE: COMPLETED with 11 debate messages (5 AI agents)");
+    console.log("    • CVX: ACTIVE with 9 debate messages (5 AI agents)");
     console.log("    • NVDA: COMPLETED with 4 debate messages (2 AI agents)");
     console.log("  - 2 active positions (NEE $741k, NVDA $660k)");
     console.log("  - 6 monitoring events (3 NEE, 3 NVDA)");
