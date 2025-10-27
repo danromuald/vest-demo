@@ -1111,7 +1111,7 @@ export default function Research() {
 
               <AgentPanel
                 agentName="Financial Modeler"
-                agentType="FINANCIAL_MODELER"
+                agentType="DCF_MODELER"
                 description="DCF models with bull/base/bear scenarios"
                 isGenerating={dcfMutation.isPending}
                 response={getDcfModel()}
