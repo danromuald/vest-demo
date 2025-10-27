@@ -860,7 +860,9 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
   const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [activeAgents, setActiveAgents] = useState<string[]>(["research", "contrarian"]);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   // Fetch IC meetings for this workflow
   const { data: meetings, isLoading: meetingsLoading } = useQuery<any[]>({
@@ -999,6 +1001,53 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
       submitVoteMutation.mutate(selectedVote);
     }
   };
+
+  // Handle text-to-speech for debate messages
+  const handleSpeak = (messageId: string, content: string) => {
+    // If already speaking this message, stop it
+    if (speakingMessageId === messageId) {
+      window.speechSynthesis.cancel();
+      setSpeakingMessageId(null);
+      return;
+    }
+
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+
+    // Create new speech utterance
+    const utterance = new SpeechSynthesisUtterance(content);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    
+    // Set speaking state
+    setSpeakingMessageId(messageId);
+    
+    // Handle speech end
+    utterance.onend = () => {
+      setSpeakingMessageId(null);
+    };
+    
+    // Handle errors
+    utterance.onerror = () => {
+      setSpeakingMessageId(null);
+      toast({
+        title: "Text-to-speech error",
+        description: "Unable to read message aloud",
+        variant: "destructive"
+      });
+    };
+    
+    speechSynthesisRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Cleanup speech synthesis on unmount
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -1308,12 +1357,15 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
                       transition={{ duration: 0.2 }}
                     >
                       <EnhancedDebateMessage
+                        messageId={msg.id || `msg-${index}`}
                         author={msg.senderName}
                         role={msg.senderRole}
                         timestamp={timestamp}
                         message={msg.content}
                         type={isAI ? "ai" : "human"}
                         agentType={msg.agentType}
+                        onSpeak={handleSpeak}
+                        isSpeaking={speakingMessageId === (msg.id || `msg-${index}`)}
                       />
                     </motion.div>
                   );
@@ -1391,6 +1443,7 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
 
 // Enhanced Debate Message Component with Agent Capabilities
 function EnhancedDebateMessage({ 
+  messageId,
   author, 
   role,
   timestamp, 
@@ -1398,8 +1451,11 @@ function EnhancedDebateMessage({
   type,
   agentType,
   artifact,
-  canSpeak = true
+  canSpeak = true,
+  onSpeak,
+  isSpeaking = false
 }: { 
+  messageId: string;
   author: string;
   role?: string;
   timestamp: string; 
@@ -1408,9 +1464,9 @@ function EnhancedDebateMessage({
   agentType?: string;
   artifact?: { type: string; title: string };
   canSpeak?: boolean;
+  onSpeak?: (messageId: string, content: string) => void;
+  isSpeaking?: boolean;
 }) {
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  
   // Find agent configuration if this is an AI message
   const agent = type === "ai" ? AI_AGENTS.find(a => a.id === agentType || a.name.toLowerCase().includes(agentType?.toLowerCase() || "")) : null;
   const AgentIcon = agent?.icon || Sparkles;
@@ -1453,15 +1509,15 @@ function EnhancedDebateMessage({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {type === "ai" && canSpeak && (
+          {type === "ai" && canSpeak && onSpeak && (
             <Button
               variant="ghost"
               size="sm"
               className="h-6 px-2"
-              onClick={() => setIsSpeaking(!isSpeaking)}
+              onClick={() => onSpeak(messageId, message)}
               data-testid="button-speak-message"
             >
-              <Volume2 className={`h-3 w-3 ${isSpeaking ? "text-green-500" : ""}`} />
+              <Volume2 className={`h-3 w-3 ${isSpeaking ? "text-green-500 animate-pulse" : ""}`} />
             </Button>
           )}
           <span className="text-xs text-muted-foreground">{timestamp}</span>

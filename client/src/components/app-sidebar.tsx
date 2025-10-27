@@ -63,16 +63,19 @@ const workflowItems = [
   },
 ];
 
-const preWorkAgents = [
-  { title: "Research Briefs", url: "/research-brief", icon: Brain },
-  { title: "Financial Models", url: "/financial-model", icon: Calculator },
-  { title: "Quant Analysis", url: "/quant-analysis", icon: Activity },
-  { title: "Risk Analysis", url: "/risk-analysis", icon: AlertTriangle },
-  { title: "Scenario Simulator", url: "/scenario-simulator", icon: Target },
+// Pre-work agents are now integrated into the Analysis Hub tab in workflow workspace
+// Keeping this array for reference, but filtering it out below
+const preWorkAgents: Array<{ title: string; url: string; icon: any }> = [
+  // { title: "Research Briefs", url: "/research-brief", icon: Brain },
+  // { title: "Financial Models", url: "/financial-model", icon: Calculator },
+  // { title: "Quant Analysis", url: "/quant-analysis", icon: Activity },
+  // { title: "Risk Analysis", url: "/risk-analysis", icon: AlertTriangle },
+  // { title: "Scenario Simulator", url: "/scenario-simulator", icon: Target },
 ];
 
+// Debate Room is now integrated into the IC Meeting tab in workflow workspace
 const meetingAgents = [
-  { title: "Debate Room", url: "/debate-room", icon: MessageCircle },
+  // { title: "Debate Room", url: "/debate-room", icon: MessageCircle },
   { title: "Debate Archives", url: "/debate-archives", icon: Archive },
   { title: "Investment Memos", url: "/investment-memos", icon: FileText },
 ];
@@ -84,9 +87,10 @@ const executionAgents = [
   { title: "Trade Orders", url: "/trade-orders", icon: DollarSign },
 ];
 
-const monitoringAgents = [
-  { title: "Thesis Monitor", url: "/thesis-monitor", icon: Target },
-  { title: "Market Events", url: "/market-events", icon: Bell },
+// Thesis Monitor and Market Events are now integrated into the Monitoring tab in workflow workspace
+const monitoringAgents: Array<{ title: string; url: string; icon: any }> = [
+  // { title: "Thesis Monitor", url: "/thesis-monitor", icon: Target },
+  // { title: "Market Events", url: "/market-events", icon: Bell },
 ];
 
 const supportingAgents = [
