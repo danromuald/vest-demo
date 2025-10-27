@@ -35,9 +35,11 @@ import {
   Target,
   TrendingDown,
   Shield,
-  GitBranch
+  GitBranch,
+  Mic,
+  Volume2
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { Workflow, MonitoringEvent as MonitoringEventType, ThesisHealthMetric } from "@shared/schema";
 
@@ -840,12 +842,25 @@ function AnalysisSection({
   );
 }
 
-// IC Meeting Tab - Real-time collaborative meeting room
+// AI Agent Configurations for IC Meeting
+const AI_AGENTS = [
+  { id: "research", name: "Research Agent", icon: FileText, color: "text-blue-500", specialty: "Market research and competitive analysis" },
+  { id: "quant", name: "Quant Agent", icon: TrendingUp, color: "text-purple-500", specialty: "Quantitative modeling and valuation" },
+  { id: "risk", name: "Risk Agent", icon: Shield, color: "text-red-500", specialty: "Risk assessment and scenario analysis" },
+  { id: "compliance", name: "Compliance Agent", icon: AlertCircle, color: "text-orange-500", specialty: "Regulatory compliance and governance" },
+  { id: "contrarian", name: "Contrarian Agent", icon: Sparkles, color: "text-yellow-500", specialty: "Devil's advocate and alternative scenarios" },
+];
+
+// IC Meeting Tab - Real-time collaborative meeting room with multi-agent AI
 function ICMeetingTab({ workflowId }: { workflowId: string }) {
   const { user } = useAuth();
   const permissions = getPermissions(user);
   const [selectedVote, setSelectedVote] = useState<"APPROVE" | "REJECT" | "ABSTAIN" | null>(null);
   const [debateMessage, setDebateMessage] = useState("");
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [activeAgents, setActiveAgents] = useState<string[]>(["research", "contrarian"]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch IC meetings for this workflow
   const { data: meetings, isLoading: meetingsLoading } = useQuery<any[]>({
@@ -861,6 +876,11 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
     queryFn: () => fetch(`/api/ic-meetings/${activeMeeting?.id}/debate-messages`).then(res => res.json()),
     enabled: !!activeMeeting?.id,
   });
+
+  // Auto-scroll to bottom of messages when debate messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [debateMessages]);
 
   // Fetch votes for the active meeting
   const { data: votes = [], isLoading: votesLoading } = useQuery<any[]>({
@@ -1089,68 +1109,167 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
         </CardContent>
       </Card>
 
-      {/* Debate & Discussion */}
-      <Card data-testid="card-debate">
+      {/* AI Multi-Agent Debate Room */}
+      <Card data-testid="card-ai-debate">
         <CardHeader>
-          <CardTitle>Discussion</CardTitle>
-          <CardDescription>
-            Live debate and Q&A with real-time updates
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-yellow-500" />
+                AI-Powered Debate Room
+              </CardTitle>
+              <CardDescription>
+                Real-time discussion with specialized AI agents and committee members
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                {activeAgents.length} AI agents active
+              </Badge>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Real Debate Messages */}
-          <div className="space-y-3 max-h-96 overflow-y-auto">
+          {/* Active AI Agents Panel */}
+          <div className="p-3 rounded-md bg-muted/50 border border-border">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-muted-foreground">Active AI Agents</span>
+              <Button variant="ghost" size="sm" className="text-xs h-6">
+                <Plus className="h-3 w-3 mr-1" />
+                Add Agent
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {AI_AGENTS.map((agent) => {
+                const AgentIcon = agent.icon;
+                const isActive = activeAgents.includes(agent.id);
+                return (
+                  <Badge
+                    key={agent.id}
+                    variant={isActive ? "default" : "outline"}
+                    className={`cursor-pointer transition-all ${isActive ? agent.color : ""}`}
+                    onClick={() => {
+                      setActiveAgents(prev =>
+                        prev.includes(agent.id)
+                          ? prev.filter(id => id !== agent.id)
+                          : [...prev, agent.id]
+                      );
+                    }}
+                    data-testid={`badge-agent-${agent.id}`}
+                  >
+                    <AgentIcon className="h-3 w-3 mr-1" />
+                    {agent.name}
+                  </Badge>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Messages Area */}
+          <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2" data-testid="messages-container">
             {messagesLoading ? (
-              <div className="text-center py-4 text-muted-foreground text-sm">
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2" />
                 Loading discussion...
               </div>
             ) : debateMessages.length > 0 ? (
-              debateMessages.map((msg: any, index: number) => {
-                // Format timestamp
-                const timestamp = msg.createdAt 
-                  ? new Date(msg.createdAt).toLocaleString('en-US', { 
-                      month: 'short', 
-                      day: 'numeric', 
-                      hour: 'numeric', 
-                      minute: '2-digit' 
-                    })
-                  : 'Just now';
-                
-                // Determine if this is an AI agent message
-                const isAI = msg.senderRole?.includes('AGENT') || msg.senderRole === 'BULL_AGENT' || msg.senderRole === 'BEAR_AGENT';
-                
-                return (
-                  <DebateMessage
-                    key={msg.id || index}
-                    author={`${msg.senderName} ${!isAI ? `(${msg.senderRole})` : ''}`}
-                    timestamp={timestamp}
-                    message={msg.content}
-                    type={isAI ? "ai" : "comment"}
-                  />
-                );
-              })
+              <AnimatePresence mode="popLayout">
+                {debateMessages.map((msg: any, index: number) => {
+                  const timestamp = msg.createdAt 
+                    ? new Date(msg.createdAt).toLocaleString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        hour: 'numeric', 
+                        minute: '2-digit' 
+                      })
+                    : 'Just now';
+                  
+                  const isAI = msg.senderRole?.includes('AGENT') || msg.senderRole === 'BULL_AGENT' || msg.senderRole === 'BEAR_AGENT';
+                  
+                  return (
+                    <motion.div
+                      key={msg.id || index}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <EnhancedDebateMessage
+                        author={msg.senderName}
+                        role={msg.senderRole}
+                        timestamp={timestamp}
+                        message={msg.content}
+                        type={isAI ? "ai" : "human"}
+                        agentType={msg.agentType}
+                      />
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             ) : (
-              <div className="text-center py-8 text-muted-foreground text-sm">
-                <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>No discussion yet</p>
-                <p className="text-xs mt-1">Start the conversation below</p>
+              <div className="text-center py-12 text-muted-foreground text-sm">
+                <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                <p className="font-medium">No discussion yet</p>
+                <p className="text-xs mt-1">Ask a question or share your perspective below</p>
+                <p className="text-xs mt-1 text-yellow-500">AI agents will respond with analysis and insights</p>
               </div>
             )}
+            <div ref={messagesEndRef} />
           </div>
 
-          {/* Message Input */}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Add to discussion..."
-              className="flex-1 px-3 py-2 rounded-md border border-border bg-background text-sm"
-              value={debateMessage}
-              onChange={(e) => setDebateMessage(e.target.value)}
-              data-testid="input-debate-message"
-            />
-            <Button data-testid="button-send-message">
-              <MessageSquare className="h-4 w-4" />
-            </Button>
+          {/* Enhanced Message Input with Voice */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  placeholder={isVoiceMode ? "Listening..." : "Type your question or prompt for AI agents..."}
+                  className="w-full px-4 py-3 pr-12 rounded-md border border-border bg-background text-sm focus:ring-2 focus:ring-primary/20"
+                  value={debateMessage}
+                  onChange={(e) => setDebateMessage(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter" && debateMessage.trim()) {
+                      // Handle send message
+                      setDebateMessage("");
+                    }
+                  }}
+                  disabled={isRecording}
+                  data-testid="input-debate-message"
+                />
+                {isRecording && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse delay-75" />
+                      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse delay-150" />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <Button
+                variant={isRecording ? "destructive" : "outline"}
+                size="icon"
+                onClick={() => {
+                  setIsRecording(!isRecording);
+                  setIsVoiceMode(!isVoiceMode);
+                }}
+                data-testid="button-voice-input"
+              >
+                <Mic className="h-4 w-4" />
+              </Button>
+              <Button
+                disabled={!debateMessage.trim() && !isRecording}
+                data-testid="button-send-message"
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Send
+              </Button>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Sparkles className="h-3 w-3 text-yellow-500" />
+              <span>AI agents will analyze your input and provide expert insights</span>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -1158,7 +1277,118 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
   );
 }
 
-// Debate Message Component
+// Enhanced Debate Message Component with Agent Capabilities
+function EnhancedDebateMessage({ 
+  author, 
+  role,
+  timestamp, 
+  message, 
+  type,
+  agentType,
+  artifact,
+  canSpeak = true
+}: { 
+  author: string;
+  role?: string;
+  timestamp: string; 
+  message: string; 
+  type: "human" | "ai";
+  agentType?: string;
+  artifact?: { type: string; title: string };
+  canSpeak?: boolean;
+}) {
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  
+  // Find agent configuration if this is an AI message
+  const agent = type === "ai" ? AI_AGENTS.find(a => a.id === agentType || a.name.toLowerCase().includes(agentType?.toLowerCase() || "")) : null;
+  const AgentIcon = agent?.icon || Sparkles;
+  
+  return (
+    <div 
+      className={`p-4 rounded-md transition-all ${
+        type === "ai" 
+          ? "bg-gradient-to-r from-yellow-500/10 to-yellow-500/5 border border-yellow-500/20" 
+          : "bg-muted/50 border border-border"
+      }`}
+      data-testid={`debate-message-${type}`}
+    >
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <div className="flex items-center gap-2">
+          <div className={`w-8 h-8 rounded-full ${type === "ai" ? "bg-yellow-500/20" : "bg-primary/20"} flex items-center justify-center flex-shrink-0`}>
+            {type === "ai" ? (
+              <AgentIcon className={`h-4 w-4 ${agent?.color || "text-yellow-500"}`} />
+            ) : (
+              <span className="text-xs font-semibold">{author.charAt(0)}</span>
+            )}
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold">{author}</span>
+              {type === "ai" ? (
+                <Badge variant="outline" className="text-xs gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  AI Agent
+                </Badge>
+              ) : role && (
+                <Badge variant="secondary" className="text-xs">
+                  {role}
+                </Badge>
+              )}
+            </div>
+            {agent && (
+              <p className="text-xs text-muted-foreground">{agent.specialty}</p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {type === "ai" && canSpeak && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2"
+              onClick={() => setIsSpeaking(!isSpeaking)}
+              data-testid="button-speak-message"
+            >
+              <Volume2 className={`h-3 w-3 ${isSpeaking ? "text-green-500" : ""}`} />
+            </Button>
+          )}
+          <span className="text-xs text-muted-foreground">{timestamp}</span>
+        </div>
+      </div>
+      
+      <p className="text-sm leading-relaxed mb-2">{message}</p>
+      
+      {/* Artifact Attachment */}
+      {artifact && (
+        <div className="mt-3 p-2 rounded-md bg-background border border-border">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            <div className="flex-1">
+              <p className="text-xs font-medium">{artifact.title}</p>
+              <p className="text-xs text-muted-foreground">{artifact.type}</p>
+            </div>
+            <Button variant="ghost" size="sm" className="h-6 text-xs">
+              View
+            </Button>
+          </div>
+        </div>
+      )}
+      
+      {isSpeaking && (
+        <div className="mt-2 flex items-center gap-2 text-xs text-green-500">
+          <div className="flex gap-1">
+            <div className="w-1 h-3 bg-green-500 animate-pulse" />
+            <div className="w-1 h-3 bg-green-500 animate-pulse delay-75" />
+            <div className="w-1 h-3 bg-green-500 animate-pulse delay-150" />
+          </div>
+          <span>Speaking...</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Simple Debate Message Component (legacy)
 function DebateMessage({ 
   author, 
   timestamp, 

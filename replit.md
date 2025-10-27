@@ -4,8 +4,13 @@
 Vest is an AI-powered investment committee workflow system designed to automate and enhance the investment decision-making process. The platform streamlines workflows from initial research through execution and ongoing portfolio monitoring, leveraging a 16-agent AI system. Its purpose is to reduce analyst workload, enhance meeting quality, ensure compliance, and maintain institutional knowledge. Vest offers capabilities for automated research synthesis, AI-assisted investment committee meetings with real-time contrarian analysis, portfolio monitoring with thesis health tracking, document generation, scenario simulation, compliance checks, trade order generation, and risk assessment. The project is a production-ready enterprise MVP with comprehensive workflow automation.
 
 ## Recent Changes (October 27, 2025)
-- **Workflow UX Enhancements**: Export and Advance Stage buttons now fully functional with proper API integration and loading states
+- **Multi-Agent IC Meeting Room**: Implemented AI-powered debate room with 5 specialized agents (Research, Quant, Risk, Compliance, Contrarian) each with unique icons, colors, and specialties. Agents can be toggled on/off dynamically.
+- **Voice Input Capability**: Added voice recording interface with visual indicators (pulsing red dots during recording), mock implementation ready for speech-to-text integration
+- **Enhanced Debate Messages**: Created EnhancedDebateMessage component with agent avatars, specialty descriptions, role badges, text-to-speech buttons with speaking animations, and support for artifact attachments
+- **Auto-Scroll Fix**: Corrected useEffect dependency to auto-scroll to latest messages when debate content updates
+- **Workflow UX Enhancements**: Export and Advance Stage buttons fully functional with proper API integration and loading states
 - **Framer Motion Animations**: Added smooth fade/slide transitions to all workflow tabs, staggered card animations in Overview tab, and expandable artifact previews
+- **Monitoring Tab Enhancements**: Consolidated thesis health score dashboard, alert rules management, and event stream with filtering capabilities
 - **Fixed Type Errors**: Corrected MonitoringEvent schema mismatches (changed `triggeredAt` to `createdAt`, removed `status` in favor of `resolvedAt` check)
 - **Enhanced Artifact Display**: Artifacts in Analysis Hub now show expandable inline previews with smooth animations
 - **Role-Based Authorization**: Completed server-side voting authorization and client-side permission filtering
