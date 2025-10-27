@@ -400,6 +400,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // IC Meeting Votes
+  app.get("/api/ic-meetings/:id/votes", async (req, res) => {
+    try {
+      const meetingId = req.params.id;
+      
+      // Get the IC meeting to find its workflow
+      const meetings = await storage.getICMeetings();
+      const meeting = meetings.find(m => m.id === meetingId);
+      
+      if (!meeting || !meeting.workflowId) {
+        return res.json([]); // No meeting or no workflow link, return empty array
+      }
+      
+      // Get the workflow to find the ticker
+      const allWorkflows = await storage.getWorkflows({});
+      const workflow = allWorkflows.find(w => w.id === meeting.workflowId);
+      
+      if (!workflow) {
+        return res.json([]); // No workflow found, return empty array
+      }
+      
+      // Get proposals for this ticker
+      const allProposals = await storage.getProposals();
+      const workflowProposal = allProposals.find(p => p.ticker === workflow.ticker);
+      
+      if (!workflowProposal) {
+        return res.json([]); // No proposal yet, return empty array
+      }
+      
+      // Get votes for the proposal
+      const votes = await storage.getVotes(workflowProposal.id);
+      res.json(votes);
+    } catch (error) {
+      console.error("Failed to fetch IC meeting votes:", error);
+      res.status(500).json({ error: "Failed to fetch IC meeting votes" });
+    }
+  });
+
+  // IC Meeting Debate Messages  
+  app.get("/api/ic-meetings/:id/debate-messages", async (req, res) => {
+    try {
+      const messages = await storage.getDebateMessages(req.params.id);
+      res.json(messages);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch IC meeting debate messages" });
+    }
+  });
+
   app.delete("/api/ic-meetings/:id", async (req, res) => {
     try {
       const meetingId = req.params.id;
