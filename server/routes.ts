@@ -352,6 +352,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get IC meetings for a specific workflow
+  app.get("/api/workflows/:workflowId/ic-meetings", async (req, res) => {
+    try {
+      const workflowId = req.params.workflowId;
+      const allMeetings = await storage.getICMeetings();
+      const workflowMeetings = allMeetings.filter(m => m.workflowId === workflowId);
+      res.json(workflowMeetings);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch workflow IC meetings" });
+    }
+  });
+
   app.post("/api/ic-meetings", async (req, res) => {
     try {
       console.log("IC Meeting creation payload:", JSON.stringify(req.body, null, 2));
