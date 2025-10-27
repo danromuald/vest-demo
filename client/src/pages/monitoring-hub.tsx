@@ -20,13 +20,45 @@ export default function MonitoringHub() {
     queryKey: ['/api/positions'],
   });
 
-  const { data: thesisMonitors = [] } = useQuery<ThesisMonitor[]>({
-    queryKey: ['/api/thesis-monitors'],
+  // Fetch workflows to get thesis health data (workflow-centric architecture)
+  const { data: workflows = [] } = useQuery<any[]>({
+    queryKey: ['/api/workflows'],
+  });
+
+  // Fetch thesis health metrics for all workflows
+  const { data: allThesisHealthMetrics = [] } = useQuery<any[]>({
+    queryKey: ['/api/workflows', 'all-thesis-health'],
+    queryFn: async () => {
+      const allMetrics = await Promise.all(
+        workflows.map(async (workflow) => {
+          try {
+            const response = await fetch(`/api/workflows/${workflow.id}/thesis-health`);
+            if (!response.ok) return [];
+            return await response.json();
+          } catch {
+            return [];
+          }
+        })
+      );
+      return allMetrics.flat();
+    },
+    enabled: workflows.length > 0,
   });
 
   const { data: marketEvents = [] } = useQuery<MarketEvent[]>({
     queryKey: ['/api/market-events'],
   });
+
+  // Map thesis health metrics to position-compatible format
+  const thesisMonitors = allThesisHealthMetrics.map((metric: any) => {
+    const workflow = workflows.find(w => w.id === metric.workflowId);
+    const position = positions.find(p => p.ticker === workflow?.ticker);
+    return {
+      ...metric,
+      positionId: position?.id,
+      ticker: workflow?.ticker,
+    };
+  }).filter(m => m.positionId); // Only include metrics with matching positions
 
   const filteredPositions = positions.filter(position => {
     const matchesSearch = position.ticker?.toLowerCase().includes(searchQuery.toLowerCase()) ||
