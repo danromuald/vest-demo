@@ -901,6 +901,105 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
     ABSTAIN: votesByType.ABSTAIN || 0,
   };
 
+  // Get workflow data to find the proposal
+  const { data: workflows, isLoading: workflowsLoading } = useQuery<any[]>({
+    queryKey: ["/api/workflows"],
+  });
+  const workflow = workflows?.find(w => w.id === workflowId);
+
+  // Get proposals to find the one for this workflow
+  const { data: proposals, isLoading: proposalsLoading } = useQuery<any[]>({
+    queryKey: ["/api/proposals"],
+  });
+  const proposal = proposals?.find(p => p.ticker === workflow?.ticker);
+  const isProposalReady = !!(proposal?.id && !workflowsLoading && !proposalsLoading);
+
+  // Send debate message mutation
+  const sendMessageMutation = useMutation({
+    mutationFn: async (content: string) => {
+      if (!proposal?.id) {
+        throw new Error("Proposal not loaded yet. Please wait and try again.");
+      }
+      return apiRequest("POST", `/api/ic-meetings/${activeMeeting?.id}/debate-messages`, {
+        proposalId: proposal.id,
+        content,
+        messageType: "COMMENT"
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/ic-meetings`, activeMeeting?.id, "debate-messages"] });
+      setDebateMessage("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to send message",
+        description: error.message || "Please try again",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Submit vote mutation
+  const submitVoteMutation = useMutation({
+    mutationFn: async (voteDecision: "APPROVE" | "REJECT" | "ABSTAIN") => {
+      if (!proposal?.id) {
+        throw new Error("Proposal not loaded yet. Please wait and try again.");
+      }
+      return apiRequest("POST", "/api/votes", {
+        proposalId: proposal.id,
+        voterName: `${user?.firstName} ${user?.lastName}`,
+        voterRole: user?.role || "ANALYST",
+        vote: voteDecision,
+        comment: `Vote submitted via IC Meeting for ${workflow?.ticker}`
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/ic-meetings`, activeMeeting?.id, "votes"] });
+      toast({
+        title: "Vote submitted",
+        description: `Your ${selectedVote} vote has been recorded`,
+      });
+      setSelectedVote(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to submit vote",
+        description: error.message || "Please try again",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Handle send message
+  const handleSendMessage = () => {
+    if (!isProposalReady) {
+      toast({
+        title: "Please wait",
+        description: "Loading proposal data...",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (debateMessage.trim() && activeMeeting?.id) {
+      sendMessageMutation.mutate(debateMessage);
+    }
+  };
+
+  // Handle vote submission
+  const handleSubmitVote = () => {
+    if (!isProposalReady) {
+      toast({
+        title: "Please wait",
+        description: "Loading proposal data...",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (selectedVote && permissions.canVoteInMeeting) {
+      submitVoteMutation.mutate(selectedVote);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Meeting Header */}
@@ -1106,6 +1205,19 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
               </div>
             </div>
           </div>
+          
+          {/* Submit Vote Button */}
+          {selectedVote && permissions.canVoteInMeeting && (
+            <Button 
+              className="w-full"
+              onClick={handleSubmitVote}
+              disabled={submitVoteMutation.isPending || !isProposalReady}
+              data-testid="button-submit-vote"
+            >
+              <CheckCircle2 className="h-4 w-4 mr-2" />
+              {submitVoteMutation.isPending ? "Submitting..." : !isProposalReady ? "Loading..." : `Submit ${selectedVote} Vote`}
+            </Button>
+          )}
         </CardContent>
       </Card>
 
@@ -1230,8 +1342,7 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
                   onChange={(e) => setDebateMessage(e.target.value)}
                   onKeyPress={(e) => {
                     if (e.key === "Enter" && debateMessage.trim()) {
-                      // Handle send message
-                      setDebateMessage("");
+                      handleSendMessage();
                     }
                   }}
                   disabled={isRecording}
@@ -1259,11 +1370,12 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
                 <Mic className="h-4 w-4" />
               </Button>
               <Button
-                disabled={!debateMessage.trim() && !isRecording}
+                disabled={!debateMessage.trim() && !isRecording || sendMessageMutation.isPending || !isProposalReady}
+                onClick={handleSendMessage}
                 data-testid="button-send-message"
               >
                 <MessageSquare className="h-4 w-4 mr-2" />
-                Send
+                {sendMessageMutation.isPending ? "Sending..." : !isProposalReady ? "Loading..." : "Send"}
               </Button>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">

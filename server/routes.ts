@@ -476,6 +476,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/ic-meetings/:id/debate-messages", async (req: any, res) => {
+    try {
+      let userId: string;
+      let userName: string;
+      let userRole: string;
+      
+      // In development mode, always use mock user
+      if (process.env.NODE_ENV === 'development') {
+        userId = 'user-demo-1';
+        const user = await storage.getUser(userId);
+        userName = user ? `${user.firstName} ${user.lastName}` : 'Demo User';
+        userRole = user?.role || 'ANALYST';
+      } else {
+        // In production, require authenticated session
+        if (!req.user || !req.session) {
+          res.status(401).json({ error: "Unauthorized - authentication required" });
+          return;
+        }
+        userId = req.user.claims?.sub || req.user.id;
+        if (!userId) {
+          res.status(401).json({ error: "Unauthorized - invalid session" });
+          return;
+        }
+        const user = await storage.getUser(userId);
+        if (!user) {
+          res.status(401).json({ error: "Unauthorized - user not found" });
+          return;
+        }
+        userName = `${user.firstName} ${user.lastName}`;
+        userRole = user.role;
+      }
+
+      const validated = insertDebateMessageSchema.parse({
+        ...req.body,
+        meetingId: req.params.id,
+        userId,
+        senderName: userName,
+        senderRole: userRole,
+      });
+      const message = await storage.createDebateMessage(validated);
+      res.json(message);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Validation failed", details: error.errors });
+        return;
+      }
+      res.status(500).json({ error: "Failed to create debate message" });
+    }
+  });
+
   app.delete("/api/ic-meetings/:id", async (req, res) => {
     try {
       const meetingId = req.params.id;
