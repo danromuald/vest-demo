@@ -1,4 +1,4 @@
-.PHONY: help run-all setup start start-detached stop restart logs clean seed db-push db-reset shell
+.PHONY: help run-all setup start start-detached stop restart logs clean seed db-push db-reset shell check-docker
 
 help:
 	@echo "╔══════════════════════════════════════════════════════════╗"
@@ -20,6 +20,7 @@ help:
 	@echo "  seed              - 🌱 Seed the database with demo data"
 	@echo "  db-push           - 📊 Run database migrations"
 	@echo "  shell             - 🐚 Open shell in app container"
+	@echo "  check-docker      - 🔍 Check Docker Desktop memory allocation"
 	@echo ""
 	@echo "Example workflow:"
 	@echo "  make run-all      # First time setup"
@@ -28,7 +29,15 @@ help:
 	@echo "  make clean        # Complete cleanup"
 	@echo ""
 
-run-all:
+check-docker:
+	@echo "🔍 Checking Docker Desktop configuration..."
+	@docker info --format '{{.MemTotal}}' | awk '{printf "Memory: %.2f GB\n", $$1/1024/1024/1024}'
+	@echo ""
+	@echo "💡 Recommended: At least 4GB RAM allocated to Docker"
+	@echo "   To increase: Docker Desktop → Settings → Resources → Memory"
+	@echo ""
+
+run-all: check-docker
 	@echo "╔══════════════════════════════════════════════════════════╗"
 	@echo "║         🚀 Starting Vest - Complete Setup                ║"
 	@echo "╚══════════════════════════════════════════════════════════╝"
@@ -63,19 +72,33 @@ run-all:
 	@docker compose exec -T app npm run db:push -- --force 2>/dev/null || echo "✅ Schema up to date!"
 	@echo ""
 	@echo "⏳ Seeding database with demo data..."
-	@docker compose exec -T app npx tsx scripts/seed.ts
-	@echo ""
-	@echo "╔══════════════════════════════════════════════════════════╗"
-	@echo "║              ✅ Vest is Ready!                            ║"
-	@echo "╚══════════════════════════════════════════════════════════╝"
-	@echo ""
-	@echo "🌐 Open your browser: http://localhost:5000"
-	@echo "👤 Auto-login as: Dan Mbanga (dan@example.io)"
-	@echo ""
-	@echo "📋 View logs: make logs"
-	@echo "⏹️  Stop app:  make stop"
-	@echo "🧹 Cleanup:   make clean"
-	@echo ""
+	@echo "   (This may take 30-60 seconds - please wait...)"
+	@if docker compose exec -T app npx tsx scripts/seed.ts; then \
+		echo ""; \
+		echo "╔══════════════════════════════════════════════════════════╗"; \
+		echo "║              ✅ Vest is Ready!                            ║"; \
+		echo "╚══════════════════════════════════════════════════════════╝"; \
+		echo ""; \
+		echo "🌐 Open your browser: http://localhost:5000"; \
+		echo "👤 Auto-login as: Dan Mbanga (dan@example.io)"; \
+		echo ""; \
+		echo "📋 View logs: make logs"; \
+		echo "⏹️  Stop app:  make stop"; \
+		echo "🧹 Cleanup:   make clean"; \
+		echo ""; \
+	else \
+		echo ""; \
+		echo "❌ Seeding failed (Error $$?)"; \
+		echo ""; \
+		echo "Common fixes:"; \
+		echo "  1. Increase Docker memory: Docker Desktop → Settings → Resources"; \
+		echo "     Recommended: 4GB minimum, 8GB preferred"; \
+		echo "  2. Try seeding again: make seed"; \
+		echo "  3. Check logs: make logs"; \
+		echo ""; \
+		echo "The app may still work - try opening: http://localhost:5000"; \
+		echo ""; \
+	fi
 
 setup:
 	@echo "🔨 Building Docker containers..."
@@ -121,6 +144,7 @@ db-reset:
 
 seed:
 	@echo "🌱 Seeding database..."
+	@echo "   (This may take 30-60 seconds - please wait...)"
 	@docker compose exec app npx tsx scripts/seed.ts
 	@echo "✅ Database seeded!"
 
