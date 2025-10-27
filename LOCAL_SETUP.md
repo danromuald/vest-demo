@@ -1,35 +1,41 @@
 # Vest - Local Development Setup
 
-This guide will help you set up and run Vest locally on your MacBook using Docker.
+This guide will help you set up and run Vest locally using Docker.
 
 ## Prerequisites
 
-- Docker Desktop for Mac ([Download here](https://www.docker.com/products/docker-desktop))
+- Docker Desktop ([Download here](https://www.docker.com/products/docker-desktop))
 - Git
+- Make (pre-installed on macOS/Linux, [Windows instructions](https://gnuwin32.sourceforge.net/packages/make.htm))
 
-## Quick Start
+## Quick Start (Recommended)
 
-### 1. Clone the Repository
-
-```bash
-git clone <your-repo-url>
-cd vest
-```
-
-### 2. Start the Application
-
-The easiest way to run Vest locally is using Docker Compose, which will:
-- Start a PostgreSQL database
-- Install all dependencies
-- Run database migrations
-- Seed the database with demo data
-- Start the development server
+### One Command Setup
 
 ```bash
-docker-compose up
+make run-all
 ```
+
+That's it! This single command will:
+- ✅ Build Docker containers
+- ✅ Start PostgreSQL database
+- ✅ Run database migrations
+- ✅ Seed with complete demo data (NVDA workflow, users, meetings, etc.)
+- ✅ Start the development server
 
 The application will be available at: **http://localhost:5000**
+
+### Alternative: Using Docker Compose Directly
+
+If you prefer to use Docker Compose without Make:
+
+```bash
+# Build and start everything
+docker-compose up --build
+
+# In another terminal, seed the database
+docker-compose exec app npx tsx scripts/seed.ts
+```
 
 ### 3. Access the Demo
 
@@ -51,45 +57,51 @@ The Docker setup automatically creates:
 - ✅ Sample companies (TSLA, GOOGL, NVDA)
 - ✅ Notifications and agent responses
 
-## Useful Commands
+## Make Commands
 
-### Stop the Application
-
-```bash
-docker-compose down
-```
-
-### Stop and Remove All Data
+Run `make help` to see all available commands:
 
 ```bash
-docker-compose down -v
+make help              # Show all commands
+make run-all           # 🚀 Complete setup (build, start, migrate, seed)
+make start             # Start application (with logs)
+make start-detached    # Start in background
+make stop              # Stop application
+make restart           # Restart application
+make logs              # View live logs
+make clean             # Remove all containers and data
+make db-reset          # Reset and reseed database
+make seed              # Reseed database only
+make db-push           # Run database migrations
+make shell             # Open shell in app container
 ```
 
-This will delete the database and all data. Next time you run `docker-compose up`, it will be a fresh start with seed data.
+### Common Workflows
 
-### View Logs
-
+**First time setup:**
 ```bash
-# All services
-docker-compose logs -f
-
-# Just the app
-docker-compose logs -f app
-
-# Just the database
-docker-compose logs -f postgres
+make run-all
 ```
 
-### Rebuild After Code Changes
-
-If you've made changes to dependencies or Docker configuration:
-
+**Daily development:**
 ```bash
-docker-compose up --build
+make start              # Start with logs
+# ... do your work ...
+make stop               # Stop when done
 ```
 
-### Access the Database Directly
+**Fresh start (delete all data):**
+```bash
+make clean              # Remove everything
+make run-all            # Start fresh
+```
 
+**View logs:**
+```bash
+make logs               # Follow logs in real-time
+```
+
+**Access database shell:**
 ```bash
 docker exec -it vest-postgres psql -U vest -d vest_db
 ```
