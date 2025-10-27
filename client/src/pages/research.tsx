@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -46,6 +47,7 @@ const proposalFormSchema = z.object({
 type ProposalFormValues = z.infer<typeof proposalFormSchema>;
 
 export default function Research() {
+  const [, setLocation] = useLocation();
   const [selectedRequest, setSelectedRequest] = useState<ResearchRequest | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -123,6 +125,47 @@ export default function Research() {
   const { data: workflowStages } = useQuery({
     queryKey: ["/api/workflow-stages"],
   });
+
+  // Fetch proposals and workflows to show workflow connection
+  const { data: proposals = [] } = useQuery<any[]>({
+    queryKey: ['/api/proposals'],
+  });
+
+  const { data: workflows = [] } = useQuery<any[]>({
+    queryKey: ['/api/workflows'],
+  });
+
+  // Helper to find workflow for a research request
+  const getWorkflowForResearch = (request: ResearchRequest) => {
+    if (!request.proposalId) return null;
+    const proposal = proposals.find(p => p.id === request.proposalId);
+    if (!proposal?.workflowId) return null;
+    return workflows.find(w => w.id === proposal.workflowId);
+  };
+
+  // Helper to get workflow stage label
+  const getStageLabel = (stage: string) => {
+    const labels: Record<string, string> = {
+      DISCOVERY: "Discovery",
+      ANALYSIS: "Analysis",
+      IC_MEETING: "IC Meeting",
+      EXECUTION: "Execution",
+      MONITORING: "Monitoring"
+    };
+    return labels[stage] || stage;
+  };
+
+  // Helper to get workflow stage color
+  const getStageColor = (stage: string) => {
+    switch (stage) {
+      case "DISCOVERY": return "bg-blue-500/10 text-blue-500 border-blue-500/20";
+      case "ANALYSIS": return "bg-purple-500/10 text-purple-500 border-purple-500/20";
+      case "IC_MEETING": return "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
+      case "EXECUTION": return "bg-green-500/10 text-green-500 border-green-500/20";
+      case "MONITORING": return "bg-cyan-500/10 text-cyan-500 border-cyan-500/20";
+      default: return "bg-muted/50 text-muted-foreground border-muted";
+    }
+  };
 
   const createMutation = useMutation({
     mutationFn: async (data: ResearchRequestFormValues) => {
@@ -590,12 +633,21 @@ export default function Research() {
           ) : (
             <div className="space-y-3">
               {researchRequests.map((request) => {
+                const workflow = getWorkflowForResearch(request);
                 const workflowStage = getWorkflowStage(request.id);
+                const hasWorkflow = !!workflow;
+                
                 return (
                   <div
                     key={request.id}
-                    className="flex items-center gap-4 rounded-md border p-4 hover-elevate"
+                    className="flex items-center gap-4 rounded-md border p-4 hover-elevate cursor-pointer"
                     data-testid={`card-request-${request.ticker}`}
+                    onClick={() => {
+                      // Navigate to workflow workspace if exists
+                      if (hasWorkflow) {
+                        setLocation(`/workflows/${workflow.id}`);
+                      }
+                    }}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
@@ -606,6 +658,15 @@ export default function Research() {
                         <Badge variant="outline" className="text-xs">
                           {request.researchType}
                         </Badge>
+                        {hasWorkflow && (
+                          <Badge 
+                            variant="outline" 
+                            className={getStageColor(workflow.currentStage)}
+                            data-testid={`badge-workflow-stage-${request.ticker}`}
+                          >
+                            {getStageLabel(workflow.currentStage)}
+                          </Badge>
+                        )}
                       </div>
                       {request.description && (
                         <p className="text-sm text-muted-foreground mb-2 line-clamp-1">
@@ -639,7 +700,10 @@ export default function Research() {
                             <Button
                               variant="default"
                               size="sm"
-                              onClick={() => handleCreateProposal(request)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCreateProposal(request);
+                              }}
                               data-testid={`button-create-proposal-${request.ticker}`}
                             >
                               <Plus className="h-3 w-3" />
@@ -652,7 +716,10 @@ export default function Research() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleAIAnalysis(request)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAIAnalysis(request);
+                        }}
                         data-testid={`button-analyze-${request.ticker}`}
                       >
                         <Bot className="h-3 w-3" />
@@ -661,7 +728,10 @@ export default function Research() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleViewAnalysis(request)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewAnalysis(request);
+                        }}
                         data-testid={`button-view-analysis-${request.ticker}`}
                       >
                         <Search className="h-3 w-3" />
@@ -670,7 +740,10 @@ export default function Research() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleEditClick(request)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditClick(request);
+                        }}
                         data-testid={`button-edit-${request.ticker}`}
                       >
                         <Edit className="h-4 w-4" />
@@ -678,7 +751,10 @@ export default function Research() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => deleteMutation.mutate(request.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteMutation.mutate(request.id);
+                        }}
                         data-testid={`button-delete-${request.ticker}`}
                       >
                         <Trash2 className="h-4 w-4" />
