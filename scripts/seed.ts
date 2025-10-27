@@ -1241,8 +1241,10 @@ Occidental has successfully navigated the challenging post-Anadarko integration 
       })
     ]);
 
-    // Create research request for OXY (analyst seeking help)
-    console.log("  Creating OXY research request...");
+    // Create research requests for different workflow states
+    console.log("  Creating research requests...");
+    
+    // 1. OXY research request (IN_PROGRESS - linked to existing proposal)
     await storage.createResearchRequest({
       ticker: "OXY",
       companyName: "Occidental Petroleum Corporation",
@@ -1256,6 +1258,53 @@ Occidental has successfully navigated the challenging post-Anadarko integration 
       query: "Model OXY cash flows under three scenarios: (1) $100 oil sustained, (2) $80 oil base case, (3) $60 oil stress case. Focus on debt paydown timeline and buyback capacity.",
       context: "Need to understand downside protection and upside optionality for IC presentation",
       expectedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+    });
+
+    // 2. TSLA research request (PENDING - not started yet, no proposal)
+    await storage.createResearchRequest({
+      ticker: "TSLA",
+      companyName: "Tesla, Inc.",
+      requestedBy: "user-demo-1",
+      assignedTo: "user-2",
+      researchType: "INITIAL",
+      agentType: "RESEARCH_SYNTHESIZER",
+      priority: "HIGH",
+      status: "PENDING",
+      query: "Full investment analysis for Tesla including EV market share trends, energy business growth, autonomous driving timeline, and China production ramp. Need comprehensive research brief and DCF model.",
+      context: "Portfolio manager interested in adding EV exposure. Need initial research to determine if worth bringing to IC.",
+      expectedDelivery: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
+    });
+
+    // 3. GOOGL research request (COMPLETED - ready to create proposal)
+    const googlResearch = await storage.createResearchRequest({
+      ticker: "GOOGL",
+      companyName: "Alphabet Inc.",
+      requestedBy: "user-2",
+      assignedTo: "user-demo-1",
+      researchType: "INITIAL",
+      agentType: "RESEARCH_SYNTHESIZER",
+      priority: "MEDIUM",
+      status: "COMPLETED",
+      query: "Comprehensive investment analysis for Alphabet focusing on cloud growth, AI monetization, search durability, and YouTube/subscription revenue. Generate research brief and DCF model.",
+      context: "Considering adding large-cap tech exposure. Cloud segment showing strong momentum.",
+      expectedDelivery: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      completedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
+    });
+
+    // 4. AMZN research request (COMPLETED - ready to create proposal)
+    const amznResearch = await storage.createResearchRequest({
+      ticker: "AMZN",
+      companyName: "Amazon.com, Inc.",
+      requestedBy: "user-demo-1",
+      assignedTo: "user-2",
+      researchType: "DEEP_DIVE",
+      agentType: "RESEARCH_SYNTHESIZER",
+      priority: "HIGH",
+      status: "COMPLETED",
+      query: "Deep dive on Amazon focusing on AWS margin expansion, retail profitability improvement, advertising growth, and capital allocation. Need detailed financial model with scenario analysis.",
+      context: "Strong conviction opportunity - cloud growth accelerating, retail margins improving, advertising high-margin new revenue stream.",
+      expectedDelivery: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)
     });
 
     // Create notifications
@@ -1822,6 +1871,136 @@ Occidental has successfully navigated the challenging post-Anadarko integration 
             { date: "2024-08", regime: "HIGH_VOL", duration: "15 days" }
           ],
           forecast: "Regime expected to remain moderate through year-end"
+        }
+      })
+    ]);
+
+    // =====================================================================
+    // GOOGL and AMZN Agent Responses (for COMPLETED research requests)
+    // =====================================================================
+    console.log("Creating agent responses for GOOGL and AMZN...");
+    await Promise.all([
+      // GOOGL Research Brief
+      storage.createAgentResponse({
+        agentType: "RESEARCH_SYNTHESIZER",
+        ticker: "GOOGL",
+        prompt: "Generate comprehensive research brief for Alphabet Inc.",
+        response: {
+          ticker: "GOOGL",
+          companyName: "Alphabet Inc.",
+          summary: "Alphabet dominates internet search (90%+ market share) while building strong positions in cloud computing and digital advertising. Google Cloud Platform is gaining share in the $500B+ cloud market, while YouTube and advertising businesses provide stable cash flow for AI investments.",
+          keyMetrics: {
+            revenue: "$307B TTM",
+            growth: "+9% YoY",
+            margins: "Operating Margin: 28%, Net Margin: 24%",
+            valuation: "P/E: 24x, EV/EBITDA: 15.2x, FCF Yield: 4.2%"
+          },
+          strengths: [
+            "Search monopoly with 90%+ market share generates $200B+ in high-margin revenue",
+            "YouTube is #2 streaming platform with 2.5B+ users and growing subscription revenue",
+            "Cloud business growing 28% with improving margins (now profitable)",
+            "Leading AI capabilities (DeepMind, Gemini, Bard) positioned for AI monetization",
+            "Fortress balance sheet with $110B+ cash, enables aggressive AI R&D spending"
+          ],
+          risks: [
+            "DOJ antitrust case threatens search dominance and revenue",
+            "AI disruption risk - ChatGPT and others could erode search queries",
+            "Cloud competition from AWS and Azure limits market share gains",
+            "YouTube growth slowing as TikTok captures younger demographics",
+            "High employee costs and R&D spend pressuring margins"
+          ],
+          recommendation: "BUY"
+        }
+      }),
+
+      // GOOGL DCF Model
+      storage.createAgentResponse({
+        agentType: "FINANCIAL_MODELER",
+        ticker: "GOOGL",
+        prompt: "Build DCF valuation model for GOOGL",
+        response: {
+          ticker: "GOOGL",
+          scenarios: {
+            bull: {
+              price: 165,
+              irr: 22.5,
+              assumptions: "AI monetization successful, Cloud margins expand to 15%+, Search stable despite AI disruption"
+            },
+            base: {
+              price: 145,
+              irr: 15.8,
+              assumptions: "Cloud grows 25%, Search revenue +5-7% annually, YouTube sustains mid-teens growth"
+            },
+            bear: {
+              price: 105,
+              irr: -8.2,
+              assumptions: "Search queries decline 10% annually from AI disruption, DOJ breakup forces asset sales"
+            }
+          },
+          wacc: 8.5,
+          terminalGrowth: 3.0
+        }
+      }),
+
+      // AMZN Research Brief
+      storage.createAgentResponse({
+        agentType: "RESEARCH_SYNTHESIZER",
+        ticker: "AMZN",
+        prompt: "Generate deep-dive research brief for Amazon.com Inc.",
+        response: {
+          ticker: "AMZN",
+          companyName: "Amazon.com, Inc.",
+          summary: "Amazon's three-pillar strategy (AWS cloud, retail marketplace, advertising) creates a powerful flywheel. AWS dominates cloud infrastructure (32% market share), retail profitability is inflecting after years of investment, and advertising is a high-margin $40B+ business growing 25%+.",
+          keyMetrics: {
+            revenue: "$575B TTM",
+            growth: "+11% YoY",
+            margins: "Operating Margin: 8.7% (expanding), AWS Margin: 30%+",
+            valuation: "P/E: 48x, EV/Sales: 2.8x, FCF: $36B TTM"
+          },
+          strengths: [
+            "AWS cloud leadership with 32% market share, $90B+ revenue run rate",
+            "Retail operating margin inflecting from 1% to 5%+ through automation and density",
+            "Advertising platform growing 25%+ with 60%+ incremental margins",
+            "Prime membership moat with 200M+ subscribers driving loyalty and spend",
+            "Logistics network creates cost advantage and enables faster delivery than competitors"
+          ],
+          risks: [
+            "Regulatory scrutiny - FTC lawsuit targeting marketplace practices",
+            "AWS competition from Microsoft Azure and Google Cloud",
+            "Labor challenges - unionization efforts and wage pressure",
+            "Retail margin compression if competition intensifies from Walmart, Temu",
+            "Capital intensity - CapEx running $50B+ annually for fulfillment and AWS"
+          ],
+          recommendation: "BUY"
+        }
+      }),
+
+      // AMZN DCF Model
+      storage.createAgentResponse({
+        agentType: "FINANCIAL_MODELER",
+        ticker: "AMZN",
+        prompt: "Build comprehensive DCF model for Amazon with scenario analysis",
+        response: {
+          ticker: "AMZN",
+          scenarios: {
+            bull: {
+              price: 210,
+              irr: 28.5,
+              assumptions: "AWS grows 20%+, Retail margins expand to 8%, Advertising accelerates to $80B by 2028"
+            },
+            base: {
+              price: 175,
+              irr: 18.2,
+              assumptions: "AWS 15% growth, Retail margins reach 6%, Advertising grows 20% annually"
+            },
+            bear: {
+              price: 120,
+              irr: -12.5,
+              assumptions: "AWS growth slows to 10%, Retail margin pressure from competition, Regulatory headwinds"
+            }
+          },
+          wacc: 9.2,
+          terminalGrowth: 4.0
         }
       })
     ]);
