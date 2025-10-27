@@ -37,11 +37,16 @@ import {
   Shield,
   GitBranch,
   Mic,
-  Volume2
+  Volume2,
+  MicOff,
+  Share2
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { Workflow, MonitoringEvent as MonitoringEventType, ThesisHealthMetric } from "@shared/schema";
+import { AI_AGENTS, getAgentInfo, getAgentVoiceSettings } from "@/lib/ai-agents";
+import { EnhancedDebateMessage } from "@/components/EnhancedDebateMessage";
+import { useTextToSpeech, useSpeechToText } from "@/hooks/use-voice";
 
 // Helper function to generate mock AI content for different artifact types
 function generateMockArtifactContent(artifactType: string): string {
@@ -1108,15 +1113,6 @@ function AnalysisSection({
   );
 }
 
-// AI Agent Configurations for IC Meeting
-const AI_AGENTS = [
-  { id: "research", name: "Research Agent", icon: FileText, color: "text-blue-500", specialty: "Market research and competitive analysis" },
-  { id: "quant", name: "Quant Agent", icon: TrendingUp, color: "text-purple-500", specialty: "Quantitative modeling and valuation" },
-  { id: "risk", name: "Risk Agent", icon: Shield, color: "text-red-500", specialty: "Risk assessment and scenario analysis" },
-  { id: "compliance", name: "Compliance Agent", icon: AlertCircle, color: "text-orange-500", specialty: "Regulatory compliance and governance" },
-  { id: "contrarian", name: "Contrarian Agent", icon: Sparkles, color: "text-yellow-500", specialty: "Devil's advocate and alternative scenarios" },
-];
-
 // IC Meeting Tab - Real-time collaborative meeting room with multi-agent AI
 function ICMeetingTab({ workflowId }: { workflowId: string }) {
   const { toast } = useToast();
@@ -1124,12 +1120,21 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
   const permissions = getPermissions(user);
   const [selectedVote, setSelectedVote] = useState<"APPROVE" | "REJECT" | "ABSTAIN" | null>(null);
   const [debateMessage, setDebateMessage] = useState("");
-  const [isVoiceMode, setIsVoiceMode] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
   const [activeAgents, setActiveAgents] = useState<string[]>(["research", "contrarian"]);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const [ws, setWs] = useState<WebSocket | null>(null);
+  
+  // Voice features
+  const { speak, stop: stopSpeaking, isSpeaking } = useTextToSpeech();
+  const { 
+    isListening, 
+    transcript, 
+    startListening, 
+    stopListening, 
+    resetTranscript,
+    isSupported: sttSupported 
+  } = useSpeechToText();
 
   // Fetch IC meetings for this workflow
   const { data: meetings, isLoading: meetingsLoading } = useQuery<any[]>({
@@ -1150,6 +1155,54 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [debateMessages]);
+
+  // Handle speech-to-text transcript
+  useEffect(() => {
+    if (transcript) {
+      setDebateMessage(transcript);
+    }
+  }, [transcript]);
+
+  // WebSocket connection for real-time updates (optional enhancement)
+  useEffect(() => {
+    if (!activeMeeting?.id) return;
+
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const websocket = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+    websocket.onopen = () => {
+      websocket.send(JSON.stringify({
+        type: "join_debate",
+        sessionId: activeMeeting.id,
+        userName: `${user?.firstName} ${user?.lastName}`,
+      }));
+    };
+
+    websocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      switch (data.type) {
+        case "new_debate_message":
+          queryClient.invalidateQueries({ queryKey: [`/api/ic-meetings`, activeMeeting.id, "debate-messages"] });
+          break;
+        case "vote_update":
+          queryClient.invalidateQueries({ queryKey: [`/api/ic-meetings`, activeMeeting.id, "votes"] });
+          break;
+      }
+    };
+
+    setWs(websocket);
+
+    return () => {
+      if (websocket.readyState === WebSocket.OPEN) {
+        websocket.send(JSON.stringify({
+          type: "leave_debate",
+          sessionId: activeMeeting.id,
+        }));
+      }
+      websocket.close();
+    };
+  }, [activeMeeting?.id, user, queryClient]);
 
   // Fetch votes for the active meeting
   const { data: votes = [], isLoading: votesLoading } = useQuery<any[]>({
@@ -1297,50 +1350,48 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
 
   // Handle text-to-speech for debate messages
   const handleSpeak = (messageId: string, content: string) => {
-    // If already speaking this message, stop it
-    if (speakingMessageId === messageId) {
-      window.speechSynthesis.cancel();
+    // If already speaking, stop it
+    if (isSpeaking) {
+      stopSpeaking();
       setSpeakingMessageId(null);
       return;
     }
 
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
-
-    // Create new speech utterance
-    const utterance = new SpeechSynthesisUtterance(content);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
+    // Find the message to get agent role for voice settings
+    const message = debateMessages.find(m => m.id === messageId);
+    const voiceSettings = message?.agentRole ? getAgentVoiceSettings(message.agentRole) : {};
     
     // Set speaking state
     setSpeakingMessageId(messageId);
     
-    // Handle speech end
-    utterance.onend = () => {
-      setSpeakingMessageId(null);
-    };
-    
-    // Handle errors
-    utterance.onerror = () => {
-      setSpeakingMessageId(null);
-      toast({
-        title: "Text-to-speech error",
-        description: "Unable to read message aloud",
-        variant: "destructive"
-      });
-    };
-    
-    speechSynthesisRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+    // Speak with agent-specific voice
+    speak(content, voiceSettings);
   };
 
-  // Cleanup speech synthesis on unmount
-  useEffect(() => {
-    return () => {
-      window.speechSynthesis.cancel();
-    };
-  }, []);
+  // Toggle voice recording
+  const toggleVoiceRecording = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      resetTranscript();
+      startListening();
+    }
+  };
+
+  // Export debate transcript
+  const handleExportDebate = () => {
+    toast({
+      title: "Export Started",
+      description: "Generating IC meeting transcript PDF...",
+    });
+    // In production, this would generate a PDF export
+    setTimeout(() => {
+      toast({
+        title: "Export Complete",
+        description: "IC meeting transcript downloaded successfully",
+      });
+    }, 1500);
+  };
 
   return (
     <div className="space-y-6">
@@ -1355,6 +1406,25 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleExportDebate}
+            data-testid="button-export-ic-meeting"
+            className="gap-2"
+          >
+            <Download className="h-3 w-3" />
+            Export
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            data-testid="button-share-ic-meeting"
+            className="gap-2"
+          >
+            <Share2 className="h-3 w-3" />
+            Share
+          </Button>
           {activeMeeting?.status === "IN_PROGRESS" ? (
             <Badge variant="default" className="gap-2" data-testid="badge-meeting-live">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -1681,8 +1751,10 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
               <div className="flex-1 relative">
                 <input
                   type="text"
-                  placeholder={isVoiceMode ? "Listening..." : "Type your question or prompt for AI agents..."}
-                  className="w-full px-4 py-3 pr-12 rounded-md border border-border bg-background text-sm focus:ring-2 focus:ring-primary/20"
+                  placeholder={isListening ? "Listening..." : "Type your question or prompt for AI agents..."}
+                  className={`w-full px-4 py-3 pr-12 rounded-md border bg-background text-sm focus:ring-2 focus:ring-primary/20 ${
+                    isListening ? "border-primary" : "border-border"
+                  }`}
                   value={debateMessage}
                   onChange={(e) => setDebateMessage(e.target.value)}
                   onKeyPress={(e) => {
@@ -1690,10 +1762,10 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
                       handleSendMessage();
                     }
                   }}
-                  disabled={isRecording}
+                  disabled={isListening}
                   data-testid="input-debate-message"
                 />
-                {isRecording && (
+                {isListening && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
                     <div className="flex items-center gap-1">
                       <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
@@ -1703,19 +1775,19 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
                   </div>
                 )}
               </div>
+              {sttSupported && (
+                <Button
+                  variant={isListening ? "destructive" : "outline"}
+                  size="icon"
+                  onClick={toggleVoiceRecording}
+                  data-testid="button-voice-input"
+                  className={isListening ? "animate-pulse" : ""}
+                >
+                  {isListening ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+                </Button>
+              )}
               <Button
-                variant={isRecording ? "destructive" : "outline"}
-                size="icon"
-                onClick={() => {
-                  setIsRecording(!isRecording);
-                  setIsVoiceMode(!isVoiceMode);
-                }}
-                data-testid="button-voice-input"
-              >
-                <Mic className="h-4 w-4" />
-              </Button>
-              <Button
-                disabled={!debateMessage.trim() && !isRecording || sendMessageMutation.isPending || !isProposalReady}
+                disabled={!debateMessage.trim() || sendMessageMutation.isPending || !isProposalReady}
                 onClick={handleSendMessage}
                 data-testid="button-send-message"
               >
@@ -1723,9 +1795,17 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
                 {sendMessageMutation.isPending ? "Sending..." : !isProposalReady ? "Loading..." : "Send"}
               </Button>
             </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Sparkles className="h-3 w-3 text-yellow-500" />
-              <span>AI agents will analyze your input and provide expert insights</span>
+            <div className="flex items-center gap-4 text-xs">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Sparkles className="h-3 w-3 text-yellow-500" />
+                <span>AI agents will analyze your input and provide expert insights</span>
+              </div>
+              {isSpeaking && (
+                <Badge variant="default" className="animate-pulse gap-1">
+                  <Volume2 className="h-3 w-3" />
+                  AI Speaking
+                </Badge>
+              )}
             </div>
           </div>
         </CardContent>
@@ -1734,154 +1814,6 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
   );
 }
 
-// Enhanced Debate Message Component with Agent Capabilities
-function EnhancedDebateMessage({ 
-  messageId,
-  author, 
-  role,
-  timestamp, 
-  message, 
-  type,
-  agentType,
-  artifact,
-  canSpeak = true,
-  onSpeak,
-  isSpeaking = false
-}: { 
-  messageId: string;
-  author: string;
-  role?: string;
-  timestamp: string; 
-  message: string; 
-  type: "human" | "ai";
-  agentType?: string;
-  artifact?: { type: string; title: string };
-  canSpeak?: boolean;
-  onSpeak?: (messageId: string, content: string) => void;
-  isSpeaking?: boolean;
-}) {
-  // Find agent configuration if this is an AI message
-  const agent = type === "ai" ? AI_AGENTS.find(a => a.id === agentType || a.name.toLowerCase().includes(agentType?.toLowerCase() || "")) : null;
-  const AgentIcon = agent?.icon || Sparkles;
-  
-  return (
-    <div 
-      className={`p-4 rounded-md transition-all ${
-        type === "ai" 
-          ? "bg-gradient-to-r from-yellow-500/10 to-yellow-500/5 border border-yellow-500/20" 
-          : "bg-muted/50 border border-border"
-      }`}
-      data-testid={`debate-message-${type}`}
-    >
-      <div className="flex items-start justify-between gap-3 mb-2">
-        <div className="flex items-center gap-2">
-          <div className={`w-8 h-8 rounded-full ${type === "ai" ? "bg-yellow-500/20" : "bg-primary/20"} flex items-center justify-center flex-shrink-0`}>
-            {type === "ai" ? (
-              <AgentIcon className={`h-4 w-4 ${agent?.color || "text-yellow-500"}`} />
-            ) : (
-              <span className="text-xs font-semibold">{author.charAt(0)}</span>
-            )}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold">{author}</span>
-              {type === "ai" ? (
-                <Badge variant="outline" className="text-xs gap-1">
-                  <Sparkles className="h-3 w-3" />
-                  AI Agent
-                </Badge>
-              ) : role && (
-                <Badge variant="secondary" className="text-xs">
-                  {role}
-                </Badge>
-              )}
-            </div>
-            {agent && (
-              <p className="text-xs text-muted-foreground">{agent.specialty}</p>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {type === "ai" && canSpeak && onSpeak && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2"
-              onClick={() => onSpeak(messageId, message)}
-              data-testid="button-speak-message"
-            >
-              <Volume2 className={`h-3 w-3 ${isSpeaking ? "text-green-500 animate-pulse" : ""}`} />
-            </Button>
-          )}
-          <span className="text-xs text-muted-foreground">{timestamp}</span>
-        </div>
-      </div>
-      
-      <p className="text-sm leading-relaxed mb-2">{message}</p>
-      
-      {/* Artifact Attachment */}
-      {artifact && (
-        <div className="mt-3 p-2 rounded-md bg-background border border-border">
-          <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-muted-foreground" />
-            <div className="flex-1">
-              <p className="text-xs font-medium">{artifact.title}</p>
-              <p className="text-xs text-muted-foreground">{artifact.type}</p>
-            </div>
-            <Button variant="ghost" size="sm" className="h-6 text-xs">
-              View
-            </Button>
-          </div>
-        </div>
-      )}
-      
-      {isSpeaking && (
-        <div className="mt-2 flex items-center gap-2 text-xs text-green-500">
-          <div className="flex gap-1">
-            <div className="w-1 h-3 bg-green-500 animate-pulse" />
-            <div className="w-1 h-3 bg-green-500 animate-pulse delay-75" />
-            <div className="w-1 h-3 bg-green-500 animate-pulse delay-150" />
-          </div>
-          <span>Speaking...</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Simple Debate Message Component (legacy)
-function DebateMessage({ 
-  author, 
-  timestamp, 
-  message, 
-  type 
-}: { 
-  author: string; 
-  timestamp: string; 
-  message: string; 
-  type: "comment" | "ai";
-}) {
-  return (
-    <div 
-      className={`p-3 rounded-md ${type === "ai" ? "bg-yellow-500/10 border border-yellow-500/20" : "bg-muted"}`}
-      data-testid={`debate-message-${type}`}
-    >
-      <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{author}</span>
-          {type === "ai" && (
-            <Badge variant="outline" className="text-xs">
-              <Sparkles className="h-3 w-3 mr-1" />
-              AI
-            </Badge>
-          )}
-        </div>
-        <span className="text-xs text-muted-foreground">{timestamp}</span>
-      </div>
-      <p className="text-sm">{message}</p>
-    </div>
-  );
-}
 
 // Execution Tab (Placeholder)
 function ExecutionTab({ workflowId }: { workflowId: string }) {

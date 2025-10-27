@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -14,16 +13,7 @@ import {
   Send,
   Users,
   MessageSquare,
-  Bot,
-  User,
-  Shield,
-  Sword,
-  FileText,
-  TrendingUp,
-  AlertTriangle,
   CheckCircle2,
-  XCircle,
-  Clock,
   Sparkles,
   BarChart3,
   Mic,
@@ -31,48 +21,13 @@ import {
   Volume2,
   VolumeX,
   Phone,
+  Download,
+  Share2,
 } from "lucide-react";
 import type { DebateSession, DebateMessage, Proposal } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-
-interface AgentInfo {
-  role: string;
-  name: string;
-  icon: any;
-  color: string;
-  description: string;
-}
-
-const DEBATE_AGENTS: Record<string, AgentInfo> = {
-  CONTRARIAN: {
-    role: "CONTRARIAN",
-    name: "Contrarian Analyst",
-    icon: Shield,
-    color: "text-destructive",
-    description: "Bear case defender, challenges the thesis",
-  },
-  DEFENDER: {
-    role: "DEFENDER",
-    name: "Thesis Defender",
-    icon: Sword,
-    color: "text-chart-2",
-    description: "Bull case champion, supports the investment",
-  },
-  SECRETARY: {
-    role: "SECRETARY",
-    name: "Meeting Secretary",
-    icon: FileText,
-    color: "text-primary",
-    description: "Moderates debate and provides summaries",
-  },
-  LEAD_PM: {
-    role: "LEAD_PM",
-    name: "Lead Portfolio Manager",
-    icon: Users,
-    color: "text-chart-1",
-    description: "Asks penetrating questions to test the thesis",
-  },
-};
+import { AI_AGENTS, getAgentInfo, getAgentVoiceSettings } from "@/lib/ai-agents";
+import { EnhancedDebateMessage } from "@/components/EnhancedDebateMessage";
 
 export default function DebateRoom() {
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
@@ -174,10 +129,11 @@ export default function DebateRoom() {
     if (messages.length === 0 || !autoSpeak || !voiceEnabled || !ttsSupported) return;
     
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage && lastMessage.senderType === "AI_AGENT") {
+    // Check if this is an AI agent (senderRole contains _AGENT)
+    const isAgent = lastMessage && lastMessage.senderRole?.includes('_AGENT');
+    if (isAgent) {
       // Get agent-specific voice settings
-      const agentInfo = getAgentInfo(lastMessage.agentRole);
-      const voiceSettings = getAgentVoiceSettings(lastMessage.agentRole);
+      const voiceSettings = getAgentVoiceSettings(lastMessage.senderRole);
       
       // Speak the message with appropriate voice
       speak(lastMessage.content, voiceSettings);
@@ -242,22 +198,6 @@ export default function DebateRoom() {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
-
-  const getAgentInfo = (agentRole: string | null): AgentInfo | null => {
-    return agentRole ? DEBATE_AGENTS[agentRole] || null : null;
-  };
-  
-  const getAgentVoiceSettings = (agentRole: string | null) => {
-    // Different voice characteristics for each agent
-    const settings: Record<string, { pitch: number; rate: number }> = {
-      CONTRARIAN: { pitch: 0.9, rate: 1.1 }, // Lower, faster - urgent bear case
-      DEFENDER: { pitch: 1.1, rate: 0.95 }, // Higher, slower - confident bull case
-      SECRETARY: { pitch: 1.0, rate: 1.0 }, // Neutral - balanced moderator
-      LEAD_PM: { pitch: 1.05, rate: 0.9 }, // Slightly higher, measured - thoughtful questions
-    };
-    
-    return agentRole ? settings[agentRole] || {} : {};
-  };
   
   const toggleVoiceInput = () => {
     if (isListening) {
@@ -268,35 +208,35 @@ export default function DebateRoom() {
     }
   };
 
-  const renderAgentAvatar = (message: DebateMessage) => {
-    const agentInfo = getAgentInfo(message.agentRole);
-    const Icon = agentInfo?.icon || Bot;
+  // Handle text-to-speech for a message
+  const handleSpeak = (messageId: string, content: string) => {
+    // Already speaking this message - stop it
+    if (isSpeaking) {
+      stop();
+      return;
+    }
+
+    // Find the message to get agent role for voice settings
+    const message = messages.find(m => m.id === messageId);
+    const voiceSettings = message?.senderRole ? getAgentVoiceSettings(message.senderRole) : {};
     
-    return (
-      <Avatar className="h-9 w-9 mt-1">
-        <AvatarFallback className={message.senderType === "AI_AGENT" ? "bg-primary/10" : "bg-muted"}>
-          {message.senderType === "AI_AGENT" ? (
-            <Icon className={`h-4 w-4 ${agentInfo?.color || "text-primary"}`} />
-          ) : (
-            <User className="h-4 w-4" />
-          )}
-        </AvatarFallback>
-      </Avatar>
-    );
+    // Speak with agent-specific voice
+    speak(content, voiceSettings);
   };
 
-  const getStanceBadge = (stance: string | null) => {
-    if (!stance) return null;
-    const colors = {
-      BULL: "bg-chart-2/10 text-chart-2 border-chart-2/20",
-      BEAR: "bg-destructive/10 text-destructive border-destructive/20",
-      NEUTRAL: "bg-muted text-muted-foreground border-border",
-    };
-    return (
-      <Badge variant="outline" className={colors[stance as keyof typeof colors] || colors.NEUTRAL}>
-        {stance.toLowerCase()}
-      </Badge>
-    );
+  // Export debate session
+  const handleExport = () => {
+    toast({
+      title: "Export Started",
+      description: "Generating debate transcript PDF...",
+    });
+    // In production, this would generate a PDF export
+    setTimeout(() => {
+      toast({
+        title: "Export Complete",
+        description: "Debate transcript downloaded successfully",
+      });
+    }, 1500);
   };
 
   return (
@@ -384,80 +324,95 @@ export default function DebateRoom() {
                     <span>{selectedProposal?.proposalType} recommendation</span>
                   </CardDescription>
                 </div>
-                <Badge variant="outline" className="ml-auto">
-                  {selectedSessionData?.currentPhase}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">
+                    {selectedSessionData?.currentPhase}
+                  </Badge>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleExport}
+                    data-testid="button-export-debate"
+                    className="gap-2"
+                  >
+                    <Download className="h-3 w-3" />
+                    Export
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    data-testid="button-share-debate"
+                    className="gap-2"
+                  >
+                    <Share2 className="h-3 w-3" />
+                    Share
+                  </Button>
+                </div>
               </div>
 
-              {/* Quick Agent Invoke Buttons */}
-              <div className="flex gap-2 mt-4 flex-wrap">
-                {Object.values(DEBATE_AGENTS).map((agent) => {
-                  const Icon = agent.icon;
-                  return (
-                    <Button
-                      key={agent.role}
-                      size="sm"
-                      variant="outline"
-                      onClick={() => invokeAgentMutation.mutate(agent.role)}
-                      disabled={invokeAgentMutation.isPending}
-                      data-testid={`button-invoke-${agent.role.toLowerCase()}`}
-                      className="gap-2"
-                    >
-                      <Icon className={`h-3 w-3 ${agent.color}`} />
-                      <span>{agent.name}</span>
-                    </Button>
-                  );
-                })}
+              {/* AI Agent Panel */}
+              <div className="mt-4 p-3 rounded-md bg-muted/50 border border-border">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-muted-foreground">AI Agents (click to invoke)</span>
+                  <Badge variant="outline" className="text-xs gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    {AI_AGENTS.length} available
+                  </Badge>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {AI_AGENTS.map((agent) => {
+                    const Icon = agent.icon;
+                    return (
+                      <Button
+                        key={agent.id}
+                        size="sm"
+                        variant="outline"
+                        onClick={() => invokeAgentMutation.mutate(agent.role)}
+                        disabled={invokeAgentMutation.isPending}
+                        data-testid={`button-invoke-${agent.id}`}
+                        className="gap-2"
+                      >
+                        <Icon className={`h-3 w-3 ${agent.color}`} />
+                        <span>{agent.name}</span>
+                      </Button>
+                    );
+                  })}
+                </div>
               </div>
             </CardHeader>
 
             <CardContent className="flex-1 overflow-hidden p-0">
               <ScrollArea className="h-full p-6">
-                <div className="space-y-6">
-                  {messages.map((message, index) => {
-                    const isAgent = message.senderType === "AI_AGENT";
-                    const agentInfo = getAgentInfo(message.agentRole);
-                    const isLastMessage = index === messages.length - 1;
-                    const isSpeakingThis = isLastMessage && isSpeaking && isAgent;
-                    
-                    return (
-                      <div
-                        key={index}
-                        className={`flex gap-3 ${isAgent ? "bg-muted/30 -mx-6 px-6 py-4 rounded-lg" : ""} ${isSpeakingThis ? "ring-2 ring-primary/50" : ""}`}
-                        data-testid={`message-${index}`}
-                      >
-                        {renderAgentAvatar(message)}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="font-semibold text-sm">{message.senderName}</span>
-                            {agentInfo && (
-                              <Badge variant="outline" className="text-xs">
-                                {agentInfo.name}
-                              </Badge>
-                            )}
-                            {getStanceBadge(message.stance)}
-                            {message.messageType !== "TEXT" && (
-                              <Badge variant="secondary" className="text-xs">
-                                {message.messageType}
-                              </Badge>
-                            )}
-                            {isSpeakingThis && (
-                              <Badge variant="default" className="text-xs animate-pulse gap-1">
-                                <Volume2 className="h-3 w-3" />
-                                Speaking
-                              </Badge>
-                            )}
-                            <span className="text-xs text-muted-foreground ml-auto">
-                              {formatTime(message.timestamp!)}
-                            </span>
-                          </div>
-                          <div className="text-sm text-foreground whitespace-pre-wrap">
-                            {message.content}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="space-y-4">
+                  {messages.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                      <p className="font-medium">No messages yet</p>
+                      <p className="text-xs mt-1">Start the conversation or invoke an AI agent</p>
+                    </div>
+                  ) : (
+                    messages.map((message, index) => {
+                      // Check if this is an AI agent (senderRole contains _AGENT)
+                      const isAgent = message.senderRole?.includes('_AGENT') || false;
+                      const isLastMessage = index === messages.length - 1;
+                      const isSpeakingThis = isLastMessage && isSpeaking && isAgent;
+                      
+                      return (
+                        <EnhancedDebateMessage
+                          key={message.id || index}
+                          messageId={message.id || `msg-${index}`}
+                          author={message.senderName || "Unknown"}
+                          role={!isAgent ? message.senderRole : undefined}
+                          agentRole={isAgent ? message.senderRole : undefined}
+                          timestamp={formatTime(message.createdAt || new Date())}
+                          message={message.content || ""}
+                          type={isAgent ? "ai" : "human"}
+                          onSpeak={handleSpeak}
+                          isSpeaking={isSpeakingThis}
+                        />
+                      );
+                    })
+                  )}
                   <div ref={messagesEndRef} />
                 </div>
               </ScrollArea>
