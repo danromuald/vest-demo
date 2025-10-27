@@ -1212,6 +1212,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/export/workflow-artifacts/:workflowId", async (req, res) => {
+    try {
+      const workflow = await storage.getWorkflow(req.params.workflowId);
+      if (!workflow) {
+        res.status(404).json({ error: "Workflow not found" });
+        return;
+      }
+
+      const artifacts = await storage.getWorkflowArtifacts(req.params.workflowId);
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="workflow-${workflow.ticker}-artifacts-${Date.now()}.pdf"`
+      );
+
+      await pdfService.generateWorkflowArtifacts(workflow, artifacts, res);
+    } catch (error) {
+      console.error("Workflow artifacts export error:", error);
+      res.status(500).json({ error: "Failed to generate workflow artifacts PDF" });
+    }
+  });
+
   // Notification Routes
   app.get("/api/notifications", async (req, res) => {
     try {

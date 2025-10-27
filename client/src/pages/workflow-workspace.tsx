@@ -830,7 +830,19 @@ function AnalysisHubTab({ workflowId, artifacts }: { workflowId: string; artifac
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" data-testid="button-export-all">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            data-testid="button-export-all"
+            onClick={() => {
+              const url = `/api/export/workflow-artifacts/${workflowId}`;
+              window.open(url, '_blank');
+              toast({
+                title: "Export Started",
+                description: "Generating comprehensive workflow report PDF",
+              });
+            }}
+          >
             <Download className="h-4 w-4 mr-2" />
             Export All
           </Button>
@@ -1580,11 +1592,7 @@ function ICMeetingTab({ workflowId }: { workflowId: string }) {
           {/* Active AI Agents Panel */}
           <div className="p-3 rounded-md bg-muted/50 border border-border">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted-foreground">Active AI Agents</span>
-              <Button variant="ghost" size="sm" className="text-xs h-6">
-                <Plus className="h-3 w-3 mr-1" />
-                Add Agent
-              </Button>
+              <span className="text-xs font-medium text-muted-foreground">Active AI Agents (click to toggle)</span>
             </div>
             <div className="flex flex-wrap gap-2">
               {AI_AGENTS.map((agent) => {
@@ -2064,16 +2072,8 @@ function MonitoringTab({ workflowId }: { workflowId: string }) {
       {/* Alert Rules */}
       <Card data-testid="card-alert-rules">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Alert Rules</CardTitle>
-              <CardDescription>Automated monitoring thresholds and notifications</CardDescription>
-            </div>
-            <Button size="sm" variant="outline" data-testid="button-add-rule">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Rule
-            </Button>
-          </div>
+          <CardTitle>Alert Rules</CardTitle>
+          <CardDescription>Automated monitoring thresholds and notifications</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -2216,9 +2216,6 @@ function AlertRule({
             {triggered} trigger{triggered !== 1 ? "s" : ""}
           </Badge>
         )}
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <Eye className="h-4 w-4" />
-        </Button>
       </div>
     </div>
   );

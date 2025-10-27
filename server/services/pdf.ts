@@ -509,6 +509,120 @@ export class PDFService {
 
     doc.end();
   }
+
+  /**
+   * Generate Workflow Artifacts PDF (Export All)
+   */
+  async generateWorkflowArtifacts(
+    workflow: any,
+    artifacts: any[],
+    stream: Writable
+  ): Promise<void> {
+    const doc = new PDFDocument({ size: "LETTER", margin: 50 });
+    doc.pipe(stream);
+
+    // Header
+    doc
+      .fontSize(24)
+      .font("Helvetica-Bold")
+      .text("Workflow Analysis Report", { align: "center" })
+      .moveDown(0.5);
+
+    doc
+      .fontSize(14)
+      .font("Helvetica")
+      .text(`${workflow.ticker} - ${workflow.companyName}`, { align: "center" })
+      .moveDown(0.3);
+
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text(new Date().toLocaleDateString(), { align: "center" })
+      .moveDown(2);
+
+    // Workflow Overview
+    doc
+      .fontSize(16)
+      .font("Helvetica-Bold")
+      .text("Workflow Overview")
+      .moveDown(0.5);
+
+    doc
+      .fontSize(11)
+      .font("Helvetica")
+      .text(`Ticker: ${workflow.ticker}`)
+      .text(`Company: ${workflow.companyName || "N/A"}`)
+      .text(`Current Stage: ${workflow.currentStage}`)
+      .text(`Created: ${workflow.createdAt ? new Date(workflow.createdAt).toLocaleDateString() : "N/A"}`)
+      .text(`Total Artifacts: ${artifacts.length}`)
+      .moveDown(2);
+
+    // Artifacts by Type
+    const artifactsByType = artifacts.reduce((acc, artifact) => {
+      if (!acc[artifact.artifactType]) {
+        acc[artifact.artifactType] = [];
+      }
+      acc[artifact.artifactType].push(artifact);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    Object.entries(artifactsByType).forEach(([type, arts], sectionIndex) => {
+      if (sectionIndex > 0) {
+        doc.addPage();
+      }
+
+      // Section Title
+      doc
+        .fontSize(16)
+        .font("Helvetica-Bold")
+        .text(type.replace(/_/g, " "))
+        .moveDown(0.5);
+
+      arts.forEach((artifact, index) => {
+        doc
+          .fontSize(12)
+          .font("Helvetica-Bold")
+          .text(`${index + 1}. ${artifact.title || type}`)
+          .moveDown(0.3);
+
+        doc
+          .fontSize(10)
+          .font("Helvetica")
+          .text(`Generated: ${artifact.createdAt ? new Date(artifact.createdAt).toLocaleDateString() : "N/A"}`, {
+            indent: 20,
+          })
+          .text(`Stage: ${artifact.stage}`, { indent: 20 })
+          .text(`Status: ${artifact.status}`, { indent: 20 });
+
+        if (artifact.summary) {
+          doc.moveDown(0.3);
+          doc
+            .fontSize(10)
+            .font("Helvetica-Oblique")
+            .text(`Summary: ${artifact.summary}`, {
+              indent: 20,
+              align: "justify",
+              width: doc.page.width - 120,
+            });
+        }
+
+        doc.moveDown(0.8);
+      });
+    });
+
+    // Footer
+    doc
+      .fontSize(9)
+      .font("Helvetica-Oblique")
+      .text(
+        "This comprehensive workflow report is confidential and for internal use only.",
+        50,
+        doc.page.height - 50,
+        { align: "center", width: doc.page.width - 100 }
+      );
+
+    doc.end();
+  }
 }
 
 export const pdfService = new PDFService();
