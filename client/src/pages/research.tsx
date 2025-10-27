@@ -709,8 +709,10 @@ export default function Research() {
                                               workflowStage?.currentStage === "IC_PREP" ||
                                               workflowStage?.currentStage === "IC_MEETING";
                         
-                        // Show button if workflow is at analysis stage or later
-                        if (isAnalysisStage) {
+                        // Show button if research is COMPLETED or workflow is at analysis stage or later
+                        const showCreateButton = request.status === "COMPLETED" || isAnalysisStage;
+                        
+                        if (showCreateButton) {
                           return (
                             <Button
                               variant="default"
