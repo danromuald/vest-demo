@@ -72,27 +72,19 @@ See [LOCAL_SETUP.md](./LOCAL_SETUP.md) for detailed instructions and troubleshoo
 - React 18 + TypeScript
 - Shadcn/ui + Radix UI primitives
 - Tailwind CSS with custom financial color palette
-- TanStack Query for server state management
-- Wouter for client-side routing
-- Framer Motion for animations
+- TanStack Query for server state
+- Wouter for routing
 
 **Backend**
-- Node.js 20 + Express.js
-- PostgreSQL 15 database
-- Drizzle ORM for type-safe queries
+- Node.js + Express.js
+- PostgreSQL (Neon serverless)
+- Drizzle ORM
 - WebSocket server for real-time features
-- Session-based authentication
-- PDF generation for reports
+- Replit Auth (OpenID Connect) for production
 
 **AI Integration**
-- OpenAI-compatible API
+- OpenAI-compatible API (GPT-5 via Replit AI)
 - 16 specialized agents for research, analysis, and monitoring
-- Real-time AI debate and contrarian analysis
-
-**Infrastructure**
-- Docker & Docker Compose for local development
-- Health checks and automatic migrations
-- Volume persistence for database
 
 ### Database Schema
 
@@ -115,17 +107,17 @@ See [LOCAL_SETUP.md](./LOCAL_SETUP.md) for detailed instructions and troubleshoo
 
 ## 🔐 Authentication
 
-### Development Mode (Default)
+### Development Mode (Automatic)
 - No login required
 - Auto-signed in as **Dan Mbanga** (dan@example.io)
 - Switch roles via user menu (Analyst, PM, Compliance, Admin)
-- No PII exposure - perfect for demos and testing
+- No PII exposure - perfect for demos
 
-### Production Mode
+### Production Mode (Replit)
+- Replit Auth (OpenID Connect)
 - Session-based authentication
-- Configurable authentication provider (OAuth, SAML, etc.)
-- Role-based access control (RBAC)
-- Secure session management with encrypted cookies
+- Automatic user upsert on first login
+- Role-based access control
 
 ## 📊 Key Features in Detail
 
@@ -168,16 +160,14 @@ Single `/workflows/:id` route with stage-aware tabs:
 - Real-time debate messages
 - AI contrarian agent challenging consensus
 - Integrated research briefs and valuation models
-- Voice input capability for debate participation
 
 ### 4. Portfolio Monitoring
 
-- Automated thesis health tracking (0-100 score)
+- Automated thesis health tracking
 - Market event detection and alerts
-- Custom alert rules and notifications
+- Custom notification rules
 - Position performance analytics
 - Catalyst and risk monitoring
-- Historical performance timeline
 
 ## 🧪 Demo Data
 
@@ -231,8 +221,6 @@ npm run dev
 ### Available Scripts
 
 - `npm run dev` - Start development server with hot reload
-- `npm run build` - Build for production
-- `npm run start` - Start production server
 - `npm run db:push` - Sync database schema
 - `npm run db:push --force` - Force sync (bypass safety checks)
 - `npx tsx scripts/seed.ts` - Seed database with demo data
@@ -240,9 +228,6 @@ npm run dev
 ## 🐳 Docker Commands
 
 ```bash
-# Complete setup (recommended)
-make run-all
-
 # Start services
 docker-compose up
 
@@ -270,61 +255,39 @@ docker-compose exec app npx tsx scripts/seed.ts
 
 ## 📈 Production Deployment
 
+### Replit Deployment
+
+The application is optimized for Replit with:
+- Automatic Replit Auth integration
+- Neon PostgreSQL (serverless)
+- Environment variables via Replit Secrets
+- One-click deployment
+
+Simply deploy to Replit - no additional configuration needed!
+
 ### Environment Variables
 
-**Required:**
+**Required for Production:**
 - `DATABASE_URL` - PostgreSQL connection string
-- `SESSION_SECRET` - Session encryption key (generate with `openssl rand -base64 32`)
-- `NODE_ENV` - Set to `production` for production mode
+- `SESSION_SECRET` - Session encryption key
+- `REPLIT_DOMAINS` - Comma-separated domains (auto-set on Replit)
+- `REPL_ID` - Application ID (auto-set on Replit)
 
 **Optional:**
+- `NODE_ENV` - Set to `production` for production mode
 - `PORT` - Server port (default: 5000)
-- `OPENAI_API_KEY` - OpenAI API key for AI agents (if using OpenAI directly)
-
-### Deployment Platforms
-
-Vest can be deployed to any platform that supports Node.js and PostgreSQL:
-
-**Recommended Platforms:**
-- **Heroku** - Simple deployment with Postgres add-on
-- **Railway** - Modern platform with automatic PostgreSQL
-- **Render** - Free tier available with PostgreSQL
-- **AWS/GCP/Azure** - Full control with managed PostgreSQL (RDS/Cloud SQL/Azure DB)
-- **DigitalOcean App Platform** - Easy deployment with managed databases
-
-### Production Checklist
-
-- [ ] Set strong `SESSION_SECRET` (32+ random characters)
-- [ ] Configure production database (PostgreSQL 15+)
-- [ ] Set `NODE_ENV=production`
-- [ ] Enable SSL for database connections
-- [ ] Configure domain and HTTPS
-- [ ] Set up monitoring and logging
-- [ ] Configure backup strategy for PostgreSQL
-- [ ] Review and configure CORS settings if needed
-
-## 🔒 Security
-
-- Session-based authentication with encrypted cookies
-- CSRF protection on all mutations
-- SQL injection prevention via Drizzle ORM
-- Environment-based configuration
-- Secure WebSocket connections
-- No hardcoded secrets or credentials
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+2. Create a feature branch
 3. Make your changes
-4. Run tests and ensure everything works locally
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
+4. Run tests and ensure everything works
+5. Submit a pull request
 
 ## 📝 License
 
-Apache 2.0
+Proprietary - All rights reserved
 
 ## 🙋 Support
 
