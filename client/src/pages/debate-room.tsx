@@ -23,6 +23,7 @@ import {
   Phone,
   Download,
   Share2,
+  AlertTriangle,
 } from "lucide-react";
 import type { DebateSession, DebateMessage, Proposal } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -212,7 +213,7 @@ export default function DebateRoom() {
   const handleSpeak = (messageId: string, content: string) => {
     // Already speaking this message - stop it
     if (isSpeaking) {
-      stop();
+      stopSpeaking();
       return;
     }
 
@@ -426,11 +427,13 @@ export default function DebateRoom() {
                     size="sm"
                     onClick={() => setVoiceEnabled(!voiceEnabled)}
                     disabled={!ttsSupported}
-                    data-testid="button-toggle-voice"
+                    data-testid="button-toggle-tts"
+                    aria-label={voiceEnabled ? "Disable text-to-speech" : "Enable text-to-speech"}
+                    aria-pressed={voiceEnabled}
                     className="gap-2"
                   >
                     {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-                    <span className="text-xs">Voice</span>
+                    <span className="text-xs">TTS</span>
                   </Button>
                   <Button
                     variant={autoSpeak ? "default" : "outline"}
@@ -438,6 +441,7 @@ export default function DebateRoom() {
                     onClick={() => setAutoSpeak(!autoSpeak)}
                     disabled={!ttsSupported || !voiceEnabled}
                     data-testid="button-auto-speak"
+                    aria-pressed={autoSpeak}
                     className="gap-2"
                   >
                     <Phone className="h-4 w-4" />
@@ -447,6 +451,12 @@ export default function DebateRoom() {
                     <Badge variant="default" className="animate-pulse gap-2">
                       <Volume2 className="h-3 w-3" />
                       Speaking...
+                    </Badge>
+                  )}
+                  {isListening && (
+                    <Badge variant="destructive" className="animate-pulse gap-2" data-testid="badge-recording">
+                      <Mic className="h-3 w-3" />
+                      Recording...
                     </Badge>
                   )}
                 </div>
@@ -469,8 +479,11 @@ export default function DebateRoom() {
                   <Button
                     variant={isListening ? "default" : "outline"}
                     onClick={toggleVoiceInput}
-                    data-testid="button-voice-input"
+                    data-testid="button-voice-recording"
+                    aria-label={isListening ? "Stop voice recording" : "Start voice recording"}
+                    aria-pressed={isListening}
                     className={isListening ? "animate-pulse" : ""}
+                    title={isListening ? "Recording... Click to stop" : "Click to start voice recording"}
                   >
                     {isListening ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
                   </Button>
@@ -552,11 +565,11 @@ export default function DebateRoom() {
 
                   <TabsContent value="agents" className="px-4 pb-4 mt-0">
                     <div className="space-y-3">
-                      {Object.values(DEBATE_AGENTS).map((agent) => {
+                      {AI_AGENTS.map((agent) => {
                         const Icon = agent.icon;
                         const isActive = selectedSessionData?.activeAgents?.includes(agent.role);
                         return (
-                          <div key={agent.role} className="border rounded-md p-3">
+                          <div key={agent.id} className="border rounded-md p-3">
                             <div className="flex items-start gap-3">
                               <div className={`p-2 rounded-md ${isActive ? "bg-primary/10" : "bg-muted"}`}>
                                 <Icon className={`h-4 w-4 ${agent.color}`} />
@@ -571,7 +584,7 @@ export default function DebateRoom() {
                                   )}
                                 </div>
                                 <p className="text-[10px] text-muted-foreground mt-1">
-                                  {agent.description}
+                                  {agent.specialty}
                                 </p>
                               </div>
                             </div>

@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Volume2, Sparkles, FileText, User } from "lucide-react";
-import { AI_AGENTS, getAgentInfo } from "@/lib/ai-agents";
+import { getAgentInfo } from "@/lib/ai-agents";
 
 interface EnhancedDebateMessageProps {
   messageId: string;
