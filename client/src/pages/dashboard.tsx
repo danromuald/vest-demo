@@ -1,12 +1,11 @@
 import { MetricCard } from "@/components/metric-card";
-import { WorkflowStageNavigator } from "@/components/workflow-stage-navigator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, Users, FileText, Bell, Loader2, ArrowRight, AlertTriangle, CheckCircle, Clock } from "lucide-react";
+import { TrendingUp, Users, FileText, Bell, Loader2, ArrowRight, AlertTriangle, CheckCircle, Clock, Workflow } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import type { Position, Proposal, ResearchRequest, Notification } from "@shared/schema";
+import type { Position, Proposal, ResearchRequest, Notification, Workflow as WorkflowType } from "@shared/schema";
 
 export default function Dashboard() {
   const { data: positions = [], isLoading: loadingPositions } = useQuery<Position[]>({
@@ -17,6 +16,10 @@ export default function Dashboard() {
     queryKey: ['/api/proposals'],
   });
 
+  const { data: workflows = [], isLoading: loadingWorkflows } = useQuery<WorkflowType[]>({
+    queryKey: ['/api/workflows'],
+  });
+
   const { data: researchRequests = [] } = useQuery<ResearchRequest[]>({
     queryKey: ['/api/research-requests'],
   });
@@ -25,7 +28,7 @@ export default function Dashboard() {
     queryKey: ['/api/notifications'],
   });
 
-  if (loadingPositions) {
+  if (loadingPositions || loadingWorkflows) {
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -40,6 +43,7 @@ export default function Dashboard() {
     : 0;
 
   const activeProposals = proposals.filter(p => p.status === "PENDING");
+  const activeWorkflows = workflows.filter(w => w.status === "ACTIVE");
   const criticalAlerts = notifications.filter(n => n.severity === "CRITICAL" && !n.readAt).length;
   const activeResearch = researchRequests.filter(r => r.status === "IN_PROGRESS").length;
 
@@ -87,8 +91,69 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Workflow Stage Navigator */}
-      <WorkflowStageNavigator />
+      {/* Active Workflows */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
+          <div>
+            <CardTitle className="text-base font-semibold">Active Workflows</CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              Investment opportunities in pipeline
+            </p>
+          </div>
+          <Workflow className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          {activeWorkflows.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <CheckCircle className="h-10 w-10 text-muted-foreground/50 mb-3" />
+              <p className="text-sm text-muted-foreground">No active workflows</p>
+              <Button variant="outline" size="sm" className="mt-3" data-testid="button-create-workflow">
+                Start New Workflow
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {activeWorkflows.map((workflow) => {
+                const stageLabels: Record<string, string> = {
+                  'DISCOVERY': 'Discovery',
+                  'ANALYSIS': 'Analysis',
+                  'IC_MEETING': 'IC Meeting',
+                  'EXECUTION': 'Execution',
+                  'MONITORING': 'Monitoring'
+                };
+                const stageLabel = stageLabels[workflow.currentStage] || workflow.currentStage;
+                
+                return (
+                  <Link key={workflow.id} href={`/workflows/${workflow.id}`}>
+                    <div 
+                      className="flex items-center justify-between hover-elevate rounded-md p-4 border border-border cursor-pointer"
+                      data-testid={`workflow-${workflow.id}`}
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-sm font-semibold text-foreground">{workflow.ticker}</p>
+                          <span className="text-xs text-muted-foreground">•</span>
+                          <p className="text-xs text-muted-foreground">{workflow.companyName}</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-2">{workflow.sector}</p>
+                        {workflow.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-1">{workflow.description}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge variant="secondary" data-testid={`badge-stage-${workflow.id}`}>
+                          {stageLabel}
+                        </Badge>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

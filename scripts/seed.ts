@@ -4,16 +4,16 @@ async function seed() {
   console.log("🌱 Starting database seeding...");
 
   try {
-    // Check if already seeded by looking for NVDA workflow with monitoring events
-    const existingWorkflows = await storage.getWorkflows({ ticker: "NVDA" });
+    // Check if already seeded by looking for NEE workflow
+    const existingWorkflows = await storage.getWorkflows({ ticker: "NEE" });
     if (existingWorkflows.length > 0) {
-      const existingNvdaWorkflow = existingWorkflows[0];
-      const monitoringEvents = await storage.getMonitoringEvents(existingNvdaWorkflow.id);
+      const existingNeeWorkflow = existingWorkflows[0];
+      const monitoringEvents = await storage.getMonitoringEvents(existingNeeWorkflow.id);
       if (monitoringEvents.length > 0) {
         console.log("✅ Database already seeded - skipping");
         return;
       }
-      console.log("NVDA workflow exists but incomplete - proceeding with seed...");
+      console.log("NEE workflow exists but incomplete - proceeding with seed...");
     } else {
       console.log("Database not seeded yet - proceeding with seed...");
     }
@@ -21,6 +21,16 @@ async function seed() {
     // Create demo users with different roles
     console.log("Creating demo users...");
     const users = [
+      {
+        id: "user-demo-1",
+        email: "dan@example.io",
+        firstName: "Dan",
+        lastName: "Mbanga",
+        profileImageUrl: null,
+        role: "ANALYST" as const,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
       {
         id: "user-analyst-1",
         email: "sarah.chen@vest.com",
@@ -50,6 +60,16 @@ async function seed() {
         role: "COMPLIANCE" as const,
         createdAt: new Date(),
         updatedAt: new Date(),
+      },
+      {
+        id: "user-analyst-2",
+        email: "alex.thompson@vest.com",
+        firstName: "Alex",
+        lastName: "Thompson",
+        profileImageUrl: null,
+        role: "ANALYST" as const,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       }
     ];
 
@@ -57,32 +77,32 @@ async function seed() {
       await storage.upsertUser(user);
     }
 
-    // Create companies
+    // Create Energy sector companies
     console.log("Creating companies...");
     const companies = [
       {
-        ticker: "NVDA",
-        name: "NVIDIA Corporation",
-        sector: "Technology",
-        industry: "Semiconductors",
-        marketCap: 1200000000000,
-        description: "Graphics processing units and AI chips manufacturer"
+        ticker: "NEE",
+        name: "NextEra Energy, Inc.",
+        sector: "Energy",
+        industry: "Electric Utilities",
+        marketCap: 152000000000,
+        description: "Leading clean energy company with largest renewable energy portfolio in North America"
       },
       {
-        ticker: "TSLA",
-        name: "Tesla, Inc.",
-        sector: "Consumer Discretionary",
-        industry: "Automobiles",
-        marketCap: 789000000000,
-        description: "Electric vehicle and clean energy company"
+        ticker: "CVX",
+        name: "Chevron Corporation",
+        sector: "Energy",
+        industry: "Oil & Gas Integrated",
+        marketCap: 285000000000,
+        description: "Integrated energy company engaged in crude oil and natural gas exploration and production"
       },
       {
-        ticker: "GOOGL",
-        name: "Alphabet Inc.",
-        sector: "Communication Services",
-        industry: "Internet Services",
-        marketCap: 1680000000000,
-        description: "Technology company specializing in internet services"
+        ticker: "OXY",
+        name: "Occidental Petroleum Corporation",
+        sector: "Energy",
+        industry: "Oil & Gas E&P",
+        marketCap: 56000000000,
+        description: "Independent oil and gas company with carbon capture and enhanced oil recovery capabilities"
       }
     ];
 
@@ -98,331 +118,961 @@ async function seed() {
       }
     }
 
-    // Create NVDA proposal (starting point)
-    console.log("Creating NVDA proposal...");
-    const nvdaProposal = await storage.createProposal({
-      ticker: "NVDA",
-      companyName: "NVIDIA Corporation",
+    // =====================================================================
+    // WORKFLOW 1: NEE - Complete workflow in MONITORING stage
+    // =====================================================================
+    console.log("\n📊 Creating NEE workflow (MONITORING stage)...");
+    
+    const neeProposal = await storage.createProposal({
+      ticker: "NEE",
+      companyName: "NextEra Energy, Inc.",
       analyst: "user-analyst-1",
       proposalType: "BUY",
-      proposedWeight: "5.00",
-      targetPrice: "145.00",
-      status: "PENDING",
-      thesis: "AI infrastructure leader with dominant market share and strong secular growth tailwinds from enterprise AI adoption. Target price $145 represents 21% upside from current $119.50.",
+      proposedWeight: "4.50",
+      targetPrice: "85.00",
+      status: "APPROVED",
+      thesis: "NextEra Energy is the world's largest renewable energy producer with unmatched competitive advantages in clean energy infrastructure. The company's integrated regulated/competitive model provides stable cash flows while capturing secular tailwinds from energy transition. Target $85 represents 15% upside with 3.5% dividend yield.",
       catalysts: [
-        "Blackwell architecture launch Q2 with 40% performance improvement",
-        "Expanding TAM in automotive and edge computing",
-        "Strong pricing power with sustainable 65%+ gross margins"
+        "Renewable energy backlog of 23 GW with locked-in PPAs at favorable rates",
+        "Florida Power & Light rate case approval supporting 10% rate base growth",
+        "Green hydrogen pilot programs positioning for $100B+ addressable market",
+        "IRA tax credits extending economics of solar/wind for 10+ years"
       ],
       risks: [
-        "Customer concentration: Top 3 customers represent 45% of revenue",
-        "Geopolitical headwinds: Export restrictions to China impact 25% of TAM",
-        "Valuation: Trading at 35x NTM P/E vs 5-year avg of 22x"
+        "Regulatory risk: Florida PSC could deny future rate increases",
+        "Weather exposure: Hurricane season could impact infrastructure",
+        "Interest rate sensitivity: Rising rates pressure ROIC on capital-intensive projects",
+        "Technology disruption: Battery storage economics improving faster than expected"
       ],
+      recommendation: "BUY",
+      upside: "15.20",
+      downside: "-8.50"
     });
 
-    // Create comprehensive NVDA workflow
-    console.log("Creating NVDA workflow...");
-    const nvdaWorkflow = await storage.createWorkflow({
-      ticker: "NVDA",
-      companyName: "NVIDIA Corporation",
-      sector: "Technology",
-      currentStage: "MONITORING", // Advanced stage to show full functionality
+    const neeWorkflow = await storage.createWorkflow({
+      ticker: "NEE",
+      companyName: "NextEra Energy, Inc.",
+      sector: "Energy",
+      currentStage: "MONITORING",
       status: "ACTIVE",
       owner: "user-analyst-1",
-      description: "NVDA investment workflow from discovery through monitoring",
+      description: "Clean energy leader with dominant renewable infrastructure and regulated utility moat"
     });
 
-    // Create workflow stages
-    console.log("Creating workflow stages...");
-    const stages = [
-      { stage: "DISCOVERY", status: "COMPLETED", completedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
-      { stage: "ANALYSIS", status: "COMPLETED", completedAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000) },
-      { stage: "IC_MEETING", status: "COMPLETED", completedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000) },
-      { stage: "EXECUTION", status: "COMPLETED", completedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000) },
-      { stage: "MONITORING", status: "IN_PROGRESS", completedAt: null },
-    ];
-
-    for (const stageData of stages) {
-      await storage.createWorkflowStage({
-        workflowId: nvdaWorkflow.id,
-        stage: stageData.stage as any,
-        status: stageData.status as any,
+    // Create all 5 workflow stages for NEE (all completed except monitoring which is in progress)
+    const neeStages = await Promise.all([
+      storage.createWorkflowStage({
+        workflowId: neeWorkflow.id,
+        stage: "DISCOVERY",
+        status: "COMPLETED",
         owner: "user-analyst-1",
-        startedAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000),
-        completedAt: stageData.completedAt,
-      });
-    }
-
-    // Workflow assignments (would be created if storage method existed)
-    // Note: Assignment functionality can be added later
-
-    // Create artifacts (research outputs)
-    console.log("Creating workflow artifacts...");
-    const artifacts = [
-      {
-        workflowId: nvdaWorkflow.id,
-        artifactType: "RESEARCH_BRIEF",
-        title: "NVIDIA Deep Dive: AI Infrastructure Dominance",
-        version: 1,
-        content: {
-          summary: "Comprehensive analysis of NVIDIA's market position, competitive moat, and growth drivers in AI infrastructure.",
-          sections: [
-            { title: "Executive Summary", body: "NVIDIA maintains 80%+ market share in AI accelerators..." },
-            { title: "Market Position", body: "Dominant player in GPU technology with commanding share in gaming, data centers, and AI computing" },
-            { title: "Competitive Moat", body: "CUDA ecosystem with 4M+ developers creates significant switching costs" }
-          ]
-        },
-        createdBy: "user-analyst-1",
+        startedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        completedAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000),
+        notes: "Initial research and thesis development completed"
+      }),
+      storage.createWorkflowStage({
+        workflowId: neeWorkflow.id,
         stage: "ANALYSIS",
-        status: "APPROVED",
-      },
-      {
-        workflowId: nvdaWorkflow.id,
-        artifactType: "FINANCIAL_MODEL",
-        title: "NVIDIA DCF Valuation Model",
-        version: 1,
-        content: {
-          summary: "3-scenario DCF model with bull case $165, base $145, bear $110 price targets.",
-          baseCase: { revenue_cagr: 0.22, operating_margin: 0.48, wacc: 0.092, target_price: 145 },
-          bullCase: { revenue_cagr: 0.28, operating_margin: 0.52, wacc: 0.085, target_price: 165 },
-          bearCase: { revenue_cagr: 0.15, operating_margin: 0.42, wacc: 0.105, target_price: 110 }
-        },
-        createdBy: "user-analyst-1",
-        stage: "ANALYSIS",
-        status: "APPROVED",
-      },
-      {
-        workflowId: nvdaWorkflow.id,
-        artifactType: "RISK_ANALYSIS",
-        title: "NVIDIA Risk Assessment",
-        version: 1,
-        content: {
-          summary: "Key risks include customer concentration, geopolitical exposure, and valuation premium.",
-          risks: [
-            { factor: "Customer Concentration", severity: "HIGH", description: "Top 3 customers represent 45% of revenue" },
-            { factor: "Geopolitical", severity: "HIGH", description: "Export restrictions to China impact 25% of TAM" },
-            { factor: "Valuation", severity: "MEDIUM", description: "Trading at 35x NTM P/E vs 5-year avg of 22x" }
-          ]
-        },
-        createdBy: "user-analyst-1",
-        stage: "ANALYSIS",
-        status: "APPROVED",
-      },
-      {
-        workflowId: nvdaWorkflow.id,
-        artifactType: "THESIS",
-        title: "NVIDIA Investment Thesis",
-        version: 1,
-        content: {
-          summary: "Long NVDA: AI infrastructure leader with durable competitive moat and strong secular tailwinds.",
-          recommendation: "BUY",
-          targetPrice: 145,
-          thesis: "We recommend a BUY rating on NVIDIA with a $145 price target, representing 21% upside. The company is well-positioned to capitalize on AI infrastructure growth with sustainable competitive advantages."
-        },
-        createdBy: "user-analyst-1",
+        status: "COMPLETED",
+        owner: "user-analyst-1",
+        startedAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000),
+        completedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+        notes: "Financial model, risk analysis, and investment thesis completed"
+      }),
+      storage.createWorkflowStage({
+        workflowId: neeWorkflow.id,
         stage: "IC_MEETING",
+        status: "COMPLETED",
+        owner: "user-pm-1",
+        startedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+        completedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        notes: "IC meeting approved position - 4.5% weight"
+      }),
+      storage.createWorkflowStage({
+        workflowId: neeWorkflow.id,
+        stage: "EXECUTION",
+        status: "COMPLETED",
+        owner: "user-pm-1",
+        startedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        completedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+        notes: "Position built - 6500 shares @ $73.50 avg"
+      }),
+      storage.createWorkflowStage({
+        workflowId: neeWorkflow.id,
+        stage: "MONITORING",
+        status: "IN_PROGRESS",
+        owner: "user-analyst-1",
+        startedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+        completedAt: null,
+        notes: "Active monitoring - thesis health: HEALTHY"
+      })
+    ]);
+
+    // NEE Research Artifacts
+    console.log("  Creating NEE artifacts...");
+    const neeArtifacts = [
+      await storage.createWorkflowArtifact({
+        workflowId: neeWorkflow.id,
+        artifactType: "RESEARCH_BRIEF",
+        stage: "ANALYSIS",
+        title: "NEE Renewable Energy Leadership Analysis",
+        content: { text: `# NextEra Energy Investment Research Brief
+
+## Executive Summary
+NextEra Energy (NEE) represents a unique opportunity to gain exposure to the secular energy transition theme while maintaining downside protection through its regulated Florida utility. The company operates the largest renewable energy portfolio globally with 30+ GW capacity and has demonstrated consistent execution on capital deployment.
+
+## Investment Thesis
+1. **Renewable Energy Leadership**: NEE owns and operates the world's largest wind and solar portfolio. FPL's regulated utility provides stable cash flows (~60% of EBITDA) while NEP captures growth in competitive renewables.
+
+2. **Structural Competitive Advantages**: 
+   - Lowest cost renewable energy producer due to scale and technology partnerships
+   - Vertically integrated development/operations reducing third-party dependencies
+   - Strong relationships with turbine/panel manufacturers ensuring supply chain priority
+
+3. **Secular Tailwinds**: 
+   - Corporate PPAs: 85% of Fortune 100 have net-zero commitments
+   - Federal support: IRA provides $369B in clean energy incentives
+   - State mandates: 30+ states with renewable portfolio standards
+
+## Financial Model Highlights
+- Revenue CAGR 2023-2028E: 8.2%
+- EBITDA CAGR 2023-2028E: 9.5%
+- FCF/share growth: 10% annually
+- Current valuation: 18.5x NTM P/E vs 5-year average of 21.2x
+
+## Key Risks
+- Regulatory lag in Florida rate cases
+- Rising interest rates impacting project economics
+- Weather volatility (hurricanes)
+- Technology disruption from battery storage
+
+## Recommendation: BUY
+Target Price: $85 (15% upside)
+Position Size: 4.5% of portfolio`,
+        version: 1,
         status: "APPROVED",
-      },
+        createdBy: "user-analyst-1",
+        approvedBy: "user-pm-1"
+      }),
+
+      await storage.createWorkflowArtifact({
+        workflowId: neeWorkflow.id,
+        proposalId: neeProposal.id,
+        artifactType: "FINANCIAL_MODEL",
+        title: "NEE DCF Valuation Model",
+        content: `# NextEra Energy DCF Model
+
+## Model Assumptions
+**Revenue Drivers:**
+- Florida Power & Light: 6% rate base growth + 2% volume
+- Energy Resources: 23 GW renewable backlog deployment
+- Customer growth: 75K new FL connections annually
+
+**Margin Profile:**
+- Regulated utility EBITDA margin: 45% (stable)
+- Competitive renewables EBITDA margin: 38% (expanding from scale)
+
+**Capital Deployment:**
+- Annual capex: $18-20B through 2027
+- Renewable development: $12B annually
+- Grid modernization: $4B annually
+- Maintenance capex: $2B annually
+
+## DCF Valuation
+- Terminal FCF (2028): $7.2B
+- WACC: 7.2% (beta: 0.65, equity weight: 55%)
+- Terminal growth: 3.0%
+- Enterprise Value: $168B
+- Net Debt: $65B
+- Equity Value: $103B
+- Shares Out: 2.0B
+- **Fair Value: $85/share**
+
+## Sensitivity Analysis
+Price sensitivity to WACC ± 50bps and terminal growth ± 50bps:
+- Bull case ($95): WACC 6.7%, g=3.5%
+- Base case ($85): WACC 7.2%, g=3.0%  
+- Bear case ($68): WACC 7.7%, g=2.5%
+
+## Returns Analysis
+- Entry price: $73.50
+- Expected return (1-year): 18.7% (15% price + 3.7% yield)
+- Risk-adjusted return: 14.2% (applying 75% probability)`,
+        version: 1,
+        status: "APPROVED",
+        createdBy: "user-analyst-1",
+        approvedBy: "user-pm-1"
+      }),
+
+      await storage.createWorkflowArtifact({
+        workflowId: neeWorkflow.id,
+        proposalId: neeProposal.id,
+        artifactType: "RISK_ANALYSIS",
+        title: "NEE Risk Assessment & Scenario Analysis",
+        content: `# Risk Analysis: NextEra Energy
+
+## Top 5 Risks (Probability x Impact)
+
+### 1. Regulatory Risk (Medium probability, High impact)
+**Description**: Florida Public Service Commission could deny or reduce requested rate increases
+**Mitigation**: Strong regulatory track record, essential service designation
+**Quantified Impact**: -15% downside if rate case denied
+
+### 2. Interest Rate Risk (High probability, Medium impact)  
+**Description**: Rising rates increase WACC and reduce project returns
+**Mitigation**: Hedging program, locked-in PPAs, inflation escalators
+**Quantified Impact**: Each 100bps increase in rates = -$4/share in fair value
+
+### 3. Weather/Climate Risk (Low probability, High impact)
+**Description**: Major hurricane causing infrastructure damage and outages
+**Mitigation**: Underground infrastructure investment, insurance coverage
+**Quantified Impact**: Category 5 hurricane = $2-3B damage (insured)
+
+### 4. Technology Disruption (Medium probability, Medium impact)
+**Description**: Battery storage costs decline faster than solar, changing competitive dynamics
+**Mitigation**: Early mover in battery storage (3 GW pipeline)
+**Quantified Impact**: Could compress renewables margins by 200-300bps
+
+### 5. Execution Risk (Low probability, Medium impact)
+**Description**: Delays or cost overruns in 23 GW renewable backlog
+**Mitigation**: Proven development team, supply chain relationships
+**Quantified Impact**: 20% cost overrun = -8% to returns
+
+## Scenario Analysis
+
+**Bull Case (+45%): Clean Energy Acceleration**
+- Federal policy extends IRA credits
+- Carbon pricing drives renewable demand  
+- NEE gains market share in storage
+- Target: $105/share
+
+**Base Case (+15%): As Expected**
+- Current trajectory continues
+- Moderate policy support
+- Target: $85/share
+
+**Bear Case (-25%): Renewables Slowdown**
+- Policy uncertainty slows development
+- Rising rates pressure returns
+- Technology disruption
+- Target: $55/share`,
+        version: 1,
+        status: "APPROVED",
+        createdBy: "user-analyst-1",
+        approvedBy: "user-pm-1"
+      }),
+
+      await storage.createWorkflowArtifact({
+        workflowId: neeWorkflow.id,
+        proposalId: neeProposal.id,
+        artifactType: "INVESTMENT_THESIS",
+        title: "NEE Investment Thesis Summary",
+        content: `# Investment Thesis: NextEra Energy (NEE)
+
+## Core Thesis
+NextEra Energy represents a rare combination of defensive utility characteristics with offensive exposure to the multi-decade energy transition. The company's dual model provides downside protection while capturing upside from renewable energy secular growth.
+
+## Why Now?
+1. Stock trading at 18.5x P/E vs 5-year average of 21x (13% discount)
+2. 23 GW renewable backlog represents 3-4 years of visible growth
+3. IRA tailwinds just beginning to materialize in project returns
+4. Recent pullback driven by rate concerns creates entry opportunity
+
+## Competitive Position
+- #1 renewable energy producer globally (30+ GW installed)
+- Lowest cost operator (scale + vertical integration)
+- Regulated utility provides 60% of EBITDA (moat + stability)
+- Technology leadership in battery storage and green hydrogen
+
+## Financial Strength
+- Investment grade credit rating (BBB+/Baa1)
+- Conservative 60% payout ratio provides dividend growth runway
+- $70B+ liquidity for growth investments
+- 10-year track record of meeting/exceeding guidance
+
+## Risk/Reward
+- Upside to $85 target: +15%
+- Dividend yield: 3.7%
+- Total return potential: 18-20% annually
+- Downside: Well-supported at $65 (regulated utility value)
+
+## Position Recommendation
+**Action**: BUY
+**Weight**: 4.5% (overweight vs 2.5% benchmark)
+**Entry**: $73.50 or lower
+**Stop loss**: $65 (regulated utility sum-of-parts value)`,
+        version: 1,
+        status: "APPROVED",
+        createdBy: "user-analyst-1",
+        approvedBy: "user-pm-1"
+      })
     ];
 
-    for (const artifact of artifacts) {
-      await storage.createWorkflowArtifact(artifact as any);
-    }
-
-    // Create IC Meeting
-    console.log("Creating IC meeting...");
-    const icMeeting = await storage.createICMeeting({
-      workflowId: nvdaWorkflow.id,
-      title: "NVDA Investment Committee Meeting",
-      meetingDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+    // NEE IC Meeting with realistic debate
+    console.log("  Creating NEE IC meeting...");
+    const neeMeeting = await storage.createICMeeting({
+      proposalId: neeProposal.id,
+      workflowId: neeWorkflow.id,
+      scheduledAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
       status: "COMPLETED",
-      description: "Investment Committee review of NVDA BUY proposal",
-      agenda: {
-        items: ["NVDA investment proposal review", "Risk assessment discussion", "Vote on recommendation"]
-      },
-      decisions: {
-        decision: "APPROVED",
-        rationale: "Unanimous approval based on strong thesis and compelling risk/reward profile"
-      },
-      createdBy: "user-pm-1",
+      outcome: "APPROVED",
+      notes: "Strong consensus on thesis. Approved 4.5% position size. Some debate on timing given recent rate case uncertainty.",
+      attendees: ["user-analyst-1", "user-pm-1", "user-compliance-1", "user-demo-1"]
     });
 
-    // Add meeting participants
-    await storage.createMeetingParticipant({
-      meetingId: icMeeting.id,
-      userId: "user-analyst-1",
-      role: "ANALYST",
-    });
-
-    await storage.createMeetingParticipant({
-      meetingId: icMeeting.id,
-      userId: "user-pm-1",
-      role: "PM",
-    });
-
-    await storage.createMeetingParticipant({
-      meetingId: icMeeting.id,
-      userId: "user-compliance-1",
-      role: "COMPLIANCE",
-    });
-
-    // Create votes
-    const votes = [
-      { proposalId: nvdaProposal.id, voterName: "Sarah Chen", voterRole: "ANALYST", vote: "APPROVE", comment: "Strong thesis with compelling risk/reward" },
-      { proposalId: nvdaProposal.id, voterName: "Mike Rodriguez", voterRole: "PM", vote: "APPROVE", comment: "Fits portfolio strategy, good entry point" },
-      { proposalId: nvdaProposal.id, voterName: "Jane Smith", voterRole: "COMPLIANCE", vote: "APPROVE", comment: "No compliance concerns" },
-    ];
-
-    for (const vote of votes) {
-      await storage.createVote(vote as any);
-    }
-
-    // Create debate messages
-    const messages = [
-      {
-        meetingId: icMeeting.id,
+    // IC Meeting votes
+    await Promise.all([
+      storage.createVote({
+        meetingId: neeMeeting.id,
+        proposalId: neeProposal.id,
         userId: "user-pm-1",
+        vote: "APPROVE",
+        reasoning: "Clean energy thesis is compelling. NEE has best-in-class execution. Valuation is attractive at 18x P/E.",
+        confidence: 85
+      }),
+      storage.createVote({
+        meetingId: neeMeeting.id,
+        proposalId: neeProposal.id,
+        userId: "user-compliance-1",
+        vote: "APPROVE",
+        reasoning: "Regulatory risk is manageable given Florida's constructive environment. Position size is appropriate.",
+        confidence: 78
+      }),
+      storage.createVote({
+        meetingId: neeMeeting.id,
+        proposalId: neeProposal.id,
+        userId: "user-demo-1",
+        vote: "APPROVE",
+        reasoning: "Strong secular tailwinds. Execution track record reduces risk. Like the regulated utility downside protection.",
+        confidence: 82
+      })
+    ]);
+
+    // IC Meeting debate messages
+    const neeDebateMessages = [
+      {
+        meetingId: neeMeeting.id,
+        proposalId: neeProposal.id,
+        senderId: "user-pm-1",
         senderName: "Mike Rodriguez",
         senderRole: "PM",
-        content: "The customer concentration risk is valid, but worth noting they have multi-year contracts with committed capacity. Sticky relationships.",
-        messageType: "COMMENT",
+        content: "Sarah, great work on the research brief. The renewable backlog visibility is compelling. My main question is on the Florida rate case - what's your confidence on approval?",
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 5 * 60 * 1000)
       },
       {
-        meetingId: icMeeting.id,
-        userId: "user-analyst-1",
+        meetingId: neeMeeting.id,
+        proposalId: neeProposal.id,
+        senderId: "user-analyst-1",
         senderName: "Sarah Chen",
         senderRole: "ANALYST",
-        content: "Agree. Also, their software moat is underappreciated - CUDA ecosystem creates significant switching costs.",
-        messageType: "COMMENT",
+        content: "High confidence - 85%. FPL has a strong track record with the FL PSC. They've approved 95% of rate increases over the past 10 years. The infrastructure investments are clearly beneficial to customers (grid hardening, reliability).",
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 8 * 60 * 1000)
       },
+      {
+        meetingId: neeMeeting.id,
+        proposalId: neeProposal.id,
+        senderId: "AI_AGENT",
+        senderName: "Contrarian AI",
+        senderRole: "ANALYST",
+        content: "🤖 **Contrarian View**: While NEE's renewable portfolio is impressive, I'm concerned about three factors: (1) Rising interest rates disproportionately impact capital-intensive renewable developers - every 100bps reduces project returns by ~200bps. (2) Battery storage costs are declining 15-20% annually, which could obsolete some of NEE's solar/wind assets sooner than expected. (3) The stock has historically underperformed during rate hike cycles - we're potentially early in a multi-year hiking cycle. Have we stress-tested the model for 9% WACC?",
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 12 * 60 * 1000)
+      },
+      {
+        meetingId: neeMeeting.id,
+        proposalId: neeProposal.id,
+        senderId: "user-analyst-1",
+        senderName: "Sarah Chen",
+        senderRole: "ANALYST",
+        content: "Good pushback. On interest rates: NEE has hedged ~70% of their floating rate exposure through 2025. Their PPAs also have inflation escalators which partially offset. At 9% WACC, fair value drops to $72 - still only 2% below current price. On battery storage: NEE is actually a leader there with 3 GW in development. They're positioned to benefit from the disruption, not be disrupted by it.",
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 16 * 60 * 1000)
+      },
+      {
+        meetingId: neeMeeting.id,
+        proposalId: neeProposal.id,
+        senderId: "user-demo-1",
+        senderName: "Dan Mbanga",
+        senderRole: "ANALYST",
+        content: "I think the regulated utility piece gives us meaningful downside protection here. Even in a bear case on renewables, FPL is worth $50-55/share by itself. We're essentially getting the competitive renewables business for $20/share when it generates $4B+ in EBITDA.",
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 20 * 60 * 1000)
+      },
+      {
+        meetingId: neeMeeting.id,
+        proposalId: neeProposal.id,
+        senderId: "user-compliance-1",
+        senderName: "Jane Smith",
+        senderRole: "COMPLIANCE",
+        content: "From a compliance perspective, I'm comfortable with the position. Liquidity is excellent, ESG profile is strong, and the regulatory environment is well-understood. No red flags on governance or disclosure quality.",
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 24 * 60 * 1000)
+      },
+      {
+        meetingId: neeMeeting.id,
+        proposalId: neeProposal.id,
+        senderId: "user-pm-1",
+        senderName: "Mike Rodriguez",
+        senderRole: "PM",
+        content: "Alright, I'm convinced. Let's approve at 4.5% weight. The risk/reward looks favorable here, and the thesis has multi-year durability. Sarah, please coordinate with trading on building the position over the next 2-3 weeks.",
+        timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 28 * 60 * 1000)
+      }
     ];
 
-    for (const msg of messages) {
-      await storage.createDebateMessage(msg as any);
+    for (const msg of neeDebateMessages) {
+      await storage.createDebateMessage(msg);
     }
 
-    // Create position (after IC approval)
-    console.log("Creating NVDA position...");
-    const avgCost = 119.50;
-    const currentPrice = 132.00;
-    const shares = 5000;
-    const marketValue = currentPrice * shares;
-    const gainLoss = (currentPrice - avgCost) * shares;
-    const gainLossPercent = ((currentPrice - avgCost) / avgCost) * 100;
-    
-    await storage.createPosition({
-      ticker: "NVDA",
-      companyName: "NVIDIA Corporation",
-      shares,
-      avgCost: avgCost.toString(),
-      currentPrice: currentPrice.toString(),
-      marketValue: marketValue.toString(),
-      portfolioWeight: "5.00", // 5% of portfolio
-      gainLoss: gainLoss.toString(),
-      gainLossPercent: gainLossPercent.toFixed(2),
-      sector: "Technology",
-      analyst: "user-analyst-1",
-      thesisHealth: "HEALTHY",
-      purchaseDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+    // NEE Position (MONITORING stage)
+    console.log("  Creating NEE position...");
+    const neePosition = await storage.createPosition({
+      proposalId: neeProposal.id,
+      ticker: "NEE",
+      companyName: "NextEra Energy, Inc.",
+      sector: "Energy",
+      quantity: 6500,
+      avgCost: "73.50",
+      currentPrice: "78.20",
+      marketValue: "508300.00",
+      gainLoss: "30550.00",
+      gainLossPercent: "6.39",
+      portfolioWeight: "4.52",
+      analyst: "Sarah Chen",
+      thesisHealth: "HEALTHY"
     });
 
-    // Create monitoring events
-    console.log("Creating monitoring events...");
-    const events = [
+    // NEE Monitoring Events
+    console.log("  Creating NEE monitoring events...");
+    const neeMonitoringEvents = [
       {
-        workflowId: nvdaWorkflow.id,
-        ticker: "NVDA",
-        eventType: "PRICE_ALERT",
-        severity: "MEDIUM",
-        title: "Price moved +10% above entry",
-        description: "Current price $132 vs entry $119.50, up 10.5% - consider rebalancing",
-        eventData: { priceChange: 10.5, currentPrice: 132.00, entryPrice: 119.50 },
-        status: "ACTIVE",
-        triggeredAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        workflowId: neeWorkflow.id,
+        positionId: neePosition.id,
+        eventType: "EARNINGS_BEAT" as const,
+        severity: "INFO" as const,
+        title: "Q3 Earnings Beat: EPS $0.85 vs $0.79 est",
+        description: "NextEra reported Q3 adjusted EPS of $0.85, beating consensus by 7.6%. Revenue of $7.2B (+9.2% YoY) also exceeded estimates. Management raised FY guidance to $3.05-3.15 from $3.00-3.10. Key highlights: (1) Renewable backlog expanded to 23.5 GW, (2) FPL customer growth of 76K exceeded expectations, (3) Energy Resources EBITDA margins expanded 120bps to 39.2%.",
+        impactOnThesis: "Positive - validates our growth assumptions and margin expansion thesis",
+        actionRequired: false,
+        actionTaken: null
       },
       {
-        workflowId: nvdaWorkflow.id,
-        ticker: "NVDA",
-        eventType: "FUNDAMENTAL",
-        severity: "LOW",
-        title: "Earnings beat expectations",
-        description: "Q3 EPS $2.15 vs est. $1.98, revenue $14.2B vs $13.8B expected",
-        eventData: { epsActual: 2.15, epsEstimate: 1.98, revenueActual: 14.2, revenueEstimate: 13.8 },
-        status: "RESOLVED",
-        triggeredAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        resolvedAt: new Date(Date.now() - 12 * 60 * 60 * 1000),
+        workflowId: neeWorkflow.id,
+        positionId: neePosition.id,
+        eventType: "REGULATORY_UPDATE" as const,
+        severity: "WARNING" as const,
+        title: "FL PSC Rate Case Hearing Delayed to Q1",
+        description: "Florida Public Service Commission postponed NEE's rate case hearing from December to February 2026. The delay is procedural (additional discovery requested by interveners) and not indicative of opposition. NEE still expects approval but timing pushed out 6-8 weeks.",
+        impactOnThesis: "Neutral to slight negative - delays implementation but doesn't change probability of approval",
+        actionRequired: false,
+        actionTaken: "Monitoring - no position change warranted"
       },
       {
-        workflowId: nvdaWorkflow.id,
-        ticker: "NVDA",
-        eventType: "MARKET_EVENT",
-        severity: "LOW",
-        title: "Analyst upgrade from Morgan Stanley",
-        description: "Upgraded to Overweight with $155 price target",
-        eventData: { analyst: "Morgan Stanley", rating: "Overweight", priceTarget: 155 },
-        status: "RESOLVED",
-        triggeredAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-        resolvedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      },
+        workflowId: neeWorkflow.id,
+        positionId: neePosition.id,
+        eventType: "MARKET_MOVE" as const,
+        severity: "INFO" as const,
+        title: "Stock +6.4% Following Earnings Beat",
+        description: "NEE shares rallied $4.70 (+6.4%) to $78.20 following strong Q3 results and raised guidance. Outperformed XLU (+0.8%) by 560bps. Volume 2.3x average. Analyst commentary positive: JPM raised target to $88, MS to $85, GS maintained Buy.",
+        impactOnThesis: "Positive - price target now $85 vs current $78.20, maintaining 8.7% upside",
+        actionRequired: false,
+        actionTaken: null
+      }
     ];
 
-    for (const event of events) {
-      await storage.createMonitoringEvent(event as any);
+    for (const event of neeMonitoringEvents) {
+      await storage.createMonitoringEvent(event);
     }
 
-    // Create thesis health metric
-    console.log("Creating thesis health metrics...");
-    await storage.createThesisHealthMetric({
-      workflowId: nvdaWorkflow.id,
-      ticker: "NVDA",
-      healthStatus: "HEALTHY",
-      healthScore: 82,
-      catalystsStatus: {
-        "Blackwell launch": "ON_TRACK",
-        "TAM expansion": "AHEAD",
-        "Pricing power": "ON_TRACK"
+    // NEE Thesis Health Metrics
+    await storage.createThesisHealth({
+      positionId: neePosition.id,
+      workflowId: neeWorkflow.id,
+      overallScore: 85,
+      status: "HEALTHY",
+      fundamentalsScore: 88,
+      catalystsScore: 82,
+      risksScore: 84,
+      valuationScore: 86,
+      technicalScore: 85,
+      notes: "Thesis tracking well. Earnings beat validates growth assumptions. Rate case delay is minor speed bump. Price appreciation to $78.20 reduces upside but position remains attractive.",
+      nextReviewDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    });
+
+    // =====================================================================
+    // WORKFLOW 2: CVX - In IC_MEETING stage
+    // =====================================================================
+    console.log("\n📊 Creating CVX workflow (IC_MEETING stage)...");
+    
+    const cvxProposal = await storage.createProposal({
+      ticker: "CVX",
+      companyName: "Chevron Corporation",
+      analyst: "user-analyst-2",
+      proposalType: "BUY",
+      proposedWeight: "3.50",
+      targetPrice: "175.00",
+      status: "PENDING",
+      thesis: "Chevron offers attractive exposure to rising oil prices with best-in-class capital discipline and shareholder returns. The company's low-cost asset base (Permian, Kazakhstan, LNG) provides competitive advantages in any price environment. Target $175 represents 12% upside with 3.8% dividend yield and 5% buyback.",
+      catalysts: [
+        "Permian production growth of 10%+ annually through 2027 from tier-1 acreage",
+        "Tengiz expansion project ramping to 850K bpd (15% company production increase)",
+        "LNG portfolio (Gorgon, Wheatstone) benefiting from Asian demand and European gas crisis",
+        "Capital returns of $20B+ annually (7-8% yield at current prices) with oil at $80+"
+      ],
+      risks: [
+        "Oil price exposure: Breakeven ~$50 WTI but material earnings sensitivity to prices",
+        "Geopolitical risk: ~40% production from Kazakhstan, Australia, Nigeria",
+        "Energy transition: Long-term demand concerns and stranded asset risk",
+        "Refining exposure: Margins compressed in recession scenarios"
+      ],
+      recommendation: "BUY",
+      upside: "12.40",
+      downside: "-18.20"
+    });
+
+    const cvxWorkflow = await storage.createWorkflow({
+      ticker: "CVX",
+      companyName: "Chevron Corporation",
+      sector: "Energy",
+      currentStage: "IC_MEETING",
+      status: "ACTIVE",
+      owner: "user-analyst-2",
+      description: "Integrated energy major with low-cost production and strong capital returns"
+    });
+
+    // Create CVX workflow stages (up to IC Meeting)
+    await Promise.all([
+      storage.createWorkflowStage({
+        workflowId: cvxWorkflow.id,
+        stage: "DISCOVERY",
+        status: "COMPLETED",
+        owner: "user-analyst-2",
+        startedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+        completedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+        notes: "Initial research on CVX completed"
+      }),
+      storage.createWorkflowStage({
+        workflowId: cvxWorkflow.id,
+        stage: "ANALYSIS",
+        status: "COMPLETED",
+        owner: "user-analyst-2",
+        startedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+        completedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+        notes: "Financial model and risk analysis completed"
+      }),
+      storage.createWorkflowStage({
+        workflowId: cvxWorkflow.id,
+        stage: "IC_MEETING",
+        status: "IN_PROGRESS",
+        owner: "user-pm-1",
+        startedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        completedAt: null,
+        notes: "IC meeting in progress - reviewing proposal"
+      }),
+      storage.createWorkflowStage({
+        workflowId: cvxWorkflow.id,
+        stage: "EXECUTION",
+        status: "PENDING",
+        owner: null,
+        startedAt: null,
+        completedAt: null,
+        notes: null
+      }),
+      storage.createWorkflowStage({
+        workflowId: cvxWorkflow.id,
+        stage: "MONITORING",
+        status: "PENDING",
+        owner: null,
+        startedAt: null,
+        completedAt: null,
+        notes: null
+      })
+    ]);
+
+    // CVX Artifacts
+    console.log("  Creating CVX artifacts...");
+    await Promise.all([
+      storage.createWorkflowArtifact({
+        workflowId: cvxWorkflow.id,
+        proposalId: cvxProposal.id,
+        artifactType: "RESEARCH_BRIEF",
+        title: "CVX Traditional Energy Quality Analysis",
+        content: `# Chevron Corporation Investment Brief
+
+## Executive Summary
+Chevron is a top-tier integrated energy company with low-cost production assets and industry-leading capital discipline. Despite energy transition headwinds, CVX offers attractive near-term returns through strong free cash flow generation and shareholder returns.
+
+## Investment Highlights
+- Permian Basin: Tier-1 acreage with 10+ years inventory at sub-$30 breakeven
+- Tengiz Expansion: Adding 260K bpd at $40/bbl breakeven (world-class)
+- Capital Returns: $20B+ annually at $80+ oil (8% shareholder yield)
+- Balance Sheet: Net debt target of $25B vs $13B today (room for returns)
+
+## Financial Outlook
+- Production CAGR 2024-2027: 3.5%
+- FCF yield: 12-14% at $85 oil, 8-10% at $70 oil
+- Dividend yield: 3.8% with 6% growth
+- Buyback: $15B annually (~5% shares outstanding)
+
+## Key Debate Points
+**Bull Case**: Energy security drives sustained $80+ oil, CVX's low-cost assets print cash, stock re-rates from 9x to 11x P/E
+**Bear Case**: Demand destruction + energy transition accelerates, oil to $60, CVX cuts buybacks
+
+## Recommendation: BUY (with timing considerations)
+Target: $175 (12% upside + 9% shareholder yield)`,
+        version: 1,
+        status: "APPROVED",
+        createdBy: "user-analyst-2",
+        approvedBy: "user-pm-1"
+      }),
+
+      storage.createWorkflowArtifact({
+        workflowId: cvxWorkflow.id,
+        proposalId: cvxProposal.id,
+        artifactType: "FINANCIAL_MODEL",
+        title: "CVX Cash Flow Model & Valuation",
+        content: `# Chevron Financial Model
+
+## Production & Price Assumptions
+- Oil production: 3.1M bpd (2024) → 3.4M bpd (2027)
+- Brent price deck: $85/bbl (2024) → $80/bbl (long-term)
+- Permian: 700K bpd → 900K bpd (+29% growth)
+- Tengiz expansion: 600K bpd → 850K bpd
+
+## Financial Projections (2024-2027)
+Revenue: $200B → $215B (+2.3% CAGR)
+EBITDA: $52B → $56B
+FCF: $28B → $30B
+EPS: $14.20 → $16.50
+
+## Valuation
+**DCF Fair Value**: $182/share
+- WACC: 9.5%
+- Terminal FCF: $28B
+- Growth rate: 0%
+
+**Relative Valuation**: $165-175/share
+- 10x P/E on $17 normalized EPS
+- In-line with XOM, premium to Occidental
+
+**Shareholder Return Value**: $170/share
+- PV of 10-year buyback at 5% of shares = $45/share of value
+
+## Sensitivity: Oil Price Impact
+$100 oil: $205/share (+31%)
+$85 oil: $175/share (base)
+$70 oil: $145/share (-17%)
+$60 oil: $120/share (-31%)`,
+        version: 1,
+        status: "APPROVED",
+        createdBy: "user-analyst-2",
+        approvedBy: "user-pm-1"
+      }),
+
+      storage.createWorkflowArtifact({
+        workflowId: cvxWorkflow.id,
+        proposalId: cvxProposal.id,
+        artifactType: "RISK_ANALYSIS",
+        title: "CVX Risk Assessment",
+        content: `# Risk Analysis: Chevron Corporation
+
+## Risk #1: Oil Price Volatility (HIGH)
+- **Probability**: High (oil prices inherently volatile)
+- **Impact**: Material - $10 oil = $1.50/share EPS impact
+- **Mitigation**: Low-cost assets, hedging program, dividend covered even at $50 oil
+- **Our View**: Bullish on oil given supply constraints and China reopening
+
+## Risk #2: Energy Transition (MEDIUM-HIGH)
+- **Probability**: Medium (pace uncertain but direction clear)
+- **Impact**: High over 10+ years - demand destruction risk
+- **Mitigation**: Shifting to LNG, low-carbon, but limited alternative energy investments
+- **Our View**: Risk real but 10-15 year timeframe allows returns before peak oil
+
+## Risk #3: Geopolitical Exposure (MEDIUM)
+- **Probability**: Medium (Kazakhstan 10% of production, some Nigeria)
+- **Impact**: Medium - loss of asset would hurt but not fatal
+- **Mitigation**: Diversified portfolio, insurance, government relations
+- **Our View**: Acceptable given returns in base case
+
+## Risk #4: Refining Margin Compression (MEDIUM)
+- **Probability**: Medium-High in recession
+- **Impact**: Medium - refining is ~25% of EBITDA
+- **Mitigation**: Integrated model, downstream often hedges upstream
+- **Our View**: Near-term risk but margins still elevated vs history
+
+## Scenario Analysis
+**Bull**: $100 oil, strong execution → $210/share (+35%)
+**Base**: $80-85 oil, on-track → $175/share (+12%)
+**Bear**: $65 oil, transition accelerates → $130/share (-17%)`,
+        version: 1,
+        status: "APPROVED",
+        createdBy: "user-analyst-2",
+        approvedBy: "user-pm-1"
+      })
+    ]);
+
+    // CVX IC Meeting (SCHEDULED but not completed)
+    console.log("  Creating CVX IC meeting (in progress)...");
+    const cvxMeeting = await storage.createICMeeting({
+      proposalId: cvxProposal.id,
+      workflowId: cvxWorkflow.id,
+      scheduledAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
+      status: "SCHEDULED",
+      outcome: null,
+      notes: "Upcoming IC meeting to review CVX proposal. Key discussion points: oil price assumptions, energy transition timeline, position sizing given sector exposure.",
+      attendees: ["user-analyst-2", "user-pm-1", "user-compliance-1", "user-demo-1"]
+    });
+
+    // Some early debate messages (meeting in progress)
+    const cvxDebateMessages = [
+      {
+        meetingId: cvxMeeting.id,
+        proposalId: cvxProposal.id,
+        senderId: "user-pm-1",
+        senderName: "Mike Rodriguez",
+        senderRole: "PM",
+        content: "Alex, thanks for the work here. Playing devil's advocate: aren't we late to the party on traditional energy? Oil stocks have rallied 40% this year. What's the catalyst for further upside from here?",
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000)
       },
-      risksStatus: {
-        "Customer concentration": "STABLE",
-        "Geopolitical": "ELEVATED",
-        "Valuation": "MODERATE"
-      },
-      keyMetrics: {
-        priceVsTarget: 0.91, // $132 vs $145 target
-        revenueGrowth: 1.22,
-        marginTrend: "STABLE"
-      },
-      deviation: {
-        priceDeviation: -9.0,
-        catalystProgress: 0.65,
-        riskMaterialization: 0.15
-      },
-      lastCheck: new Date(),
-      nextCheck: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      createdBy: "System",
+      {
+        meetingId: cvxMeeting.id,
+        proposalId: cvxProposal.id,
+        senderId: "user-analyst-2",
+        senderName: "Alex Thompson",
+        senderRole: "ANALYST",
+        content: "Fair point. But I'd argue CVX at 9x earnings with an 8% shareholder yield is still cheap. The rally has been justified - supply is tight, OPEC is disciplined, and energy capex was severely underfunded 2015-2020. We're in a structural deficit. Plus CVX specifically has Tengiz ramping which adds 15% to production at $40 breakeven.",
+        timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000)
+      }
+    ];
+
+    for (const msg of cvxDebateMessages) {
+      await storage.createDebateMessage(msg);
+    }
+
+    // =====================================================================
+    // WORKFLOW 3: OXY - In ANALYSIS stage
+    // =====================================================================
+    console.log("\n📊 Creating OXY workflow (ANALYSIS stage)...");
+    
+    const oxyProposal = await storage.createProposal({
+      ticker: "OXY",
+      companyName: "Occidental Petroleum Corporation",
+      analyst: "user-demo-1",
+      proposalType: "BUY",
+      proposedWeight: "2.50",
+      targetPrice: "75.00",
+      status: "PENDING",
+      thesis: "Occidental is a transformed company post-Anadarko acquisition with premier Permian acreage and unique carbon capture optionality. Berkshire's 25% stake provides validation and downside support. The company is on track to reduce debt from $20B to sub-$15B while returning significant capital to shareholders. Target $75 represents 25% upside.",
+      catalysts: [
+        "Permian DJ Basin production growth of 15% annually with sub-$35 breakevens",
+        "Low-carbon ventures scaling: Direct Air Capture plant in Texas (first commercial scale)",
+        "Debt reduction to $15B by end-2024 unlocking $3B+ in annual buybacks",
+        "Potential Berkshire takeout at premium to current price"
+      ],
+      risks: [
+        "High leverage: Net debt/EBITDA still 1.5x despite improvement from 2.5x",
+        "Execution risk: OxyChem weakness offsets upstream strength",
+        "Berkshire overhang: Warren Buffett could sell stake creating pressure",
+        "Carbon capture unproven: DACS economics uncertain at scale"
+      ],
+      recommendation: "BUY",
+      upside: "25.00",
+      downside: "-12.00"
+    });
+
+    const oxyWorkflow = await storage.createWorkflow({
+      ticker: "OXY",
+      companyName: "Occidental Petroleum Corporation",
+      sector: "Energy",
+      currentStage: "ANALYSIS",
+      status: "ACTIVE",
+      owner: "user-demo-1",
+      description: "Permian pure-play with carbon capture optionality and Berkshire backing"
+    });
+
+    // Create OXY workflow stages (in analysis)
+    await Promise.all([
+      storage.createWorkflowStage({
+        workflowId: oxyWorkflow.id,
+        stage: "DISCOVERY",
+        status: "COMPLETED",
+        owner: "user-demo-1",
+        startedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        completedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+        notes: "Initial research completed - Berkshire investment thesis looks compelling"
+      }),
+      storage.createWorkflowStage({
+        workflowId: oxyWorkflow.id,
+        stage: "ANALYSIS",
+        status: "IN_PROGRESS",
+        owner: "user-demo-1",
+        startedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+        completedAt: null,
+        notes: "Building financial model - 60% complete"
+      }),
+      storage.createWorkflowStage({
+        workflowId: oxyWorkflow.id,
+        stage: "IC_MEETING",
+        status: "PENDING",
+        owner: null,
+        startedAt: null,
+        completedAt: null,
+        notes: null
+      }),
+      storage.createWorkflowStage({
+        workflowId: oxyWorkflow.id,
+        stage: "EXECUTION",
+        status: "PENDING",
+        owner: null,
+        startedAt: null,
+        completedAt: null,
+        notes: null
+      }),
+      storage.createWorkflowStage({
+        workflowId: oxyWorkflow.id,
+        stage: "MONITORING",
+        status: "PENDING",
+        owner: null,
+        startedAt: null,
+        completedAt: null,
+        notes: null
+      })
+    ]);
+
+    // OXY partial artifacts (still in analysis)
+    console.log("  Creating OXY artifacts (partial)...");
+    await Promise.all([
+      storage.createWorkflowArtifact({
+        workflowId: oxyWorkflow.id,
+        proposalId: oxyProposal.id,
+        artifactType: "RESEARCH_BRIEF",
+        title: "OXY Transformation Story Analysis (DRAFT)",
+        content: `# Occidental Petroleum Research Brief - DRAFT
+
+## Investment Thesis (Work in Progress)
+Occidental has successfully navigated the challenging post-Anadarko integration and is now positioned as a premier Permian producer with improving financial flexibility. The Berkshire Hathaway investment provides both validation and downside support.
+
+## Key Points Under Investigation
+1. **Permian Asset Quality**: Analyzing well productivity trends in Delaware Basin
+2. **Carbon Capture Economics**: Modeling DAC plant returns under various scenarios
+3. **Debt Trajectory**: Stress-testing paydown timeline under different oil price scenarios
+4. **Berkshire Implications**: Is this strategic investment or just value play?
+
+## Preliminary Financial Analysis
+- Current production: ~1.2M boe/d (Permian is 60%)
+- EBITDA (est. 2024): $14-15B at $80 oil
+- FCF: $6-7B after capex and dividends
+- Net Debt: $19B → targeting $15B by Q4 2024
+
+## Work Remaining
+- [ ] Complete DCF model with stress tests
+- [ ] Detailed competitive positioning vs peers (PXD, DVN)
+- [ ] Carbon capture TAM analysis
+- [ ] Management track record review
+- [ ] Technical analysis and entry point timing
+
+**Status**: 60% complete - targeting IC meeting in 2-3 weeks`,
+        version: 1,
+        status: "PENDING",
+        createdBy: "user-demo-1",
+        approvedBy: null
+      }),
+
+      storage.createWorkflowArtifact({
+        workflowId: oxyWorkflow.id,
+        proposalId: oxyProposal.id,
+        artifactType: "FINANCIAL_MODEL",
+        title: "OXY Financial Model (IN PROGRESS)",
+        content: `# Occidental Financial Model - Work in Progress
+
+## Current Status: Building Production Model
+
+**Completed Sections:**
+✅ Historical financials (2020-2023)
+✅ Production build-up by basin
+✅ Price deck assumptions
+
+**In Progress:**
+🔄 Opex/capex by segment
+🔄 OxyChem earnings model
+🔄 Debt paydown schedule
+
+**To Do:**
+❌ Carbon capture revenue modeling
+❌ Valuation framework
+❌ Sensitivity analyses
+
+## Preliminary Estimates (Subject to Change)
+- 2024E Revenue: $29B
+- 2024E EBITDA: $14.5B
+- 2024E FCF: $6.8B
+- Est. Fair Value: $72-78/share (wide range pending refinement)
+
+**Next Steps:**
+1. Validate Permian well economics with field-level data
+2. Model OxyChem turnaround
+3. Build comprehensive debt waterfall
+4. Sensitize to oil price scenarios ($65-$100)
+
+**Expected Completion**: 7-10 days`,
+        version: 1,
+        status: "PENDING",
+        createdBy: "user-demo-1",
+        approvedBy: null
+      })
+    ]);
+
+    // Create research request for OXY (analyst seeking help)
+    console.log("  Creating OXY research request...");
+    await storage.createResearchRequest({
+      proposalId: oxyProposal.id,
+      workflowId: oxyWorkflow.id,
+      requestedBy: "user-demo-1",
+      agentType: "SCENARIO_SIMULATOR",
+      priority: "MEDIUM",
+      status: "IN_PROGRESS",
+      query: "Model OXY cash flows under three scenarios: (1) $100 oil sustained, (2) $80 oil base case, (3) $60 oil stress case. Focus on debt paydown timeline and buyback capacity.",
+      context: "Need to understand downside protection and upside optionality for IC presentation",
+      expectedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
     });
 
     // Create notifications
     console.log("Creating notifications...");
     const notifications = [
       {
-        userId: "user-analyst-1",
-        type: "MONITORING_ALERT" as const,
-        title: "NVDA price alert triggered",
-        message: "NVDA moved +10% above entry price - review for rebalancing",
-        severity: "MEDIUM" as const,
-        read: false,
-        actionUrl: `/workflows/${nvdaWorkflow.id}`,
+        userId: "user-demo-1",
+        ticker: "NEE",
+        title: "NEE Earnings Beat",
+        message: "NextEra Energy reported Q3 EPS of $0.85 vs $0.79 est (+7.6% beat). Position +6.4% today.",
+        type: "EARNINGS" as const,
+        severity: "INFO" as const,
+        readAt: null,
+        actionUrl: "/workflows/" + neeWorkflow.id
       },
       {
-        userId: "user-pm-1",
-        type: "THESIS_ALERT" as const,
-        title: "NVDA thesis health update",
-        message: "Thesis health score: 82 (HEALTHY) - catalysts progressing as expected",
+        userId: "user-demo-1",
+        ticker: "NEE",
+        title: "FL Rate Case Delayed",
+        message: "Florida PSC postponed NEE rate case hearing to February 2026 (from December). Delay is procedural.",
+        type: "REGULATORY" as const,
+        severity: "WARNING" as const,
+        readAt: null,
+        actionUrl: "/workflows/" + neeWorkflow.id
+      },
+      {
+        userId: "user-demo-1",
+        ticker: "CVX",
+        title: "CVX IC Meeting Scheduled",
+        message: "IC meeting for Chevron proposal scheduled for 2 days from now. Please review materials.",
+        type: "IC_MEETING" as const,
         severity: "INFO" as const,
-        read: false,
-        actionUrl: `/workflows/${nvdaWorkflow.id}`,
+        readAt: null,
+        actionUrl: "/ic-meeting/" + cvxMeeting.id
+      },
+      {
+        userId: "user-demo-1",
+        ticker: "OXY",
+        title: "OXY Research Request Update",
+        message: "Scenario analysis for Occidental Petroleum is in progress. Expected completion in 3 days.",
+        type: "RESEARCH" as const,
+        severity: "INFO" as const,
+        readAt: null,
+        actionUrl: "/workflows/" + oxyWorkflow.id
       }
     ];
 
@@ -430,62 +1080,36 @@ async function seed() {
       await storage.createNotification(notification);
     }
 
-    // Create agent responses
-    console.log("Creating agent responses...");
-    await storage.createAgentResponse({
-      ticker: "NVDA",
-      agentType: "RESEARCH_SYNTHESIZER",
-      prompt: "Analyze NVDA investment opportunity including market position, competitive moat, growth drivers, and key risks",
-      response: {
-        ticker: "NVDA",
-        companyName: "NVIDIA Corporation",
-        executiveSummary: "NVIDIA is the dominant player in GPU technology with commanding market share in gaming, data centers, and AI computing.",
-        keyMetrics: {
-          marketCap: "$1.2T",
-          peRatio: 35.2,
-          revenue: "$60.9B",
-          revenueGrowth: "+122% YoY",
-          netMargin: "49.3%",
-          roe: "115.2%"
-        },
-        strengths: [
-          "Dominant 80%+ market share in AI accelerators",
-          "CUDA moat with 4M+ developers",
-          "Strong pricing power with 65%+ gross margins"
-        ],
-        weaknesses: [
-          "High customer concentration",
-          "Geopolitical risks",
-          "Valuation premium"
-        ],
-        recommendation: "BUY",
-        targetPrice: 145,
-        analysisDate: new Date().toISOString(),
-      },
-      metadata: { analyst: "AI Research Agent", confidence: 0.92 },
-    });
-
-    console.log("✅ Database seeding completed successfully!");
-    console.log("\nCreated complete NVDA workflow from discovery through monitoring:");
-    console.log("  - 3 users (Analyst, PM, Compliance)");
-    console.log("  - 3 companies (NVDA, TSLA, GOOGL)");
-    console.log("  - 1 NVDA proposal");
-    console.log("  - 1 complete workflow with 5 stages");
-    console.log("  - 4 research artifacts");
-    console.log("  - 1 IC meeting with 3 votes and debate");
-    console.log("  - 1 position (executed)");
-    console.log("  - 3 monitoring events");
-    console.log("  - 1 thesis health metric");
-    console.log("  - 2 notifications");
-    console.log("  - Agent responses");
-    console.log("\nWorkflow accessible at: /workflows/" + nvdaWorkflow.id);
+    console.log("\n✅ Seed completed successfully!");
+    console.log("\n📊 Created data:");
+    console.log("  - 5 users (Dan, Sarah, Mike, Jane, Alex)");
+    console.log("  - 3 Energy sector companies (NEE, CVX, OXY)");
+    console.log("  - 3 workflows in different stages:");
+    console.log("    • NEE (MONITORING): Complete workflow with position & thesis tracking");
+    console.log("    • CVX (IC_MEETING): Ready for IC decision");
+    console.log("    • OXY (ANALYSIS): Work in progress");
+    console.log("  - 9 research artifacts across workflows");
+    console.log("  - 2 IC meetings (1 completed with debate, 1 scheduled)");
+    console.log("  - 1 active position (NEE)");
+    console.log("  - 3 monitoring events for NEE");
+    console.log("  - 7 debate messages with contrarian AI input");
+    console.log("  - 4 notifications");
+    console.log("\n🎯 Demo user: Dan Mbanga (dan@example.io)");
+    console.log("   You can see all workflows and participate in IC meetings!");
 
   } catch (error) {
-    console.error("❌ Error seeding database:", error);
-    process.exit(1);
+    console.error("❌ Seed failed:", error);
+    throw error;
   }
-
-  process.exit(0);
 }
 
-seed();
+// Run the seed
+seed()
+  .then(() => {
+    console.log("👋 Seed script finished");
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error("💥 Seed script failed:", error);
+    process.exit(1);
+  });
