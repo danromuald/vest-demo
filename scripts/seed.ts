@@ -2,6 +2,41 @@ import { storage } from "../server/storage";
 
 async function seed() {
   console.log("🌱 Starting database seeding...");
+  
+  // Helper to ensure artifact creation follows schema correctly
+  const seedArtifact = async ({
+    workflowId,
+    artifactType,
+    stage,
+    title,
+    content,
+    createdBy,
+    status = "APPROVED",
+    version = 1,
+    metadata = null
+  }: {
+    workflowId: string;
+    artifactType: string;
+    stage: string;
+    title: string;
+    content: string;
+    createdBy: string;
+    status?: string;
+    version?: number;
+    metadata?: any;
+  }) => {
+    return storage.createWorkflowArtifact({
+      workflowId,
+      artifactType,
+      stage,
+      title,
+      content: { text: content }, // Wrap in JSON
+      createdBy,
+      status,
+      version,
+      metadata
+    });
+  };
 
   try {
     // Check if already seeded by looking for NEE workflow
@@ -211,12 +246,13 @@ async function seed() {
     // NEE Research Artifacts
     console.log("  Creating NEE artifacts...");
     const neeArtifacts = [
-      await storage.createWorkflowArtifact({
+      await seedArtifact({
         workflowId: neeWorkflow.id,
         artifactType: "RESEARCH_BRIEF",
         stage: "ANALYSIS",
         title: "NEE Renewable Energy Leadership Analysis",
-        content: { text: `# NextEra Energy Investment Research Brief
+        createdBy: "user-analyst-1",
+        content: `# NextEra Energy Investment Research Brief
 
 ## Executive Summary
 NextEra Energy (NEE) represents a unique opportunity to gain exposure to the secular energy transition theme while maintaining downside protection through its regulated Florida utility. The company operates the largest renewable energy portfolio globally with 30+ GW capacity and has demonstrated consistent execution on capital deployment.
@@ -248,18 +284,15 @@ NextEra Energy (NEE) represents a unique opportunity to gain exposure to the sec
 
 ## Recommendation: BUY
 Target Price: $85 (15% upside)
-Position Size: 4.5% of portfolio`,
-        version: 1,
-        status: "APPROVED",
-        createdBy: "user-analyst-1",
-        approvedBy: "user-pm-1"
+Position Size: 4.5% of portfolio`
       }),
 
-      await storage.createWorkflowArtifact({
+      await seedArtifact({
         workflowId: neeWorkflow.id,
-        proposalId: neeProposal.id,
         artifactType: "FINANCIAL_MODEL",
+        stage: "ANALYSIS",
         title: "NEE DCF Valuation Model",
+        createdBy: "user-analyst-1",
         content: `# NextEra Energy DCF Model
 
 ## Model Assumptions
@@ -297,18 +330,15 @@ Price sensitivity to WACC ± 50bps and terminal growth ± 50bps:
 ## Returns Analysis
 - Entry price: $73.50
 - Expected return (1-year): 18.7% (15% price + 3.7% yield)
-- Risk-adjusted return: 14.2% (applying 75% probability)`,
-        version: 1,
-        status: "APPROVED",
-        createdBy: "user-analyst-1",
-        approvedBy: "user-pm-1"
+- Risk-adjusted return: 14.2% (applying 75% probability)`
       }),
 
-      await storage.createWorkflowArtifact({
+      await seedArtifact({
         workflowId: neeWorkflow.id,
-        proposalId: neeProposal.id,
         artifactType: "RISK_ANALYSIS",
+        stage: "ANALYSIS",
         title: "NEE Risk Assessment & Scenario Analysis",
+        createdBy: "user-analyst-1",
         content: `# Risk Analysis: NextEra Energy
 
 ## Top 5 Risks (Probability x Impact)
@@ -355,18 +385,15 @@ Price sensitivity to WACC ± 50bps and terminal growth ± 50bps:
 - Policy uncertainty slows development
 - Rising rates pressure returns
 - Technology disruption
-- Target: $55/share`,
-        version: 1,
-        status: "APPROVED",
-        createdBy: "user-analyst-1",
-        approvedBy: "user-pm-1"
+- Target: $55/share`
       }),
 
-      await storage.createWorkflowArtifact({
+      await seedArtifact({
         workflowId: neeWorkflow.id,
-        proposalId: neeProposal.id,
         artifactType: "INVESTMENT_THESIS",
+        stage: "ANALYSIS",
         title: "NEE Investment Thesis Summary",
+        createdBy: "user-analyst-1",
         content: `# Investment Thesis: NextEra Energy (NEE)
 
 ## Core Thesis
@@ -400,51 +427,59 @@ NextEra Energy represents a rare combination of defensive utility characteristic
 **Action**: BUY
 **Weight**: 4.5% (overweight vs 2.5% benchmark)
 **Entry**: $73.50 or lower
-**Stop loss**: $65 (regulated utility sum-of-parts value)`,
-        version: 1,
-        status: "APPROVED",
-        createdBy: "user-analyst-1",
-        approvedBy: "user-pm-1"
+**Stop loss**: $65 (regulated utility sum-of-parts value)`
       })
     ];
 
     // NEE IC Meeting with realistic debate
     console.log("  Creating NEE IC meeting...");
     const neeMeeting = await storage.createICMeeting({
-      proposalId: neeProposal.id,
       workflowId: neeWorkflow.id,
-      scheduledAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+      meetingDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
       status: "COMPLETED",
-      outcome: "APPROVED",
-      notes: "Strong consensus on thesis. Approved 4.5% position size. Some debate on timing given recent rate case uncertainty.",
-      attendees: ["user-analyst-1", "user-pm-1", "user-compliance-1", "user-demo-1"]
+      title: "NEE Investment Committee Meeting",
+      description: "Review and vote on NextEra Energy (NEE) investment proposal",
+      attendees: ["user-analyst-1", "user-pm-1", "user-compliance-1", "user-demo-1"],
+      agenda: {
+        items: [
+          "Investment thesis review",
+          "Financial model walkthrough",
+          "Risk analysis discussion",
+          "Q&A and debate",
+          "Vote on position sizing"
+        ]
+      },
+      decisions: {
+        approved: true,
+        positionSize: "4.5%",
+        conditions: []
+      },
+      minutes: "Strong consensus on thesis. Approved 4.5% position size. Some debate on timing given recent rate case uncertainty.",
+      createdBy: "user-pm-1"
     });
 
     // IC Meeting votes
     await Promise.all([
       storage.createVote({
-        meetingId: neeMeeting.id,
         proposalId: neeProposal.id,
-        userId: "user-pm-1",
+        voterName: "Mike Rodriguez",
+        voterRole: "PM",
         vote: "APPROVE",
-        reasoning: "Clean energy thesis is compelling. NEE has best-in-class execution. Valuation is attractive at 18x P/E.",
-        confidence: 85
+        comment: "Clean energy thesis is compelling. NEE has best-in-class execution. Valuation is attractive at 18x P/E. Confidence: 85%"
       }),
       storage.createVote({
-        meetingId: neeMeeting.id,
         proposalId: neeProposal.id,
-        userId: "user-compliance-1",
+        voterName: "Jane Smith",
+        voterRole: "COMPLIANCE",
         vote: "APPROVE",
-        reasoning: "Regulatory risk is manageable given Florida's constructive environment. Position size is appropriate.",
-        confidence: 78
+        comment: "Regulatory risk is manageable given Florida's constructive environment. Position size is appropriate. Confidence: 78%"
       }),
       storage.createVote({
-        meetingId: neeMeeting.id,
         proposalId: neeProposal.id,
-        userId: "user-demo-1",
+        voterName: "Dan Mbanga",
+        voterRole: "ANALYST",
         vote: "APPROVE",
-        reasoning: "Strong secular tailwinds. Execution track record reduces risk. Like the regulated utility downside protection.",
-        confidence: 82
+        comment: "Strong secular tailwinds. Execution track record reduces risk. Like the regulated utility downside protection. Confidence: 82%"
       })
     ]);
 
@@ -522,11 +557,10 @@ NextEra Energy represents a rare combination of defensive utility characteristic
     // NEE Position (MONITORING stage)
     console.log("  Creating NEE position...");
     const neePosition = await storage.createPosition({
-      proposalId: neeProposal.id,
       ticker: "NEE",
       companyName: "NextEra Energy, Inc.",
       sector: "Energy",
-      quantity: 6500,
+      shares: 6500,
       avgCost: "73.50",
       currentPrice: "78.20",
       marketValue: "508300.00",
@@ -534,7 +568,8 @@ NextEra Energy represents a rare combination of defensive utility characteristic
       gainLossPercent: "6.39",
       portfolioWeight: "4.52",
       analyst: "Sarah Chen",
-      thesisHealth: "HEALTHY"
+      thesisHealth: "HEALTHY",
+      purchaseDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) // 1 day ago
     });
 
     // NEE Monitoring Events
@@ -580,18 +615,35 @@ NextEra Energy represents a rare combination of defensive utility characteristic
     }
 
     // NEE Thesis Health Metrics
-    await storage.createThesisHealth({
-      positionId: neePosition.id,
+    await storage.createThesisHealthMetric({
       workflowId: neeWorkflow.id,
-      overallScore: 85,
-      status: "HEALTHY",
-      fundamentalsScore: 88,
-      catalystsScore: 82,
-      risksScore: 84,
-      valuationScore: 86,
-      technicalScore: 85,
-      notes: "Thesis tracking well. Earnings beat validates growth assumptions. Rate case delay is minor speed bump. Price appreciation to $78.20 reduces upside but position remains attractive.",
-      nextReviewDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      positionId: neePosition.id,
+      ticker: "NEE",
+      healthStatus: "HEALTHY",
+      healthScore: 85,
+      catalystsStatus: {
+        renewableBacklog: { status: "ON_TRACK", progress: 95, note: "23.5 GW vs 22 GW expected" },
+        regulatoryApproval: { status: "ON_TRACK", progress: 85, note: "Rate case delayed but approval likely" },
+        marginExpansion: { status: "AHEAD", progress: 110, note: "EBITDA margins 43.5% vs 42% expected" }
+      },
+      risksStatus: {
+        interestRates: { status: "MONITORED", severity: "MEDIUM", note: "70% hedged through 2025" },
+        regulatoryDelay: { status: "LOW", severity: "LOW", note: "Procedural delay only" },
+        technologyDisruption: { status: "MONITORED", severity: "MEDIUM", note: "NEE leading in battery storage" }
+      },
+      keyMetrics: {
+        revenueGrowth: { expected: 8.0, actual: 9.2, variance: "+15%" },
+        ebitdaMargin: { expected: 42.0, actual: 43.5, variance: "+3.6%" },
+        fcfYield: { expected: 3.5, actual: 3.8, variance: "+8.6%" },
+        renewableBacklog: { expected: "22 GW", actual: "23.5 GW", variance: "+6.8%" }
+      },
+      deviation: {
+        summary: "Thesis tracking well. Earnings beat validates growth assumptions. Rate case delay is minor speed bump. Price appreciation to $78.20 reduces upside but position remains attractive.",
+        majorChanges: []
+      },
+      lastCheck: new Date(),
+      nextCheck: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      createdBy: "user-analyst-1"
     });
 
     // =====================================================================
@@ -687,11 +739,12 @@ NextEra Energy represents a rare combination of defensive utility characteristic
     // CVX Artifacts
     console.log("  Creating CVX artifacts...");
     await Promise.all([
-      storage.createWorkflowArtifact({
+      seedArtifact({
         workflowId: cvxWorkflow.id,
-        proposalId: cvxProposal.id,
         artifactType: "RESEARCH_BRIEF",
+        stage: "ANALYSIS",
         title: "CVX Traditional Energy Quality Analysis",
+        createdBy: "user-analyst-2",
         content: `# Chevron Corporation Investment Brief
 
 ## Executive Summary
@@ -714,18 +767,15 @@ Chevron is a top-tier integrated energy company with low-cost production assets 
 **Bear Case**: Demand destruction + energy transition accelerates, oil to $60, CVX cuts buybacks
 
 ## Recommendation: BUY (with timing considerations)
-Target: $175 (12% upside + 9% shareholder yield)`,
-        version: 1,
-        status: "APPROVED",
-        createdBy: "user-analyst-2",
-        approvedBy: "user-pm-1"
+Target: $175 (12% upside + 9% shareholder yield)`
       }),
 
-      storage.createWorkflowArtifact({
+      seedArtifact({
         workflowId: cvxWorkflow.id,
-        proposalId: cvxProposal.id,
         artifactType: "FINANCIAL_MODEL",
+        stage: "ANALYSIS",
         title: "CVX Cash Flow Model & Valuation",
+        createdBy: "user-analyst-2",
         content: `# Chevron Financial Model
 
 ## Production & Price Assumptions
@@ -757,18 +807,15 @@ EPS: $14.20 → $16.50
 $100 oil: $205/share (+31%)
 $85 oil: $175/share (base)
 $70 oil: $145/share (-17%)
-$60 oil: $120/share (-31%)`,
-        version: 1,
-        status: "APPROVED",
-        createdBy: "user-analyst-2",
-        approvedBy: "user-pm-1"
+$60 oil: $120/share (-31%)`
       }),
 
-      storage.createWorkflowArtifact({
+      seedArtifact({
         workflowId: cvxWorkflow.id,
-        proposalId: cvxProposal.id,
         artifactType: "RISK_ANALYSIS",
+        stage: "ANALYSIS",
         title: "CVX Risk Assessment",
+        createdBy: "user-analyst-2",
         content: `# Risk Analysis: Chevron Corporation
 
 ## Risk #1: Oil Price Volatility (HIGH)
@@ -798,24 +845,30 @@ $60 oil: $120/share (-31%)`,
 ## Scenario Analysis
 **Bull**: $100 oil, strong execution → $210/share (+35%)
 **Base**: $80-85 oil, on-track → $175/share (+12%)
-**Bear**: $65 oil, transition accelerates → $130/share (-17%)`,
-        version: 1,
-        status: "APPROVED",
-        createdBy: "user-analyst-2",
-        approvedBy: "user-pm-1"
+**Bear**: $65 oil, transition accelerates → $130/share (-17%)`
       })
     ]);
 
     // CVX IC Meeting (SCHEDULED but not completed)
     console.log("  Creating CVX IC meeting (in progress)...");
     const cvxMeeting = await storage.createICMeeting({
-      proposalId: cvxProposal.id,
       workflowId: cvxWorkflow.id,
-      scheduledAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
+      meetingDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
       status: "SCHEDULED",
-      outcome: null,
-      notes: "Upcoming IC meeting to review CVX proposal. Key discussion points: oil price assumptions, energy transition timeline, position sizing given sector exposure.",
-      attendees: ["user-analyst-2", "user-pm-1", "user-compliance-1", "user-demo-1"]
+      title: "CVX Investment Committee Meeting",
+      description: "Review and vote on Chevron Corporation (CVX) investment proposal",
+      attendees: ["user-analyst-2", "user-pm-1", "user-compliance-1", "user-demo-1"],
+      agenda: {
+        items: [
+          "Traditional energy thesis review",
+          "Oil price sensitivity analysis",
+          "Energy transition risk assessment",
+          "Q&A and contrarian debate",
+          "Vote on position"
+        ]
+      },
+      minutes: "Upcoming IC meeting to review CVX proposal. Key discussion points: oil price assumptions, energy transition timeline, position sizing given sector exposure.",
+      createdBy: "user-pm-1"
     });
 
     // Some early debate messages (meeting in progress)
@@ -937,11 +990,13 @@ $60 oil: $120/share (-31%)`,
     // OXY partial artifacts (still in analysis)
     console.log("  Creating OXY artifacts (partial)...");
     await Promise.all([
-      storage.createWorkflowArtifact({
+      seedArtifact({
         workflowId: oxyWorkflow.id,
-        proposalId: oxyProposal.id,
         artifactType: "RESEARCH_BRIEF",
+        stage: "DISCOVERY",
         title: "OXY Transformation Story Analysis (DRAFT)",
+        createdBy: "user-demo-1",
+        status: "DRAFT",
         content: `# Occidental Petroleum Research Brief - DRAFT
 
 ## Investment Thesis (Work in Progress)
@@ -966,18 +1021,16 @@ Occidental has successfully navigated the challenging post-Anadarko integration 
 - [ ] Management track record review
 - [ ] Technical analysis and entry point timing
 
-**Status**: 60% complete - targeting IC meeting in 2-3 weeks`,
-        version: 1,
-        status: "PENDING",
-        createdBy: "user-demo-1",
-        approvedBy: null
+**Status**: 60% complete - targeting IC meeting in 2-3 weeks`
       }),
 
-      storage.createWorkflowArtifact({
+      seedArtifact({
         workflowId: oxyWorkflow.id,
-        proposalId: oxyProposal.id,
         artifactType: "FINANCIAL_MODEL",
+        stage: "ANALYSIS",
         title: "OXY Financial Model (IN PROGRESS)",
+        createdBy: "user-demo-1",
+        status: "DRAFT",
         content: `# Occidental Financial Model - Work in Progress
 
 ## Current Status: Building Production Model
@@ -1009,11 +1062,7 @@ Occidental has successfully navigated the challenging post-Anadarko integration 
 3. Build comprehensive debt waterfall
 4. Sensitize to oil price scenarios ($65-$100)
 
-**Expected Completion**: 7-10 days`,
-        version: 1,
-        status: "PENDING",
-        createdBy: "user-demo-1",
-        approvedBy: null
+**Expected Completion**: 7-10 days`
       })
     ]);
 
